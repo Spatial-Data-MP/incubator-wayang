@@ -1,8 +1,8 @@
 package org.apache.wayang.applications;
 
-import org.apache.wayang.api.DataQuanta;
-import org.apache.wayang.api.JavaPlanBuilder;
+import org.apache.wayang.api.*;
 import org.apache.wayang.basic.data.Record;
+import org.apache.wayang.basic.data.Tuple2;
 import org.apache.wayang.core.api.Configuration;
 import org.apache.wayang.core.api.WayangContext;
 import org.apache.wayang.java.Java;
@@ -10,8 +10,10 @@ import org.apache.wayang.postgres.Postgres;
 import org.apache.wayang.postgres.operators.PostgresTableSource;
 import org.postgresql.core.v3.QueryExecutorImpl;
 
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Iterator;
+import java.util.List;
 import java.util.logging.ConsoleHandler;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -20,23 +22,22 @@ public class TestSpatialOperators {
 
     public static void main(String[] args){
 
+        //// Debugging might be useful, set level to "FINEST" to see actual db query strings
         Logger logger = Logger.getLogger(QueryExecutorImpl.class.getName());
-
         ConsoleHandler handler = new ConsoleHandler();
-        handler.setLevel(Level.FINEST);
+//        handler.setLevel(Level.FINEST);
         // handler.setFilter(record -> record.getMessage() != null && record.getMessage().contains("query="));
-        logger.addHandler(handler);
-        logger.setUseParentHandlers(false);
-        logger.setLevel(Level.FINEST);
+//        logger.addHandler(handler);
+//        logger.setUseParentHandlers(false);
+//        logger.setLevel(Level.FINEST);
 
         System.out.println( ">>> Test a Filter Operator");
 
+        //// Db Connection, local db credentials!
         Configuration configuration = new Configuration();
-        configuration.setProperty("wayang.postgres.jdbc.url", "jdbc:postgresql://localhost:5433/postgres");
+        configuration.setProperty("wayang.postgres.jdbc.url", "jdbc:postgresql://localhost:5433/postgres"); // Default port 5432
         configuration.setProperty("wayang.postgres.jdbc.user", "postgres");
         configuration.setProperty("wayang.postgres.jdbc.password", "1234");
-
-
 
         // Set up WayangContext.
         //org.apache.wayang.api.MultiContext wayang = new MultiContext(configuration).withPlugin(Java.basicPlugin()).withPlugin(Postgres.plugin());
@@ -61,28 +62,45 @@ public class TestSpatialOperators {
                 .collect();*/
 
         // *****   Within    *****  //
-        final Collection<Integer> spiderWithin =
+        final MapDataQuantaBuilder<Record, Integer> spiderWithin =
                     planBuilder
-    //                .readTable(new PostgisTableSource("spider", "id", "geom").setGisColum("geom"))
                     .readTable(new PostgresTableSource("spider", "id", "geom"))
                     .filter(t -> true)
-    //                .filter(t -> true)
                     .withSqlUdf("ST_Within(spider.geom, ST_MakeEnvelope(0.30, 0.00, 0.00, 0.30, 4326))").withTargetPlatform(Postgres.platform())
                     .filter(t -> (Integer) t.getField(0) <= 20)
-    //                        .spatialFilter()
-                    //.filter(r -> (Integer) r.getField(1) >= 18).withSqlUdf("year >= 18").withTargetPlatform(Java.platform())
-                    // .asRecords()
-                    //.projectRecords(new String[]{"name"})
-                    .map(record -> (Integer) record.getField(0))
+                    .map(record -> (Integer) record.getField(0));
 //                    .build().explain(true);
-                    .collect()
+        System.out.println("Spider ST_Within: " + spiderWithin.collect().toString());
+
+
+        //// Sample local Collection
+        final List<Tuple2<String, Integer>> inputValues2 = Arrays.asList(
+                new Tuple2<>("Yellow", 1)
+                ,new Tuple2<>("Green", 2)
+//                ,new Tuple2<>("Blue", 3)
+        );
+        final FilterDataQuantaBuilder<Tuple2<String, Integer>> dataQuanta1 = planBuilder
+                .loadCollection(inputValues2)
+                .filter(t -> true)
+//                .filter(t -> t.getField0().equals("Yellow"))
                 ;
-//        quanta.clone();
+//        System.out.println("InputValues from Collection: " + dataQuanta1.collect().toString());
 
-//                .explain(false);
-//                .collect();
+        //// Polygons from db
+        final FilterDataQuantaBuilder<Record> dataQuanta2
+                = planBuilder.readTable(new PostgresTableSource("my_polygon", "id", "geom"))
+                .filter(t -> true)
+                ;
+//        System.out.println("Polygons from DB: " + dataQuanta2.collect().toString());
 
-        System.out.println(spiderWithin.toString());
+
+        //// Non-Spatial Join operator
+        final Collection<Tuple2<Tuple2<String, Integer>, Record>> outputValues =
+                             dataQuanta1
+                .join(Tuple2::getField1, dataQuanta2, (record -> record.getField(0)))
+                .collect();
+        System.out.println(outputValues.toString());
+
 
         // *****   All    *****  //
 //        final Collection<Integer> outputValues =
@@ -156,9 +174,6 @@ public class TestSpatialOperators {
                 // Execute the plan and collect the results.
                 .collect();
 */
-
-
-        // System.out.println(cars.toString());
         System.out.println( "*** Done. ***" );
     }
 
