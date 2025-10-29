@@ -279,6 +279,17 @@ class DataQuanta[Out: ClassTag](val operator: ElementaryOperator, outputIndex: I
     filterOperator
   }
 
+  def spatialFilterJava(udf: SerializablePredicate[Out],
+                 sqlUdf: String = null,
+                 selectivity: ProbabilisticDoubleInterval = null,
+                 udfLoad: LoadProfileEstimator = null): DataQuanta[Out] = {
+    val filterOperator = new FilterOperator(new PredicateDescriptor(
+      udf, this.output.getType.getDataUnitType.toBasicDataUnitType, selectivity, udfLoad
+    ).withSqlImplementation(sqlUdf))
+    this.connectTo(filterOperator, 0)
+    filterOperator
+  }
+
   /**
     * Feed this instance into a [[FlatMapOperator]].
     *

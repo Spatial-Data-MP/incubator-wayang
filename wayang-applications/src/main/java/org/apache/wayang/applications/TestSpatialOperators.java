@@ -102,10 +102,10 @@ public class TestSpatialOperators {
 
 
         // *****   Within Spatial Concept    *****  //
-        final FilterDataQuantaBuilder<Record> spiderWithinSpatial =
+        final SpatialFilterDataQuantaBuilder<Record> spiderWithinSpatial =
                 planBuilder
                         .readTable(new PostgresTableSource("spider", "id", "geom"))
-                .filter(t -> ((Geometry) t.getGeometry(1)).getEnvelopeInternal().intersects(new Envelope(0.00, 0.30, 0.00, 0.30)))
+                .spatialFilter(t -> ((Geometry) t.getGeometry(1)).getEnvelopeInternal().intersects(new Envelope(0.00, 0.30, 0.00, 0.30)))
 //                        .withSqlUdf("id <= 20")
                         .withTargetPlatform(Java.platform())
         ;

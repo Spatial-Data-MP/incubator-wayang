@@ -169,6 +169,14 @@ trait DataQuantaBuilder[+This <: DataQuantaBuilder[_, Out], Out] extends Logging
   def filter(udf: SerializablePredicate[Out]) = new FilterDataQuantaBuilder(this, udf)
 
   /**
+   * Feed the built [[DataQuanta]] into a [[org.apache.wayang.basic.operators.FilterOperator]].
+   *
+   * @param udf filter UDF
+   * @return a [[FilterDataQuantaBuilder]]
+   */
+  def spatialFilter(udf: SerializablePredicate[Out]) = new SpatialFilterDataQuantaBuilder(this, udf)
+
+  /**
     * Feed the built [[DataQuanta]] into a [[org.apache.wayang.basic.operators.FlatMapOperator]].
     *
     * @param udf the UDF for the [[org.apache.wayang.basic.operators.FlatMapOperator]]
@@ -848,6 +856,20 @@ class FilterDataQuantaBuilder[T](inputDataQuanta: DataQuantaBuilder[_, T], udf: 
 
 }
 
+
+class SpatialFilterDataQuantaBuilder[T](inputDataQuanta: DataQuantaBuilder[_, T], udf: SerializablePredicate[T])
+                                (implicit javaPlanBuilder: JavaPlanBuilder)
+  extends BasicDataQuantaBuilder[SpatialFilterDataQuantaBuilder[T], T] {
+
+  /**
+   * Create the [[DataQuanta]] built by this instance. Note the configuration being done in [[dataQuanta()]].
+   *
+   * @return the created and partially configured [[DataQuanta]]
+   */
+  override protected def build: DataQuanta[T] = inputDataQuanta.dataQuanta().spatialFilterJava(
+    udf
+  )
+}
 
 /**
   * [[DataQuantaBuilder]] implementation for [[org.apache.wayang.basic.operators.SortOperator]]s.
