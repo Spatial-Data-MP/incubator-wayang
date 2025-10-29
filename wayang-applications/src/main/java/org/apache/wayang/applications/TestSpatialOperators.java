@@ -8,8 +8,15 @@ import org.apache.wayang.core.api.WayangContext;
 import org.apache.wayang.java.Java;
 import org.apache.wayang.postgres.Postgres;
 import org.apache.wayang.postgres.operators.PostgresTableSource;
+import org.locationtech.jts.geom.Envelope;
+import org.locationtech.jts.geom.Geometry;
+import org.locationtech.jts.geom.GeometryFilter;
+import org.locationtech.jts.io.ParseException;
+import org.locationtech.jts.io.WKBReader;
 import org.postgresql.core.v3.QueryExecutorImpl;
+import org.postgresql.util.PGobject;
 
+import javax.xml.bind.DatatypeConverter;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Iterator;
@@ -65,13 +72,73 @@ public class TestSpatialOperators {
         final MapDataQuantaBuilder<Record, Integer> spiderWithin =
                     planBuilder
                     .readTable(new PostgresTableSource("spider", "id", "geom"))
-                    .filter(t -> true)
-                    .withSqlUdf("ST_Within(spider.geom, ST_MakeEnvelope(0.30, 0.00, 0.00, 0.30, 4326))").withTargetPlatform(Postgres.platform())
+                    .filter(t -> (Integer) t.getField(0) == 9).withSqlUdf("ST_Within(spider.geom, ST_MakeEnvelope(0.30, 0.00, 0.00, 0.30, 4326))")
+                            .withTargetPlatform(Postgres.platform())
+//                            .withTargetPlatform(Java.platform())
                     .filter(t -> (Integer) t.getField(0) <= 20)
                     .map(record -> (Integer) record.getField(0));
 //                    .build().explain(true);
         System.out.println("Spider ST_Within: " + spiderWithin.collect().toString());
 
+
+        // *****   Within Spatial Concept    *****  //
+//        final FilterDataQuantaBuilder<Geometry> spiderWithinSpatial =
+//                planBuilder
+//                        .readTable(new PostgisTableSource("spider", "id", "geom")) : GeometryDataQUantyBuilder
+//                        .filter(t -> ((Integer) t.getInt(0)) <= 20).withSqlUdf("id <= 20")
+//                        .map(t -> { // Convert Types
+//                            try {
+//                                return (new WKBReader()).read(
+//                                        DatatypeConverter.parseHexBinary(
+//                                                ((PGobject) t.getField(1)).getValue())
+//                                );
+//                            } catch (ParseException e) {
+//                                throw new RuntimeException(e);
+//                            }
+//                        })
+//                        .filter(t -> t.getEnvelopeInternal().intersects(new Envelope(0.00, 0.30, 0.00, 0.30)))
+//                        .filter(GeometryFilter::filter)
+//                ;
+
+
+        // *****   Within Spatial Concept    *****  //
+        final FilterDataQuantaBuilder<Record> spiderWithinSpatial =
+                planBuilder
+                        .readTable(new PostgresTableSource("spider", "id", "geom"))
+                .filter(t -> ((Geometry) t.getGeometry(1)).getEnvelopeInternal().intersects(new Envelope(0.00, 0.30, 0.00, 0.30)))
+//                        .withSqlUdf("id <= 20")
+                        .withTargetPlatform(Java.platform())
+        ;
+        System.out.println("InputValues from Collection: " + spiderWithinSpatial.collect().toString());
+
+        if (1+1 == 2) {
+            return;
+        }
+
+
+//                        .withSqlUdf("ST_Within(spider.geom, ST_MakeEnvelope(0.00, 0.30, 0.00, 0.30, 4326))").withTargetPlatform(Postgres.platform())
+//                        .filter(t -> (Integer) t.getField(0) <= 20)
+//                        .map(record -> (Integer) record.getField(0));
+//                    .build().explain(true);
+//        System.out.println("Spider ST_Within: " + spiderWithin.collect().toString());
+
+
+//        final FilterDataQuantaBuilder<Geometry> spiderWithinSpatial =
+//                planBuilder
+//                        .readTable(new PostgisTableSource("spider", "id", "geom")) : GeometryDataQUantyBuilder
+//                .filter(t -> ((Integer) t.getInt(0)) <= 20).withSqlUdf("id <= 20")
+//                .map(t -> { // Convert Types
+//                    try {
+//                        return (new WKBReader()).read(
+//                                DatatypeConverter.parseHexBinary(
+//                                        ((PGobject) t.getField(1)).getValue())
+//                        );
+//                    } catch (ParseException e) {
+//                        throw new RuntimeException(e);
+//                    }
+//                })
+//                .filter(t -> t.getEnvelopeInternal().intersects(new Envelope(0.00, 0.30, 0.00, 0.30)))
+//        ;
 
         //// Sample local Collection
         final List<Tuple2<String, Integer>> inputValues2 = Arrays.asList(
