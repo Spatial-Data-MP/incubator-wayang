@@ -37,10 +37,12 @@ import org.apache.wayang.core.plan.wayangplan._
 import org.apache.wayang.core.platform.Platform
 import org.apache.wayang.core.util.{Tuple => WayangTuple}
 import org.apache.wayang.basic.data.{Tuple2 => WayangTuple2}
-import org.apache.wayang.basic.model.{DLModel, LogisticRegressionModel,DecisionTreeRegressionModel};
+import org.apache.wayang.basic.model.{DLModel, DecisionTreeRegressionModel, LogisticRegressionModel}
 import org.apache.wayang.commons.util.profiledb.model.Experiment
-import com.google.protobuf.ByteString;
+import com.google.protobuf.ByteString
 import org.apache.wayang.api.python.function._
+import org.apache.wayang.basic.data.Record
+import org.locationtech.jts.geom.{Envelope, GeometryFactory, Geometry}
 import org.tensorflow.ndarray.NdArray
 
 import scala.collection.JavaConversions
@@ -279,15 +281,58 @@ class DataQuanta[Out: ClassTag](val operator: ElementaryOperator, outputIndex: I
     filterOperator
   }
 
-  def spatialFilterJava(udf: SerializablePredicate[Out],
-                 sqlUdf: String = null,
-                 selectivity: ProbabilisticDoubleInterval = null,
-                 udfLoad: LoadProfileEstimator = null): DataQuanta[Out] = {
+//  def spatialFilterJava(udf: SerializablePredicate[Out],
+//                 sqlUdf: String = null,
+//                 selectivity: ProbabilisticDoubleInterval = null,
+//                 udfLoad: LoadProfileEstimator = null):
+  def spatialFilterJava(filterType: String = "INTERSECTS",
+                        column1Id: Integer = 1,
+                        geometry: Geometry,
+//                        column1: String = "col1",
+//                        column2: String = "col2",
+                        selectivity: ProbabilisticDoubleInterval = null,
+                        udfLoad: LoadProfileEstimator = null
+                       ): DataQuanta[Out] = {
+
+//    val tag = classTag[Out]
+//    require(classOf[Record].isAssignableFrom(tag.runtimeClass),
+//      s"spatialFilterJava requires Record outputs but found ${tag.runtimeClass}")
+
+    val predicate: SerializablePredicate[Out] = toSerializablePredicate { out: Out =>
+      val rec = out.asInstanceOf[Record]
+      val geom1 = rec.getGeometry(1).asInstanceOf[org.locationtech.jts.geom.Geometry]
+
+      filterType match {
+        case "INTERSECTS" => geom1.intersects(geometry)
+        case "CONTAINS"   => geom1.contains(geometry)
+        case "WITHIN"     => geom1.within(geometry)
+        case other         => throw new IllegalArgumentException(s"Unsupported spatial filter type: $other")
+      }
+    }
+
     val filterOperator = new FilterOperator(new PredicateDescriptor(
-      udf, this.output.getType.getDataUnitType.toBasicDataUnitType, selectivity, udfLoad
-    ).withSqlImplementation(sqlUdf))
+      predicate, this.output.getType.getDataUnitType.toBasicDataUnitType, selectivity, udfLoad
+    ))
+
+    /// ### Concept
+//    GeometrySqlConverter.getSqlImplementationFor(geometry);
+
+    // SQL implementation
+    filterOperator.getPredicateDescriptor.withSqlImplementation(
+      "ST_Within(spider.geom, ST_MakeEnvelope(0.50, 0.00, 0.00, 0.50, 4326))"
+    );
+
+
+    /// ### Concept
+//    filterOperator.getPredicateDescriptor.withSqlImplementation(
+//      filterType.getSql() + "("
+//        + col1.getSqlImplementation()            // column name or geometry sql expression
+//        + ", "
+//        + col2.getSqlImplementation()
+//    );
+
     this.connectTo(filterOperator, 0)
-    filterOperator
+      filterOperator
   }
 
   /**

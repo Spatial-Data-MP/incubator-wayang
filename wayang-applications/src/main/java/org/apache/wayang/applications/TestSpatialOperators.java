@@ -10,6 +10,7 @@ import org.apache.wayang.postgres.Postgres;
 import org.apache.wayang.postgres.operators.PostgresTableSource;
 import org.locationtech.jts.geom.Envelope;
 import org.locationtech.jts.geom.Geometry;
+import org.locationtech.jts.geom.GeometryFactory;
 import org.locationtech.jts.geom.GeometryFilter;
 import org.locationtech.jts.io.ParseException;
 import org.locationtech.jts.io.WKBReader;
@@ -75,7 +76,7 @@ public class TestSpatialOperators {
                     .filter(t -> (Integer) t.getField(0) == 9).withSqlUdf("ST_Within(spider.geom, ST_MakeEnvelope(0.30, 0.00, 0.00, 0.30, 4326))")
                             .withTargetPlatform(Postgres.platform())
 //                            .withTargetPlatform(Java.platform())
-                    .filter(t -> (Integer) t.getField(0) <= 20)
+//                    .filter(t -> (Integer) t.getField(0) <= 20)
                     .map(record -> (Integer) record.getField(0));
 //                    .build().explain(true);
         System.out.println("Spider ST_Within: " + spiderWithin.collect().toString());
@@ -100,14 +101,18 @@ public class TestSpatialOperators {
 //                        .filter(GeometryFilter::filter)
 //                ;
 
+        GeometryFactory geometryFactory = new GeometryFactory();
+        Envelope envelope = new Envelope(0.00, 0.2, 0.00, 0.20);
+        Geometry geom2 = geometryFactory.toGeometry(envelope);
+
 
         // *****   Within Spatial Concept    *****  //
         final SpatialFilterDataQuantaBuilder<Record> spiderWithinSpatial =
                 planBuilder
                         .readTable(new PostgresTableSource("spider", "id", "geom"))
-                .spatialFilter(t -> ((Geometry) t.getGeometry(1)).getEnvelopeInternal().intersects(new Envelope(0.00, 0.30, 0.00, 0.30)))
+                .spatialFilter("WITHIN", 1, geom2)
 //                        .withSqlUdf("id <= 20")
-                        .withTargetPlatform(Java.platform())
+                        .withTargetPlatform(Postgres.platform())
         ;
         System.out.println("InputValues from Collection: " + spiderWithinSpatial.collect().toString());
 
@@ -165,6 +170,7 @@ public class TestSpatialOperators {
         final Collection<Tuple2<Tuple2<String, Integer>, Record>> outputValues =
                              dataQuanta1
                 .join(Tuple2::getField1, dataQuanta2, (record -> record.getField(0)))
+//                                     .withTargetPlatform(Postgres.platform())
                 .collect();
         System.out.println(outputValues.toString());
 

@@ -27,8 +27,8 @@ import java.util.{Collection => JavaCollection}
 import org.apache.wayang.api.graph.{Edge, EdgeDataQuantaBuilder, EdgeDataQuantaBuilderDecorator}
 import org.apache.wayang.api.util.{DataQuantaBuilderCache, TypeTrap}
 import org.apache.wayang.basic.data.{Record, Tuple2 => RT2}
-import org.apache.wayang.basic.model.{DLModel, Model, LogisticRegressionModel,DecisionTreeRegressionModel}
-import org.apache.wayang.basic.operators.{DLTrainingOperator, GlobalReduceOperator, LocalCallbackSink, MapOperator, SampleOperator, LogisticRegressionOperator,DecisionTreeRegressionOperator, LinearSVCOperator}
+ import org.apache.wayang.basic.model.{DLModel, DecisionTreeRegressionModel, LogisticRegressionModel, Model}
+import org.apache.wayang.basic.operators.{DLTrainingOperator, DecisionTreeRegressionOperator, GlobalReduceOperator, LinearSVCOperator, LocalCallbackSink, LogisticRegressionOperator, MapOperator, SampleOperator}
 import org.apache.wayang.commons.util.profiledb.model.Experiment
 import org.apache.wayang.core.function.FunctionDescriptor.{SerializableBiFunction, SerializableBinaryOperator, SerializableFunction, SerializableIntUnaryOperator, SerializablePredicate}
 import org.apache.wayang.core.optimizer.ProbabilisticDoubleInterval
@@ -39,8 +39,7 @@ import org.apache.wayang.core.platform.Platform
 import org.apache.wayang.core.types.DataSetType
 import org.apache.wayang.core.util.{Logging, ReflectionUtils, WayangCollections, Tuple => WayangTuple}
 import org.apache.wayang.core.plan.wayangplan.OutputSlot
-
-
+import org.locationtech.jts.geom.Geometry
 
 import scala.collection.mutable.ListBuffer
 import scala.reflect.ClassTag
@@ -174,7 +173,10 @@ trait DataQuantaBuilder[+This <: DataQuantaBuilder[_, Out], Out] extends Logging
    * @param udf filter UDF
    * @return a [[FilterDataQuantaBuilder]]
    */
-  def spatialFilter(udf: SerializablePredicate[Out]) = new SpatialFilterDataQuantaBuilder(this, udf)
+//  def spatialFilter(udf: SerializablePredicate[Out]) = new SpatialFilterDataQuantaBuilder(this, udf)
+//  def spatialFilter[Key](spatialFilterType: String) = new SpatialFilterDataQuantaBuilder(this, spatialFilterType)
+
+  def spatialFilter[Key](spatialFilterType: String, column1Id: Integer, geometry: Geometry) = new SpatialFilterDataQuantaBuilder(this, spatialFilterType, column1Id, geometry)
 
   /**
     * Feed the built [[DataQuanta]] into a [[org.apache.wayang.basic.operators.FlatMapOperator]].
@@ -857,7 +859,10 @@ class FilterDataQuantaBuilder[T](inputDataQuanta: DataQuantaBuilder[_, T], udf: 
 }
 
 
-class SpatialFilterDataQuantaBuilder[T](inputDataQuanta: DataQuantaBuilder[_, T], udf: SerializablePredicate[T])
+class SpatialFilterDataQuantaBuilder[T](inputDataQuanta: DataQuantaBuilder[_, T],
+                                        spatialFilterType: String,
+                                        column1Id: Integer,
+                                        geometry: Geometry)
                                 (implicit javaPlanBuilder: JavaPlanBuilder)
   extends BasicDataQuantaBuilder[SpatialFilterDataQuantaBuilder[T], T] {
 
@@ -867,7 +872,7 @@ class SpatialFilterDataQuantaBuilder[T](inputDataQuanta: DataQuantaBuilder[_, T]
    * @return the created and partially configured [[DataQuanta]]
    */
   override protected def build: DataQuanta[T] = inputDataQuanta.dataQuanta().spatialFilterJava(
-    udf
+    spatialFilterType, column1Id = column1Id, geometry = geometry
   )
 }
 
