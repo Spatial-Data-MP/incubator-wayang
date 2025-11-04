@@ -2,6 +2,7 @@ package org.apache.wayang.applications;
 
 import org.apache.wayang.api.*;
 import org.apache.wayang.basic.data.Record;
+import org.apache.wayang.basic.data.SpatialRecord;
 import org.apache.wayang.basic.data.Tuple2;
 import org.apache.wayang.core.api.Configuration;
 import org.apache.wayang.core.api.WayangContext;
@@ -70,16 +71,17 @@ public class TestSpatialOperators {
                 .collect();*/
 
         // *****   Within    *****  //
-        final MapDataQuantaBuilder<Record, Integer> spiderWithin =
-                    planBuilder
-                    .readTable(new PostgresTableSource("spider", "id", "geom"))
-                    .filter(t -> (Integer) t.getField(0) == 9).withSqlUdf("ST_Within(spider.geom, ST_MakeEnvelope(0.30, 0.00, 0.00, 0.30, 4326))")
-                            .withTargetPlatform(Postgres.platform())
-//                            .withTargetPlatform(Java.platform())
-//                    .filter(t -> (Integer) t.getField(0) <= 20)
-                    .map(record -> (Integer) record.getField(0));
-//                    .build().explain(true);
-        System.out.println("Spider ST_Within: " + spiderWithin.collect().toString());
+//        final MapDataQuantaBuilder<Record, Integer> spiderWithin =
+//                    planBuilder
+//                    .readTable(new PostgresTableSource("spider", "id", "geom"))
+//                            .map() // Record -> SpatialRecord(includes Geometry attribute)
+//                            .filter(t -> (Integer) t.getField(0) == 9).withSqlUdf("ST_Within(spider.geom, ST_MakeEnvelope(0.30, 0.00, 0.00, 0.30, 4326))")
+//                            .withTargetPlatform(Postgres.platform())
+////                            .withTargetPlatform(Java.platform())
+////                    .filter(t -> (Integer) t.getField(0) <= 20)
+//                    .map(record -> (Integer) record.getField(0));
+////                    .build().explain(true);
+//        System.out.println("Spider ST_Within: " + spiderWithin.collect().toString());
 
 
         // *****   Within Spatial Concept    *****  //
@@ -108,11 +110,16 @@ public class TestSpatialOperators {
 
         // *****   Within Spatial Concept    *****  //
         final SpatialFilterDataQuantaBuilder<Record> spiderWithinSpatial =
+//        final FilterDataQuantaBuilder<String> spiderWithinSpatial =
                 planBuilder
                         .readTable(new PostgresTableSource("spider", "id", "geom"))
-                .spatialFilter("WITHIN", 1, geom2)
+//                        .mapToSpatialRecord()
+//                        .map((record -> (String) record.getString(0)))
+//                        .filter((s -> true))
+//                        .collect()
+                        .spatialFilter("WITHIN", 1, geom2)
 //                        .withSqlUdf("id <= 20")
-                        .withTargetPlatform(Postgres.platform())
+//                        .withTargetPlatform(Postgres.platform())
         ;
         System.out.println("InputValues from Collection: " + spiderWithinSpatial.collect().toString());
 
@@ -120,7 +127,7 @@ public class TestSpatialOperators {
             return;
         }
 
-
+        //
 //                        .withSqlUdf("ST_Within(spider.geom, ST_MakeEnvelope(0.00, 0.30, 0.00, 0.30, 4326))").withTargetPlatform(Postgres.platform())
 //                        .filter(t -> (Integer) t.getField(0) <= 20)
 //                        .map(record -> (Integer) record.getField(0));

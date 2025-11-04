@@ -36,13 +36,13 @@ import org.apache.wayang.core.optimizer.costs.LoadProfileEstimator
 import org.apache.wayang.core.plan.wayangplan._
 import org.apache.wayang.core.platform.Platform
 import org.apache.wayang.core.util.{Tuple => WayangTuple}
-import org.apache.wayang.basic.data.{Tuple2 => WayangTuple2}
+import org.apache.wayang.basic.data.{Record, SpatialRecord, Tuple2 => WayangTuple2}
 import org.apache.wayang.basic.model.{DLModel, DecisionTreeRegressionModel, LogisticRegressionModel}
 import org.apache.wayang.commons.util.profiledb.model.Experiment
 import com.google.protobuf.ByteString
 import org.apache.wayang.api.python.function._
-import org.apache.wayang.basic.data.Record
-import org.locationtech.jts.geom.{Envelope, GeometryFactory, Geometry}
+import org.apache.wayang.core.types.DataSetType
+import org.locationtech.jts.geom.{Envelope, Geometry, GeometryFactory}
 import org.tensorflow.ndarray.NdArray
 
 import scala.collection.JavaConversions
@@ -298,29 +298,25 @@ class DataQuanta[Out: ClassTag](val operator: ElementaryOperator, outputIndex: I
 //    require(classOf[Record].isAssignableFrom(tag.runtimeClass),
 //      s"spatialFilterJava requires Record outputs but found ${tag.runtimeClass}")
 
-    val predicate: SerializablePredicate[Out] = toSerializablePredicate { out: Out =>
-      val rec = out.asInstanceOf[Record]
-      val geom1 = rec.getGeometry(1).asInstanceOf[org.locationtech.jts.geom.Geometry]
+    val spatialFilterOperator = new SpatialFilterOperator(
+      filterType,column1Id,geometry, DataSetType.createDefault(classOf[SpatialRecord])
+    )
 
-      filterType match {
-        case "INTERSECTS" => geom1.intersects(geometry)
-        case "CONTAINS"   => geom1.contains(geometry)
-        case "WITHIN"     => geom1.within(geometry)
-        case other         => throw new IllegalArgumentException(s"Unsupported spatial filter type: $other")
-      }
-    }
+    this.connectTo(spatialFilterOperator, 0)
+    spatialFilterOperator
 
-    val filterOperator = new FilterOperator(new PredicateDescriptor(
-      predicate, this.output.getType.getDataUnitType.toBasicDataUnitType, selectivity, udfLoad
-    ))
+
+//    val filterOperator = new FilterOperator(new PredicateDescriptor(
+//      predicate, this.output.getType.getDataUnitType.toBasicDataUnitType, selectivity, udfLoad
+//    ))
 
     /// ### Concept
 //    GeometrySqlConverter.getSqlImplementationFor(geometry);
 
     // SQL implementation
-    filterOperator.getPredicateDescriptor.withSqlImplementation(
-      "ST_Within(spider.geom, ST_MakeEnvelope(0.50, 0.00, 0.00, 0.50, 4326))"
-    );
+//    filterOperator.getPredicateDescriptor.withSqlImplementation(
+//      "ST_Within(spider.geom, ST_MakeEnvelope(0.50, 0.00, 0.00, 0.50, 4326))"
+//    );
 
 
     /// ### Concept
@@ -331,8 +327,6 @@ class DataQuanta[Out: ClassTag](val operator: ElementaryOperator, outputIndex: I
 //        + col2.getSqlImplementation()
 //    );
 
-    this.connectTo(filterOperator, 0)
-      filterOperator
   }
 
   /**
