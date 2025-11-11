@@ -19,6 +19,7 @@ package org.apache.wayang.api.sql;
 
 import org.apache.wayang.basic.data.Record;
  import org.apache.wayang.basic.data.SpatialRecord;
+import org.apache.wayang.basic.data.geometry.BoundingBoxGeometry;
 import org.apache.wayang.basic.operators.*;
 import org.apache.wayang.core.api.Configuration;
 import org.apache.wayang.core.api.WayangContext;
@@ -96,8 +97,55 @@ public class SqlTest {
 
     }
 
+    WayangContext getTestWayangContext() {
+        Configuration configuration = new Configuration();
+        configuration.setProperty("wayang.postgres.jdbc.url", "jdbc:postgresql://localhost:5433/postgres"); // Default port 5432
+        configuration.setProperty("wayang.postgres.jdbc.user", "postgres");
+        configuration.setProperty("wayang.postgres.jdbc.password", "1234");
+
+        return new WayangContext(configuration);
+    }
+
     @Test
-    void connectToTest() {
+    void testSpatialFilterOperator() {
+        WayangContext wayangContext = getTestWayangContext()
+                .withPlugin(Java.basicPlugin())
+                .withPlugin(Postgres.plugin());
+
+        ///  Scalar Geometry
+        GeometryFactory geometryFactory = new GeometryFactory();
+        Envelope envelope = new Envelope(0.00, 0.2, 0.00, 0.20);
+        Geometry geom2 = geometryFactory.toGeometry(envelope);
+
+        TableSource spider = new PostgresTableSource("spider", "id", "geom");
+
+        MapOperator<Record, SpatialRecord> mapToSpatial = new MapOperator<Record,SpatialRecord>(
+                (record -> new SpatialRecord(record.getValues())), Record.class, SpatialRecord.class
+        );
+        spider.connectTo(0, mapToSpatial, 0);
+
+        SpatialFilterOperator spatialFilterOperator = new SpatialFilterOperator(
+                "INTERSECTS",
+                1,
+                geom2
+        );
+        mapToSpatial.connectTo(0,spatialFilterOperator,0);
+
+        Collection<Record> collector = new ArrayList<>();
+        LocalCallbackSink<Record> sink = LocalCallbackSink.createCollectingSink(collector, Record.class);
+        spatialFilterOperator.connectTo(0, sink, 0);
+
+        wayangContext.execute("PostgreSql test", new WayangPlan(sink));
+
+        System.out.println(collector);
+
+        assertEquals(2, collector.size());
+    }
+
+
+    // Alt
+    @Test
+    void testSpatialFilter() {
                 WayangPlan wayangPlan;
         //// Db Connection, local db credentials!
         Configuration configuration = new Configuration();
