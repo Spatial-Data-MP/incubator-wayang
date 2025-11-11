@@ -18,55 +18,52 @@
 
 package org.apache.wayang.java.operators;
 
-import org.apache.wayang.basic.data.Record;
 import org.apache.wayang.basic.data.SpatialRecord;
+import org.apache.wayang.basic.operators.FilterOperator;
 import org.apache.wayang.basic.operators.SpatialFilterOperator;
 import org.apache.wayang.core.optimizer.OptimizationContext;
 import org.apache.wayang.core.plan.wayangplan.ExecutionOperator;
 import org.apache.wayang.core.platform.ChannelDescriptor;
 import org.apache.wayang.core.platform.ChannelInstance;
 import org.apache.wayang.core.platform.lineage.ExecutionLineageNode;
-import org.apache.wayang.core.types.DataSetType;
 import org.apache.wayang.core.util.Tuple;
 import org.apache.wayang.java.channels.CollectionChannel;
 import org.apache.wayang.java.channels.JavaChannelInstance;
 import org.apache.wayang.java.channels.StreamChannel;
 import org.apache.wayang.java.execution.JavaExecutor;
 import org.locationtech.jts.geom.Geometry;
+import org.locationtech.jts.io.ParseException;
+import org.locationtech.jts.io.WKBReader;
 
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
-import java.util.Locale;
-import java.util.Objects;
 import java.util.function.Predicate;
 
 /**
  * Java implementation of the {@link FilterOperator}.
  */
-public class JavaSpatialFilterOperator<SpatialDataType>
+public class JavaSpatialFilterOperator
         extends SpatialFilterOperator
         implements JavaExecutionOperator {
-
-    private final String filterType;
-    private final int geometryColumnIndex;
-    private final Geometry referenceGeometry;
 
     /**
      * Creates a new instance.
      *
-     * @param type type of the dataset elements
+     * @param filterType the type of spatial filter (e.g., "INTERSECTS", "CONTAINS", "WITHIN")
      */
-    public JavaSpatialFilterOperator(String filterType, Integer columnId, Geometry geometry) {
-        super(filterType, columnId, geometry, DataSetType.createDefault(Record.class));
-        this.filterType = (filterType == null ? "INTERSECTS" : filterType).toUpperCase(Locale.ROOT);
-        this.geometryColumnIndex = columnId == null ? 0 : columnId;
+    public JavaSpatialFilterOperator(String filterType, Integer columnIndex, Geometry geometry) {
+        super(filterType, columnIndex, geometry /*, DataSetType.createDefault(Record.class)*/);
         if (this.geometryColumnIndex < 0) {
             throw new IllegalArgumentException("Column index must be >= 0.");
         }
-        this.referenceGeometry = Objects.requireNonNull(geometry, "Reference geometry must not be null.");
     }
+
+    public JavaSpatialFilterOperator(SpatialFilterOperator that) {
+        super(that);
+    }
+
 
 //    /**
 //     * Copies an instance (exclusive of broadcasts).
@@ -95,6 +92,7 @@ public class JavaSpatialFilterOperator<SpatialDataType>
 
     private Predicate<SpatialRecord> buildSpatialPredicate() {
         return record -> {
+//            Geometry candidate = this.extractGeometry((SpatialRecord) record);
             Geometry candidate = this.extractGeometry(record);
             if (candidate == null) {
                 return false;
@@ -113,7 +111,12 @@ public class JavaSpatialFilterOperator<SpatialDataType>
     }
 
     private Geometry extractGeometry(SpatialRecord record) {
-        return (Geometry) record.getField(1);
+//        return (Geometry) record.getField(1);
+        try {
+            return record.getGeometry(this.geometryColumnIndex, new WKBReader());
+        } catch (ParseException e) {
+            throw new RuntimeException(e);
+        }
     }
 
 //    @Override

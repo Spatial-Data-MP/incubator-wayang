@@ -62,8 +62,8 @@ class JavaSpatialFilterOperatorTest extends JavaExecutionOperatorTestBase {
 
         Stream<SpatialRecord> inputStream = Stream.of(hits, misses, boundary);
 
-        JavaSpatialFilterOperator<SpatialRecord> filterOperator =
-                new JavaSpatialFilterOperator<>(
+        JavaSpatialFilterOperator filterOperator =
+                new JavaSpatialFilterOperator(
                         "INTERSECTS",
                         1,
                         queryGeometry

@@ -19,10 +19,7 @@ package org.apache.wayang.api.sql;
 
 import org.apache.wayang.basic.data.Record;
  import org.apache.wayang.basic.data.SpatialRecord;
-import org.apache.wayang.basic.operators.LocalCallbackSink;
-import org.apache.wayang.basic.operators.MapOperator;
-import org.apache.wayang.basic.operators.SpatialFilterOperator;
-import org.apache.wayang.basic.operators.TableSource;
+import org.apache.wayang.basic.operators.*;
 import org.apache.wayang.core.api.Configuration;
 import org.apache.wayang.core.api.WayangContext;
 import org.apache.wayang.core.plan.wayangplan.WayangPlan;
@@ -32,6 +29,9 @@ import org.apache.wayang.postgres.Postgres;
 import org.apache.wayang.postgres.operators.PostgresTableSource;
 import org.apache.wayang.spark.Spark;
 import org.junit.jupiter.api.Test;
+import org.locationtech.jts.geom.Envelope;
+import org.locationtech.jts.geom.Geometry;
+import org.locationtech.jts.geom.GeometryFactory;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -115,6 +115,10 @@ public class SqlTest {
 //                .withUdfJarOf(TestSpatialOperators.class);
 
 
+        GeometryFactory geometryFactory = new GeometryFactory();
+        Envelope envelope = new Envelope(0.00, 0.2, 0.00, 0.20);
+        Geometry geom2 = geometryFactory.toGeometry(envelope);
+
         Collection<org.apache.wayang.basic.data.Record> collector = new ArrayList<>();
 
         TableSource customer = new PostgresTableSource("spider", "id", "geom");
@@ -131,14 +135,38 @@ public class SqlTest {
 
         LocalCallbackSink<org.apache.wayang.basic.data.Record> sink = LocalCallbackSink.createCollectingSink(collector, Record.class);
 //        customer.connectTo(0,projection,0);
+
+
+        MapOperator<Record, SpatialRecord> mapToSpatial = new MapOperator<Record,SpatialRecord>(
+                (record -> new SpatialRecord(record.getValues())), Record.class, SpatialRecord.class
+        );
+        mapToSpatial.addTargetPlatform(Postgres.platform());
+
+        customer.connectTo(0, mapToSpatial, 0);
+
         SpatialFilterOperator spatialFilterOperator = new SpatialFilterOperator(
                 "INTERSECTS",
                 1,
-                null,
-                DataSetType.createDefault(Record.class)
+                geom2
+//                , DataSetType.createDefault(Record.class)
         );
-        customer.connectTo(0,spatialFilterOperator,0);
+
+//        FilterOperator<Record> simpleFilter = new FilterOperator<Record>(
+//                (record -> (record.getInt(0)) > 20), Record.class
+//        );
+//        simpleFilter.getPredicateDescriptor().withSqlImplementation("id > 30");
+//
+//        simpleFilter.addTargetPlatform(Postgres.platform());
+
+        spatialFilterOperator.addTargetPlatform(Postgres.platform());
+//        customer.connectTo(0,spatialFilterOperator,0);
+        mapToSpatial.connectTo(0,spatialFilterOperator,0);
         spatialFilterOperator.connectTo(0, sink, 0);
+
+//        customer.connectTo(0, simpleFilter, 0);
+//        simpleFilter.connectTo(0, sink, 0);
+
+
 
         wayangPlan = new WayangPlan(sink);
 

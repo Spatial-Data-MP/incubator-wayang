@@ -18,32 +18,49 @@
 
 package org.apache.wayang.basic.operators;
 
-import org.apache.commons.lang3.Validate;
 import org.apache.wayang.basic.data.SpatialRecord;
-import org.apache.wayang.core.api.Configuration;
-import org.apache.wayang.core.function.PredicateDescriptor;
 import org.apache.wayang.core.optimizer.OptimizationContext;
-import org.apache.wayang.core.optimizer.ProbabilisticDoubleInterval;
 import org.apache.wayang.core.optimizer.cardinality.CardinalityEstimate;
 import org.apache.wayang.core.plan.wayangplan.UnaryToUnaryOperator;
 import org.apache.wayang.core.types.DataSetType;
 import org.locationtech.jts.geom.Geometry;
 import org.apache.wayang.basic.data.Record;
 
-import java.util.Optional;
+import java.util.Locale;
+import java.util.Objects;
 
 
 /**
  * This operator returns a new dataset after filtering by applying predicateDescriptor.
  */
-public class SpatialFilterOperator extends UnaryToUnaryOperator<Record, Record> {
+public class SpatialFilterOperator extends UnaryToUnaryOperator<SpatialRecord, SpatialRecord> {
 
+
+    protected final String filterType;
+    protected final int geometryColumnIndex;
+    protected final Geometry referenceGeometry;
 
     /**
      * Creates a new instance.
      */
-    public SpatialFilterOperator(String filterType, Integer columnIndex, Geometry geometry, DataSetType<Record> type) {
-        super(type, type, true);
+    public SpatialFilterOperator(String filterType, Integer columnIndex, Geometry geometry) {
+        super(DataSetType.createDefault(SpatialRecord.class), DataSetType.createDefault(SpatialRecord.class), true);
+        this.filterType = (filterType == null ? "INTERSECTS" : filterType).toUpperCase(Locale.ROOT);
+        this.geometryColumnIndex = columnIndex == null ? 0 : columnIndex;
+//        this.referenceGeometry = Objects.requireNonNull(geometry, "Reference geometry must not be null.");
+        this.referenceGeometry = geometry;
+    }
+
+    /**
+     * Copies an instance (exclusive of broadcasts).
+     *
+     * @param that that should be copied
+     */
+    public SpatialFilterOperator(SpatialFilterOperator that) {
+        super(that);
+        this.filterType = that.filterType;
+        this.geometryColumnIndex = that.geometryColumnIndex;
+        this.referenceGeometry = that.referenceGeometry;
     }
 
 
