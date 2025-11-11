@@ -19,8 +19,8 @@
 package org.apache.wayang.java.operators;
 
 import org.apache.wayang.basic.data.SpatialRecord;
-import org.apache.wayang.basic.operators.FilterOperator;
 import org.apache.wayang.basic.operators.SpatialFilterOperator;
+import org.apache.wayang.basic.data.geometry.Geometry;
 import org.apache.wayang.core.optimizer.OptimizationContext;
 import org.apache.wayang.core.plan.wayangplan.ExecutionOperator;
 import org.apache.wayang.core.platform.ChannelDescriptor;
@@ -31,10 +31,6 @@ import org.apache.wayang.java.channels.CollectionChannel;
 import org.apache.wayang.java.channels.JavaChannelInstance;
 import org.apache.wayang.java.channels.StreamChannel;
 import org.apache.wayang.java.execution.JavaExecutor;
-import org.locationtech.jts.geom.Geometry;
-import org.locationtech.jts.io.ParseException;
-import org.locationtech.jts.io.WKBReader;
-
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
@@ -111,12 +107,7 @@ public class JavaSpatialFilterOperator
     }
 
     private Geometry extractGeometry(SpatialRecord record) {
-//        return (Geometry) record.getField(1);
-        try {
-            return record.getGeometry(this.geometryColumnIndex, new WKBReader());
-        } catch (ParseException e) {
-            throw new RuntimeException(e);
-        }
+        return record.getGeometry(this.geometryColumnIndex);
     }
 
 //    @Override

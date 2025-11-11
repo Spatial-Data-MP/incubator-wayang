@@ -19,15 +19,13 @@
 package org.apache.wayang.basic.operators;
 
 import org.apache.wayang.basic.data.SpatialRecord;
+import org.apache.wayang.basic.data.geometry.Geometry;
 import org.apache.wayang.core.optimizer.OptimizationContext;
 import org.apache.wayang.core.optimizer.cardinality.CardinalityEstimate;
 import org.apache.wayang.core.plan.wayangplan.UnaryToUnaryOperator;
 import org.apache.wayang.core.types.DataSetType;
-import org.locationtech.jts.geom.Geometry;
-import org.apache.wayang.basic.data.Record;
 
 import java.util.Locale;
-import java.util.Objects;
 
 
 /**
@@ -47,7 +45,6 @@ public class SpatialFilterOperator extends UnaryToUnaryOperator<SpatialRecord, S
         super(DataSetType.createDefault(SpatialRecord.class), DataSetType.createDefault(SpatialRecord.class), true);
         this.filterType = (filterType == null ? "INTERSECTS" : filterType).toUpperCase(Locale.ROOT);
         this.geometryColumnIndex = columnIndex == null ? 0 : columnIndex;
-//        this.referenceGeometry = Objects.requireNonNull(geometry, "Reference geometry must not be null.");
         this.referenceGeometry = geometry;
     }
 

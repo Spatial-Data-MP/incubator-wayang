@@ -20,6 +20,8 @@ package org.apache.wayang.java.operators;
 
 import org.apache.wayang.basic.data.Record;
 import org.apache.wayang.basic.data.SpatialRecord;
+import org.apache.wayang.basic.data.geometry.BoundingBoxGeometry;
+import org.apache.wayang.basic.data.geometry.Geometry;
 import org.apache.wayang.basic.operators.LocalCallbackSink;
 import org.apache.wayang.basic.operators.MapOperator;
 import org.apache.wayang.basic.operators.TableSource;
@@ -31,10 +33,6 @@ import org.apache.wayang.java.channels.JavaChannelInstance;
 //import org.apache.wayang.postgres.Postgres;
 //import org.apache.wayang.postgres.operators.PostgresTableSource;
 import org.junit.jupiter.api.Test;
-import org.locationtech.jts.geom.Coordinate;
-import org.locationtech.jts.geom.Envelope;
-import org.locationtech.jts.geom.Geometry;
-import org.locationtech.jts.geom.GeometryFactory;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -52,13 +50,11 @@ class JavaSpatialFilterOperatorTest extends JavaExecutionOperatorTestBase {
 
     @Test
     void testExecution() {
-        GeometryFactory geometryFactory = new GeometryFactory();
-        Envelope envelope = new Envelope(0.00, 0.2, 0.00, 0.20);
-        Geometry queryGeometry = geometryFactory.toGeometry(envelope);
+        Geometry queryGeometry = BoundingBoxGeometry.fromExtents(0.00, 0.2, 0.00, 0.20);
 
-        SpatialRecord hits = createSpatialRecord(1, geometryFactory.createPoint(new Coordinate(0.1, 0.1)));
-        SpatialRecord misses = createSpatialRecord(2, geometryFactory.createPoint(new Coordinate(1.0, 1.0)));
-        SpatialRecord boundary = createSpatialRecord(3, geometryFactory.createPoint(new Coordinate(0.15, 0.05)));
+        SpatialRecord hits = createSpatialRecord(1, BoundingBoxGeometry.point(0.1, 0.1));
+        SpatialRecord misses = createSpatialRecord(2, BoundingBoxGeometry.point(1.0, 1.0));
+        SpatialRecord boundary = createSpatialRecord(3, BoundingBoxGeometry.point(0.15, 0.05));
 
         Stream<SpatialRecord> inputStream = Stream.of(hits, misses, boundary);
 

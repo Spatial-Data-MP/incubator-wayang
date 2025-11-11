@@ -1,12 +1,8 @@
 package org.apache.wayang.basic.data;
 
-import org.locationtech.jts.geom.Geometry;
-import org.locationtech.jts.io.ParseException;
-import org.locationtech.jts.io.WKBReader;
-import org.locationtech.jts.io.WKTReader;
+import org.apache.wayang.basic.data.geometry.Geometry;
+import org.apache.wayang.basic.data.geometry.GeometryParser;
 import org.postgresql.util.PGobject;
-
-import javax.xml.bind.DatatypeConverter;
 
 /**
  * A specialization of {@link Record} for spatial data.
@@ -19,43 +15,34 @@ public class SpatialRecord extends Record {
     }
 
     /**
-     * Retrieve a field as a {@link Geometry}. It must be castable as such.
+     * Retrieve a field as a {@link Geometry}. The value must already be a Geometry instance.
      *
      * @param index the index of the field
      * @return the {@link Geometry} representation of the field
      */
-//    public Geometry getGeometry(final int index, final WKBReader reader) throws ParseException {
-//        final Object field = this.getValues()[index];
-//        if (field instanceof Geometry) {
-//            return (Geometry) field;
-//        } if (field instanceof String) {
-////            return reader.read(DatatypeConverter.parseHexBinary(((PGobject) this.getField(index))).getValue()));
-//            return reader.read(DatatypeConverter.parseHexBinary(((PGobject) this.getField(index)).getValue()));
-//        } else {
-//            throw new ClassCastException("Field at index " + index + " is not a Geometry: " + field);
-//        }
-//    }
-
-    public Geometry getGeometry(final int index, final WKBReader reader) throws ParseException {
+    public Geometry getGeometry(final int index) {
         final Object field = this.getValues()[index];
-
-        if (field instanceof Geometry) {
-            // Already a Geometry object
-            return (Geometry) field;
-        } else if (field instanceof PGobject) {
-            // Handle PostGIS geometry stored as a PGobject
-            final PGobject pgObj = (PGobject) field;
-            final String value = pgObj.getValue();
-            if (value == null) {
-                return null;
-            }
-            // Convert hex string to binary and parse as WKB
-            return reader.read(DatatypeConverter.parseHexBinary(value));
-        } else if (field instanceof String) {
-            // Handle raw hex string geometry
-            return reader.read(DatatypeConverter.parseHexBinary((String) field));
-        } else {
-            throw new ClassCastException("Field at index " + index + " is not a Geometry or PGobject: " + field);
+        if (field == null) {
+            return null;
         }
+        if (field instanceof Geometry) {
+            return (Geometry) field;
+        }
+        Geometry parsed = null;
+        if (field instanceof PGobject) {
+            parsed = GeometryParser.parse(((PGobject) field).getValue());
+        } else if (field instanceof CharSequence) {
+            parsed = GeometryParser.parse(field.toString());
+        } else if (field instanceof byte[]) {
+            parsed = GeometryParser.parse((byte[]) field);
+        }
+        if (parsed != null) {
+            this.setField(index, parsed);
+            return parsed;
+        }
+        if (field instanceof PGobject || field instanceof CharSequence || field instanceof byte[]) {
+            return null;
+        }
+        throw new ClassCastException("Field at index " + index + " is not convertible to Geometry: " + field);
     }
 }

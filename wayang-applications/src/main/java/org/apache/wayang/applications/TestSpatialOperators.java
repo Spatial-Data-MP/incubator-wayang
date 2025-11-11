@@ -4,19 +4,14 @@ import org.apache.wayang.api.*;
 import org.apache.wayang.basic.data.Record;
 import org.apache.wayang.basic.data.SpatialRecord;
 import org.apache.wayang.basic.data.Tuple2;
+import org.apache.wayang.basic.data.geometry.BoundingBoxGeometry;
+import org.apache.wayang.basic.data.geometry.Geometry;
 import org.apache.wayang.core.api.Configuration;
 import org.apache.wayang.core.api.WayangContext;
 import org.apache.wayang.java.Java;
 import org.apache.wayang.postgres.Postgres;
 import org.apache.wayang.postgres.operators.PostgresTableSource;
-import org.locationtech.jts.geom.Envelope;
-import org.locationtech.jts.geom.Geometry;
-import org.locationtech.jts.geom.GeometryFactory;
-import org.locationtech.jts.geom.GeometryFilter;
-import org.locationtech.jts.io.ParseException;
-import org.locationtech.jts.io.WKBReader;
 import org.postgresql.core.v3.QueryExecutorImpl;
-import org.postgresql.util.PGobject;
 
 import javax.xml.bind.DatatypeConverter;
 import java.util.Arrays;
@@ -103,9 +98,7 @@ public class TestSpatialOperators {
 //                        .filter(GeometryFilter::filter)
 //                ;
 
-        GeometryFactory geometryFactory = new GeometryFactory();
-        Envelope envelope = new Envelope(0.00, 0.2, 0.00, 0.20);
-        Geometry geom2 = geometryFactory.toGeometry(envelope);
+        Geometry geom2 = BoundingBoxGeometry.fromExtents(0.00, 0.2, 0.00, 0.20);
 
 
         // *****   Within Spatial Concept    *****  //

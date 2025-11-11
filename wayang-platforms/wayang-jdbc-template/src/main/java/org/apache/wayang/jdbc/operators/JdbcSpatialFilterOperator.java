@@ -21,12 +21,12 @@ package org.apache.wayang.jdbc.operators;
 import org.apache.wayang.basic.data.Record;
 import org.apache.wayang.basic.operators.FilterOperator;
 import org.apache.wayang.basic.operators.SpatialFilterOperator;
+import org.apache.wayang.basic.data.geometry.Geometry;
 import org.apache.wayang.core.api.Configuration;
 import org.apache.wayang.core.function.PredicateDescriptor;
 import org.apache.wayang.core.optimizer.costs.LoadProfileEstimator;
 import org.apache.wayang.core.optimizer.costs.LoadProfileEstimators;
 import org.apache.wayang.jdbc.compiler.FunctionCompiler;
-import org.locationtech.jts.geom.Geometry;
 
 import java.sql.Connection;
 import java.util.Optional;

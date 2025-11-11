@@ -26,7 +26,7 @@ import org.apache.wayang.postgres.operators.PostgresFilterOperator;
 import org.apache.wayang.postgres.operators.PostgresSpatialFilterOperator;
 import org.apache.wayang.postgres.platform.PostgresPlatform;
 import org.apache.wayang.basic.operators.SpatialFilterOperator;
-import org.locationtech.jts.geom.Geometry;
+import org.apache.wayang.basic.data.geometry.Geometry;
 
 import java.util.Collection;
 import java.util.Collections;
