@@ -194,15 +194,4 @@ public class Record implements Serializable, Copyable<Record>, Comparable<Record
 
         return Arrays.compare(thisComparables, thatComparables);
     }
-
-    public Geometry getGeometry(int i) {
-
-        try {
-            // TODO: our own GeometryType
-            Geometry geom =  (new WKBReader()).read(DatatypeConverter.parseHexBinary(((PGobject) this.getField(i)).getValue()));
-            return geom;
-        } catch (ParseException e) {
-            throw new RuntimeException(e);
-        }
-    }
 }

@@ -18,7 +18,7 @@
 
 package org.apache.wayang.basic.operators;
 
-import org.apache.wayang.basic.data.SpatialRecord;
+import org.apache.wayang.basic.data.Record;
 import org.apache.wayang.core.optimizer.OptimizationContext;
 import org.apache.wayang.core.optimizer.cardinality.CardinalityEstimate;
 import org.apache.wayang.core.plan.wayangplan.UnaryToUnaryOperator;
@@ -33,7 +33,7 @@ import java.util.Objects;
 /**
  * This operator returns a new dataset after filtering by applying predicateDescriptor.
  */
-public class SpatialFilterOperator extends UnaryToUnaryOperator<SpatialRecord, SpatialRecord> {
+public class SpatialFilterOperator extends UnaryToUnaryOperator<Record, Record> {
 
 
     protected final String filterType;
@@ -44,7 +44,7 @@ public class SpatialFilterOperator extends UnaryToUnaryOperator<SpatialRecord, S
      * Creates a new instance.
      */
     public SpatialFilterOperator(String filterType, Integer columnIndex, Geometry geometry) {
-        super(DataSetType.createDefault(SpatialRecord.class), DataSetType.createDefault(SpatialRecord.class), true);
+        super(DataSetType.createDefault(Record.class), DataSetType.createDefault(Record.class), true);
         this.filterType = (filterType == null ? "INTERSECTS" : filterType).toUpperCase(Locale.ROOT);
         this.geometryColumnIndex = columnIndex == null ? 0 : columnIndex;
 //        this.referenceGeometry = Objects.requireNonNull(geometry, "Reference geometry must not be null.");

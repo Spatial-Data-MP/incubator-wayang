@@ -19,7 +19,7 @@
 package org.apache.wayang.java.operators;
 
 import org.apache.wayang.basic.data.Record;
-import org.apache.wayang.basic.data.SpatialRecord;
+import org.apache.wayang.basic.data.Record;
 import org.apache.wayang.basic.operators.LocalCallbackSink;
 import org.apache.wayang.basic.operators.MapOperator;
 import org.apache.wayang.basic.operators.TableSource;
@@ -56,11 +56,11 @@ class JavaSpatialFilterOperatorTest extends JavaExecutionOperatorTestBase {
         Envelope envelope = new Envelope(0.00, 0.2, 0.00, 0.20);
         Geometry queryGeometry = geometryFactory.toGeometry(envelope);
 
-        SpatialRecord hits = createSpatialRecord(1, geometryFactory.createPoint(new Coordinate(0.1, 0.1)));
-        SpatialRecord misses = createSpatialRecord(2, geometryFactory.createPoint(new Coordinate(1.0, 1.0)));
-        SpatialRecord boundary = createSpatialRecord(3, geometryFactory.createPoint(new Coordinate(0.15, 0.05)));
+        Record hits = createRecord(1, geometryFactory.createPoint(new Coordinate(0.1, 0.1)));
+        Record misses = createRecord(2, geometryFactory.createPoint(new Coordinate(1.0, 1.0)));
+        Record boundary = createRecord(3, geometryFactory.createPoint(new Coordinate(0.15, 0.05)));
 
-        Stream<SpatialRecord> inputStream = Stream.of(hits, misses, boundary);
+        Stream<Record> inputStream = Stream.of(hits, misses, boundary);
 
         JavaSpatialFilterOperator filterOperator =
                 new JavaSpatialFilterOperator(
@@ -73,7 +73,7 @@ class JavaSpatialFilterOperatorTest extends JavaExecutionOperatorTestBase {
         JavaChannelInstance[] outputs = new JavaChannelInstance[]{createStreamChannelInstance()};
         evaluate(filterOperator, inputs, outputs);
 
-        final List<SpatialRecord> result = outputs[0].<SpatialRecord>provideStream().collect(Collectors.toList());
+        final List<Record> result = outputs[0].<Record>provideStream().collect(Collectors.toList());
         assertEquals(2, result.size());
         assertEquals(asList(hits, boundary), result);
     }
@@ -84,8 +84,8 @@ class JavaSpatialFilterOperatorTest extends JavaExecutionOperatorTestBase {
 //
 //    }
 
-    private static SpatialRecord createSpatialRecord(Object id, Geometry geometry) {
-        SpatialRecord record = new SpatialRecord();
+    private static Record createRecord(Object id, Geometry geometry) {
+        Record record = new Record();
         record.addField(id);
         record.addField(geometry);
         return record;

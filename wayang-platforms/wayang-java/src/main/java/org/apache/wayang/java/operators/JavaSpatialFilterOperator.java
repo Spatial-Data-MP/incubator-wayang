@@ -18,7 +18,8 @@
 
 package org.apache.wayang.java.operators;
 
-import org.apache.wayang.basic.data.SpatialRecord;
+import org.apache.wayang.basic.data.Record;
+import org.apache.wayang.basic.data.geometry.WGeometry;
 import org.apache.wayang.basic.operators.FilterOperator;
 import org.apache.wayang.basic.operators.SpatialFilterOperator;
 import org.apache.wayang.core.optimizer.OptimizationContext;
@@ -34,7 +35,9 @@ import org.apache.wayang.java.execution.JavaExecutor;
 import org.locationtech.jts.geom.Geometry;
 import org.locationtech.jts.io.ParseException;
 import org.locationtech.jts.io.WKBReader;
+import org.postgresql.util.PGobject;
 
+import javax.xml.bind.DatatypeConverter;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
@@ -82,15 +85,15 @@ public class JavaSpatialFilterOperator
             JavaExecutor javaExecutor,
             OptimizationContext.OperatorContext operatorContext) {
 
-        final Predicate<SpatialRecord> filterPredicate = this.buildSpatialPredicate();
+        final Predicate<Record> filterPredicate = this.buildSpatialPredicate();
         ((StreamChannel.Instance) outputs[0]).accept(
-                ((JavaChannelInstance) inputs[0]).<SpatialRecord>provideStream().filter(filterPredicate)
+                ((JavaChannelInstance) inputs[0]).<Record>provideStream().filter(filterPredicate)
         );
 
         return ExecutionOperator.modelLazyExecution(inputs, outputs, operatorContext);
     }
 
-    private Predicate<SpatialRecord> buildSpatialPredicate() {
+    private Predicate<Record> buildSpatialPredicate() {
         return record -> {
 //            Geometry candidate = this.extractGeometry((SpatialRecord) record);
             Geometry candidate = this.extractGeometry(record);
@@ -110,13 +113,47 @@ public class JavaSpatialFilterOperator
         };
     }
 
-    private Geometry extractGeometry(SpatialRecord record) {
-//        return (Geometry) record.getField(1);
-        try {
-            return record.getGeometry(this.geometryColumnIndex, new WKBReader());
-        } catch (ParseException e) {
-            throw new RuntimeException(e);
+    private Geometry extractGeometry(org.apache.wayang.basic.data.Record record) {
+        final Object field = record.getField(this.geometryColumnIndex);
+
+        // Code to convert
+        if (field instanceof WGeometry) {
+            return ((WGeometry) field).getGeometry();
         }
+        else
+        if (field instanceof Geometry) {
+            // Already a Geometry object
+            return (Geometry) field;
+        } else if (field instanceof PGobject) {
+            // Handle PostGIS geometry stored as a PGobject
+            final PGobject pgObj = (PGobject) field;
+            final String value = pgObj.getValue();
+            if (value == null) {
+                return null;
+            }
+            // Convert hex string to binary and parse as WKB
+            try {
+                return (new WKBReader()).read(DatatypeConverter.parseHexBinary(value));
+            } catch (ParseException e) {
+                throw new RuntimeException(e);
+            }
+        } else if (field instanceof String) {
+            // Handle raw hex string geometry
+            try {
+                return (new WKBReader()).read(DatatypeConverter.parseHexBinary((String) field));
+            } catch (ParseException e) {
+                throw new RuntimeException(e);
+            }
+        } else {
+            throw new ClassCastException("Field at index " + this.geometryColumnIndex + " is not a Geometry or PGobject: " + field);
+        }
+
+//        return ((WGeometry) record.getField(1)).getGeometry();
+//        try {
+//            return record.getGeometry(this.geometryColumnIndex, new WKBReader());
+//        } catch (ParseException e) {
+//            throw new RuntimeException(e);
+//        }
     }
 
 //    @Override

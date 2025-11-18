@@ -93,8 +93,8 @@ public class SqlAPI {
     public static void exampleWithPostgres() throws Exception {
         Configuration configuration = new Configuration();
         configuration.setProperty("wayang.postgres.jdbc.url", "jdbc:postgresql://localhost:5432/dvdrental");
-        configuration.setProperty("wayang.postgres.jdbc.user", "user");
-        configuration.setProperty("wayang.postgres.jdbc.password", "password");
+         configuration.setProperty("wayang.postgres.jdbc.user", "postgres");
+        configuration.setProperty("wayang.postgres.jdbc.password", "1234");
 
         String calciteModel = Resources.toString(
                 SqlAPI.class.getResource("/model.json"),
@@ -115,8 +115,8 @@ public class SqlAPI {
     public static void exampleJoinWithPostgres() throws Exception {
         Configuration configuration = new Configuration();
         configuration.setProperty("wayang.postgres.jdbc.url", "jdbc:postgresql://localhost:5432/dvdrental");
-        configuration.setProperty("wayang.postgres.jdbc.user", "user");
-        configuration.setProperty("wayang.postgres.jdbc.password", "password");
+        configuration.setProperty("wayang.postgres.jdbc.user", "postgres");
+        configuration.setProperty("wayang.postgres.jdbc.password", "1234");
 
         String calciteModel = Resources.toString(
                 SqlAPI.class.getResource("/model.json"),
@@ -160,7 +160,7 @@ public class SqlAPI {
 //        BasicConfigurator.configure();
 //        new SqlAPI().examplePostgres();
 //        new SqlAPI().exampleFs();
-//        new SqlAPI().exampleWithPostgres();
+        new SqlAPI().exampleWithPostgres();
 //        new SqlAPI().exampleJoinWithPostgres();
 //        new SqlAPI().exampleCrossPlatform();
         long startTime = System.nanoTime();

@@ -17,9 +17,10 @@
 
 package org.apache.wayang.api.sql;
 
+import org.apache.calcite.rel.type.RelDataType;
+import org.apache.wayang.api.sql.sources.fs.JavaCSVTableSource;
 import org.apache.wayang.basic.data.Record;
- import org.apache.wayang.basic.data.SpatialRecord;
-import org.apache.wayang.basic.data.geometry.BoundingBoxGeometry;
+//import org.apache.wayang.basic.data.SpatialRecord;
 import org.apache.wayang.basic.operators.*;
 import org.apache.wayang.core.api.Configuration;
 import org.apache.wayang.core.api.WayangContext;
@@ -35,7 +36,10 @@ import org.locationtech.jts.geom.Geometry;
 import org.locationtech.jts.geom.GeometryFactory;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
+import java.util.List;
+import java.util.Objects;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
@@ -110,6 +114,7 @@ public class SqlTest {
     void testSpatialFilterOperator() {
         WayangContext wayangContext = getTestWayangContext()
                 .withPlugin(Java.basicPlugin())
+                .withPlugin(Spark.basicPlugin())
                 .withPlugin(Postgres.plugin());
 
         ///  Scalar Geometry
@@ -119,17 +124,32 @@ public class SqlTest {
 
         TableSource spider = new PostgresTableSource("spider", "id", "geom");
 
-        MapOperator<Record, SpatialRecord> mapToSpatial = new MapOperator<Record,SpatialRecord>(
-                (record -> new SpatialRecord(record.getValues())), Record.class, SpatialRecord.class
+//        MapOperator<Record, SpatialRecord> mapToSpatial = new MapOperator<Record,SpatialRecord>(
+//                (record -> new SpatialRecord(record.getValues())), Record.class, SpatialRecord.class
+//        );
+//        spider.connectTo(0, mapToSpatial, 0);
+
+        MapOperator<Record, Record> mapToWGeometry = new MapOperator<Record, Record>(
+                (record -> {
+                    Object[] values = Arrays.copyOf(record.getValues(), record.getValues().length);
+                    String wkb = values[1].toString();
+//                    values[1] = new org.apache.wayang.basic.data.geometry.WGeometry("POLYGON((0.19793055784917613 0.1257896454307232,0.20481163436045868 0.1257896454307232,0.20481163436045868 0.12801131389541112,0.19793055784917613 0.12801131389541112,0.19793055784917613 0.1257896454307232))\n");
+                    values[1] = new org.apache.wayang.basic.data.geometry.WGeometry(wkb);
+                    return new Record(values);
+                }),
+                Record.class,
+                Record.class
         );
-        spider.connectTo(0, mapToSpatial, 0);
+
 
         SpatialFilterOperator spatialFilterOperator = new SpatialFilterOperator(
                 "INTERSECTS",
                 1,
                 geom2
         );
-        mapToSpatial.connectTo(0,spatialFilterOperator,0);
+        spatialFilterOperator.addTargetPlatform(Spark.platform());
+        spider.connectTo(0,mapToWGeometry,0);
+        mapToWGeometry.connectTo(0,spatialFilterOperator,0);
 
         Collection<Record> collector = new ArrayList<>();
         LocalCallbackSink<Record> sink = LocalCallbackSink.createCollectingSink(collector, Record.class);
@@ -185,12 +205,12 @@ public class SqlTest {
 //        customer.connectTo(0,projection,0);
 
 
-        MapOperator<Record, SpatialRecord> mapToSpatial = new MapOperator<Record,SpatialRecord>(
-                (record -> new SpatialRecord(record.getValues())), Record.class, SpatialRecord.class
-        );
-        mapToSpatial.addTargetPlatform(Postgres.platform());
+//        MapOperator<Record, SpatialRecord> mapToSpatial = new MapOperator<Record,SpatialRecord>(
+//                (record -> new SpatialRecord(record.getValues())), Record.class, SpatialRecord.class
+//        );
+//        mapToSpatial.addTargetPlatform(Postgres.platform());
 
-        customer.connectTo(0, mapToSpatial, 0);
+//        customer.connectTo(0, mapToSpatial, 0);
 
         SpatialFilterOperator spatialFilterOperator = new SpatialFilterOperator(
                 "INTERSECTS",
@@ -206,10 +226,10 @@ public class SqlTest {
 //
 //        simpleFilter.addTargetPlatform(Postgres.platform());
 
-        spatialFilterOperator.addTargetPlatform(Postgres.platform());
+//        spatialFilterOperator.addTargetPlatform(Postgres.platform());
 //        customer.connectTo(0,spatialFilterOperator,0);
-        mapToSpatial.connectTo(0,spatialFilterOperator,0);
-        spatialFilterOperator.connectTo(0, sink, 0);
+//        mapToSpatial.connectTo(0,spatialFilterOperator,0);
+//        spatialFilterOperator.connectTo(0, sink, 0);
 
 //        customer.connectTo(0, simpleFilter, 0);
 //        simpleFilter.connectTo(0, sink, 0);
@@ -231,9 +251,13 @@ public class SqlTest {
 
         assertEquals(2, collector.size());
 
+//        List<RelDataType> columnTypes = Arrays.asList(null, null);
+//        JavaCSVTableSource<Record> textFileSource = new JavaCSVTableSource<>(
+//                "/data/spider_points.csv",
+//                DataSetType.createDefault(Record.class),
+//                columnTypes
+//        );
+
 
     }
-
-
 }
-
