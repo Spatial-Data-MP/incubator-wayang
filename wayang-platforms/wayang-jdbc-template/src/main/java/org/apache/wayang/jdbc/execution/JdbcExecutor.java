@@ -37,10 +37,7 @@ import org.apache.wayang.core.util.fs.FileSystem;
 import org.apache.wayang.core.util.fs.FileSystems;
 import org.apache.wayang.jdbc.channels.SqlQueryChannel;
 import org.apache.wayang.jdbc.compiler.FunctionCompiler;
-import org.apache.wayang.jdbc.operators.JdbcExecutionOperator;
-import org.apache.wayang.jdbc.operators.JdbcFilterOperator;
-import org.apache.wayang.jdbc.operators.JdbcJoinOperator;
-import org.apache.wayang.jdbc.operators.JdbcProjectionOperator;
+import org.apache.wayang.jdbc.operators.*;
 import org.apache.wayang.jdbc.platform.JdbcPlatformTemplate;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -178,7 +175,7 @@ public class JdbcExecutor extends ExecutorTemplate {
         ExecutionTask nextTask = this.findJdbcExecutionOperatorTaskInStage(startTask, stage);
         while (nextTask != null) {
             // Evaluate the nextTask.
-            if (nextTask.getOperator() instanceof JdbcFilterOperator) {
+            if (nextTask.getOperator() instanceof JdbcFilterOperator || nextTask.getOperator() instanceof JdbcSpatialFilterOperator) {
                 filterTasks.add(nextTask);
             } else if (nextTask.getOperator() instanceof JdbcProjectionOperator) {
                 assert projectionTask == null; // Allow one projection operator per stage for now.

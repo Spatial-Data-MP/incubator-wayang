@@ -19,6 +19,7 @@
 package org.apache.wayang.postgres.operators;
 
 import org.apache.wayang.basic.data.Record;
+import org.apache.wayang.basic.data.geometry.WGeometry;
 import org.apache.wayang.basic.operators.FilterOperator;
 import org.apache.wayang.basic.operators.SpatialFilterOperator;
 import org.apache.wayang.core.function.PredicateDescriptor;
@@ -35,7 +36,7 @@ public class PostgresSpatialFilterOperator extends JdbcSpatialFilterOperator imp
     /**
      * Creates a new instance.
      */
-    public PostgresSpatialFilterOperator(String filterType, Integer columnIndex, Geometry geometry) {
+    public PostgresSpatialFilterOperator(String filterType, Integer columnIndex, WGeometry geometry) {
         super(filterType, columnIndex, geometry);
     }
 

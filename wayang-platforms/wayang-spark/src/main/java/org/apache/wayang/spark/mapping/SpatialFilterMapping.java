@@ -18,11 +18,10 @@
 
 package org.apache.wayang.spark.mapping;
 
+import org.apache.wayang.basic.data.geometry.WGeometry;
 import org.apache.wayang.basic.operators.FilterOperator;
 import org.apache.wayang.basic.operators.SpatialFilterOperator;
-import org.apache.wayang.core.function.PredicateDescriptor;
 import org.apache.wayang.core.mapping.*;
-import org.apache.wayang.core.types.DataSetType;
 import org.apache.wayang.spark.operators.SparkFilterOperator;
 import org.apache.wayang.spark.operators.SparkSpatialFilterOperator;
 import org.apache.wayang.spark.platform.SparkPlatform;
@@ -48,7 +47,7 @@ public class SpatialFilterMapping implements Mapping {
 
     private SubplanPattern createSubplanPattern() {
         final OperatorPattern<SpatialFilterOperator> operatorPattern = new OperatorPattern<>(
-                "spatialFilter", new SpatialFilterOperator((String) null, (Integer) null, (Geometry) null), false
+                "spatialFilter", new SpatialFilterOperator((String) null, (Integer) null, (WGeometry) null, ""), false
         )/*.withAdditionalTest(op -> op.getPredicateDescriptor().getSqlImplementation() != null)*/;
         return SubplanPattern.createSingleton(operatorPattern);
     }

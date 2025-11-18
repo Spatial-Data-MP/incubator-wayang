@@ -55,8 +55,8 @@ public class SparkSpatialFilterOperator
      *
      * @param filterType the type of spatial filter (e.g., "INTERSECTS", "CONTAINS", "WITHIN")
      */
-    public SparkSpatialFilterOperator(String filterType, Integer columnIndex, Geometry geometry) {
-        super(filterType, columnIndex, geometry);
+    public SparkSpatialFilterOperator(String filterType, Integer columnIndex, WGeometry geometry) {
+        super(filterType, columnIndex, geometry, "");
         if (this.geometryColumnIndex < 0) {
             throw new IllegalArgumentException("Column index must be >= 0.");
         }
@@ -93,7 +93,7 @@ public class SparkSpatialFilterOperator
     private Function<Record, Boolean> createSpatialPredicate() {
         final String filter = this.filterType;
         final int columnIndex = this.geometryColumnIndex;
-        final Geometry reference = this.referenceGeometry;
+        final Geometry reference = this.referenceGeometry.getGeometry();
 
         return record -> {
             if (reference == null) {

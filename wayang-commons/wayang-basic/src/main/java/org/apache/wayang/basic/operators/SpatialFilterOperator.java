@@ -19,15 +19,14 @@
 package org.apache.wayang.basic.operators;
 
 import org.apache.wayang.basic.data.Record;
+import org.apache.wayang.basic.data.geometry.WGeometry;
 import org.apache.wayang.core.optimizer.OptimizationContext;
 import org.apache.wayang.core.optimizer.cardinality.CardinalityEstimate;
 import org.apache.wayang.core.plan.wayangplan.UnaryToUnaryOperator;
 import org.apache.wayang.core.types.DataSetType;
 import org.locationtech.jts.geom.Geometry;
-import org.apache.wayang.basic.data.Record;
 
 import java.util.Locale;
-import java.util.Objects;
 
 
 /**
@@ -38,17 +37,19 @@ public class SpatialFilterOperator extends UnaryToUnaryOperator<Record, Record> 
 
     protected final String filterType;
     protected final int geometryColumnIndex;
-    protected final Geometry referenceGeometry;
+    protected final WGeometry referenceGeometry;
+    protected final String geometryColumnSqlName;
 
     /**
      * Creates a new instance.
      */
-    public SpatialFilterOperator(String filterType, Integer columnIndex, Geometry geometry) {
+    public SpatialFilterOperator(String filterType, Integer columnIndex, WGeometry geometry, String geometryColumnSqlName) {
         super(DataSetType.createDefault(Record.class), DataSetType.createDefault(Record.class), true);
         this.filterType = (filterType == null ? "INTERSECTS" : filterType).toUpperCase(Locale.ROOT);
         this.geometryColumnIndex = columnIndex == null ? 0 : columnIndex;
 //        this.referenceGeometry = Objects.requireNonNull(geometry, "Reference geometry must not be null.");
         this.referenceGeometry = geometry;
+        this.geometryColumnSqlName = geometryColumnSqlName;
     }
 
     /**
@@ -61,6 +62,7 @@ public class SpatialFilterOperator extends UnaryToUnaryOperator<Record, Record> 
         this.filterType = that.filterType;
         this.geometryColumnIndex = that.geometryColumnIndex;
         this.referenceGeometry = that.referenceGeometry;
+        this.geometryColumnSqlName = that.geometryColumnSqlName;
     }
 
 

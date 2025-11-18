@@ -17,15 +17,13 @@
 
 package org.apache.wayang.api.sql;
 
-import org.apache.calcite.rel.type.RelDataType;
-import org.apache.wayang.api.sql.sources.fs.JavaCSVTableSource;
 import org.apache.wayang.basic.data.Record;
 //import org.apache.wayang.basic.data.SpatialRecord;
+import org.apache.wayang.basic.data.geometry.WGeometry;
 import org.apache.wayang.basic.operators.*;
 import org.apache.wayang.core.api.Configuration;
 import org.apache.wayang.core.api.WayangContext;
 import org.apache.wayang.core.plan.wayangplan.WayangPlan;
-import org.apache.wayang.core.types.DataSetType;
 import org.apache.wayang.java.Java;
 import org.apache.wayang.postgres.Postgres;
 import org.apache.wayang.postgres.operators.PostgresTableSource;
@@ -34,12 +32,13 @@ import org.junit.jupiter.api.Test;
 import org.locationtech.jts.geom.Envelope;
 import org.locationtech.jts.geom.Geometry;
 import org.locationtech.jts.geom.GeometryFactory;
+import org.postgresql.core.v3.QueryExecutorImpl;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collection;
-import java.util.List;
-import java.util.Objects;
+import java.util.logging.ConsoleHandler;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
@@ -117,9 +116,18 @@ public class SqlTest {
                 .withPlugin(Spark.basicPlugin())
                 .withPlugin(Postgres.plugin());
 
+        //// Debugging might be useful, set level to "FINEST" to see actual db query strings
+//        Logger logger = Logger.getLogger(QueryExecutorImpl.class.getName());
+//        ConsoleHandler handler = new ConsoleHandler();
+//        handler.setLevel(Level.FINEST);
+//        // handler.setFilter(record -> record.getMessage() != null && record.getMessage().contains("query="));
+//        logger.addHandler(handler);
+//        logger.setLevel(Level.FINEST);
+
+
         ///  Scalar Geometry
         GeometryFactory geometryFactory = new GeometryFactory();
-        Envelope envelope = new Envelope(0.00, 0.2, 0.00, 0.20);
+        Envelope envelope = new Envelope(0.00, 0.4, 0.00, 0.40);
         Geometry geom2 = geometryFactory.toGeometry(envelope);
 
         TableSource spider = new PostgresTableSource("spider", "id", "geom");
@@ -129,27 +137,28 @@ public class SqlTest {
 //        );
 //        spider.connectTo(0, mapToSpatial, 0);
 
-        MapOperator<Record, Record> mapToWGeometry = new MapOperator<Record, Record>(
-                (record -> {
-                    Object[] values = Arrays.copyOf(record.getValues(), record.getValues().length);
-                    String wkb = values[1].toString();
+//        MapOperator<Record, Record> mapToWGeometry = new MapOperator<Record, Record>(
+//                (record -> {
+//                    Object[] values = Arrays.copyOf(record.getValues(), record.getValues().length);
+//                    String wkb = values[1].toString();
 //                    values[1] = new org.apache.wayang.basic.data.geometry.WGeometry("POLYGON((0.19793055784917613 0.1257896454307232,0.20481163436045868 0.1257896454307232,0.20481163436045868 0.12801131389541112,0.19793055784917613 0.12801131389541112,0.19793055784917613 0.1257896454307232))\n");
-                    values[1] = new org.apache.wayang.basic.data.geometry.WGeometry(wkb);
-                    return new Record(values);
-                }),
-                Record.class,
-                Record.class
-        );
-
+//                    values[1] = WGeometry.fromStringInput(wkb);
+//                    return new Record(values);
+//                }),
+//                Record.class,
+//                Record.class
+//        );
 
         SpatialFilterOperator spatialFilterOperator = new SpatialFilterOperator(
                 "INTERSECTS",
                 1,
-                geom2
-        );
-        spatialFilterOperator.addTargetPlatform(Spark.platform());
-        spider.connectTo(0,mapToWGeometry,0);
-        mapToWGeometry.connectTo(0,spatialFilterOperator,0);
+                WGeometry.fromStringInput("POLYGON((0.00 0.00,0.4 0.00,0.4 0.4,0.00 0.4,0.00 0.00))"),
+                "geom");
+
+//        spatialFilterOperator.addTargetPlatform(Java.platform());
+//        spider.connectTo(0,mapToWGeometry,0);
+        spider.connectTo(0, spatialFilterOperator, 0);
+//        mapToWGeometry.connectTo(0,spatialFilterOperator,0);
 
         Collection<Record> collector = new ArrayList<>();
         LocalCallbackSink<Record> sink = LocalCallbackSink.createCollectingSink(collector, Record.class);
@@ -159,7 +168,7 @@ public class SqlTest {
 
         System.out.println(collector);
 
-        assertEquals(2, collector.size());
+        assertEquals(19, collector.size());
     }
 
 
@@ -212,12 +221,12 @@ public class SqlTest {
 
 //        customer.connectTo(0, mapToSpatial, 0);
 
-        SpatialFilterOperator spatialFilterOperator = new SpatialFilterOperator(
-                "INTERSECTS",
-                1,
-                geom2
-//                , DataSetType.createDefault(Record.class)
-        );
+//        SpatialFilterOperator spatialFilterOperator = new SpatialFilterOperator(
+//                "INTERSECTS",
+//                1,
+//                geom2,
+////                , DataSetType.createDefault(Record.class)
+//                "");
 
 //        FilterOperator<Record> simpleFilter = new FilterOperator<Record>(
 //                (record -> (record.getInt(0)) > 20), Record.class

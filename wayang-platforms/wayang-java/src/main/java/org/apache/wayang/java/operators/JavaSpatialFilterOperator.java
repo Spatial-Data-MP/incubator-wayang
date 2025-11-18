@@ -20,7 +20,6 @@ package org.apache.wayang.java.operators;
 
 import org.apache.wayang.basic.data.Record;
 import org.apache.wayang.basic.data.geometry.WGeometry;
-import org.apache.wayang.basic.operators.FilterOperator;
 import org.apache.wayang.basic.operators.SpatialFilterOperator;
 import org.apache.wayang.core.optimizer.OptimizationContext;
 import org.apache.wayang.core.plan.wayangplan.ExecutionOperator;
@@ -33,11 +32,7 @@ import org.apache.wayang.java.channels.JavaChannelInstance;
 import org.apache.wayang.java.channels.StreamChannel;
 import org.apache.wayang.java.execution.JavaExecutor;
 import org.locationtech.jts.geom.Geometry;
-import org.locationtech.jts.io.ParseException;
-import org.locationtech.jts.io.WKBReader;
-import org.postgresql.util.PGobject;
 
-import javax.xml.bind.DatatypeConverter;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
@@ -56,8 +51,8 @@ public class JavaSpatialFilterOperator
      *
      * @param filterType the type of spatial filter (e.g., "INTERSECTS", "CONTAINS", "WITHIN")
      */
-    public JavaSpatialFilterOperator(String filterType, Integer columnIndex, Geometry geometry) {
-        super(filterType, columnIndex, geometry /*, DataSetType.createDefault(Record.class)*/);
+    public JavaSpatialFilterOperator(String filterType, Integer columnIndex, WGeometry geometry) {
+        super(filterType, columnIndex, geometry, /*, DataSetType.createDefault(Record.class)*/"");
         if (this.geometryColumnIndex < 0) {
             throw new IllegalArgumentException("Column index must be >= 0.");
         }
@@ -102,11 +97,11 @@ public class JavaSpatialFilterOperator
             }
             switch (this.filterType) {
                 case "INTERSECTS":
-                    return candidate.intersects(this.referenceGeometry);
+                    return candidate.intersects(this.referenceGeometry.getGeometry());
                 case "CONTAINS":
-                    return candidate.contains(this.referenceGeometry);
+                    return candidate.contains(this.referenceGeometry.getGeometry());
                 case "WITHIN":
-                    return candidate.within(this.referenceGeometry);
+                    return candidate.within(this.referenceGeometry.getGeometry());
                 default:
                     throw new IllegalArgumentException("Unsupported spatial filter type: " + this.filterType);
             }
@@ -121,32 +116,36 @@ public class JavaSpatialFilterOperator
             return ((WGeometry) field).getGeometry();
         }
         else
-        if (field instanceof Geometry) {
-            // Already a Geometry object
-            return (Geometry) field;
-        } else if (field instanceof PGobject) {
-            // Handle PostGIS geometry stored as a PGobject
-            final PGobject pgObj = (PGobject) field;
-            final String value = pgObj.getValue();
-            if (value == null) {
-                return null;
-            }
-            // Convert hex string to binary and parse as WKB
-            try {
-                return (new WKBReader()).read(DatatypeConverter.parseHexBinary(value));
-            } catch (ParseException e) {
-                throw new RuntimeException(e);
-            }
-        } else if (field instanceof String) {
-            // Handle raw hex string geometry
-            try {
-                return (new WKBReader()).read(DatatypeConverter.parseHexBinary((String) field));
-            } catch (ParseException e) {
-                throw new RuntimeException(e);
-            }
-        } else {
-            throw new ClassCastException("Field at index " + this.geometryColumnIndex + " is not a Geometry or PGobject: " + field);
+        {
+            return WGeometry.fromStringInput((String) (field.toString())).getGeometry();
         }
+//
+//        if (field instanceof Geometry) {
+//            // Already a Geometry object
+//            return (Geometry) field;
+//        } else if (field instanceof PGobject) {
+//            // Handle PostGIS geometry stored as a PGobject
+//            final PGobject pgObj = (PGobject) field;
+//            final String value = pgObj.getValue();
+//            if (value == null) {
+//                return null;
+//            }
+//            // Convert hex string to binary and parse as WKB
+//            try {
+//                return (new WKBReader()).read(DatatypeConverter.parseHexBinary(value));
+//            } catch (ParseException e) {
+//                throw new RuntimeException(e);
+//            }
+//        } else if (field instanceof String) {
+//            // Handle raw hex string geometry
+//            try {
+//                return (new WKBReader()).read(DatatypeConverter.parseHexBinary((String) field));
+//            } catch (ParseException e) {
+//                throw new RuntimeException(e);
+//            }
+//        } else {
+//            throw new ClassCastException("Field at index " + this.geometryColumnIndex + " is not a Geometry or PGobject: " + field);
+//        }
 
 //        return ((WGeometry) record.getField(1)).getGeometry();
 //        try {

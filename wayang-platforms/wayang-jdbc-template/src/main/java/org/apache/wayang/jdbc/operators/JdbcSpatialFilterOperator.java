@@ -18,18 +18,14 @@
 
 package org.apache.wayang.jdbc.operators;
 
-import org.apache.wayang.basic.data.Record;
+import org.apache.wayang.basic.data.geometry.WGeometry;
 import org.apache.wayang.basic.operators.FilterOperator;
 import org.apache.wayang.basic.operators.SpatialFilterOperator;
-import org.apache.wayang.core.api.Configuration;
-import org.apache.wayang.core.function.PredicateDescriptor;
-import org.apache.wayang.core.optimizer.costs.LoadProfileEstimator;
-import org.apache.wayang.core.optimizer.costs.LoadProfileEstimators;
+import org.apache.wayang.core.types.BasicDataUnitType;
 import org.apache.wayang.jdbc.compiler.FunctionCompiler;
 import org.locationtech.jts.geom.Geometry;
 
 import java.sql.Connection;
-import java.util.Optional;
 
 
 /**
@@ -42,8 +38,8 @@ public abstract class JdbcSpatialFilterOperator extends SpatialFilterOperator im
      *
      * @param filterType the type of spatial filter (e.g., "INTERSECTS", "CONTAINS", "WITHIN")
      */
-    public JdbcSpatialFilterOperator(String filterType, Integer columnIndex, Geometry geometry) {
-        super(filterType, columnIndex, geometry /*, DataSetType.createDefault(Record.class)*/);
+    public JdbcSpatialFilterOperator(String filterType, Integer columnIndex, WGeometry geometry) {
+        super(filterType, columnIndex, geometry, /*, DataSetType.createDefault(Record.class)*/"");
         if (this.geometryColumnIndex < 0) {
             throw new IllegalArgumentException("Column index must be >= 0.");
         }
@@ -53,13 +49,70 @@ public abstract class JdbcSpatialFilterOperator extends SpatialFilterOperator im
         super(that);
     }
 
+
     @Override
     public String createSqlClause(Connection connection, FunctionCompiler compiler) {
-        //return compiler.compile(this.predicateDescriptor);
+        if (this.referenceGeometry == null) {
+            throw new IllegalStateException("Geometry for spatial filter must not be null.");
+        }
+        if (this.geometryColumnSqlName == null || this.geometryColumnSqlName.isEmpty()) {
+            throw new IllegalStateException("geometryColumnSqlName must be set in SpatialFilterOperator.");
+        }
 
-        return "(1 = 1)";
+        // Column expression (e.g. "geom" or "t.geom")
+        final String columnExpr = this.geometryColumnSqlName;
 
+        // Geometry literal as ST_GeomFromText('WKT', srid)
+        final String wkt = this.referenceGeometry.getWKT();
+//        final int srid = this.geometry.getSRID();
+        final int srid = 4326;
+
+        // TODO: Check which SRID to use.
+        final String geomLiteral;
+        if (srid > 0) {
+            geomLiteral = String.format("ST_GeomFromText('%s', %d)", wkt, srid);
+        } else {
+            geomLiteral = String.format("ST_GeomFromText('%s')", wkt);
+        }
+
+        // Map the Java-level spatial filter type to the corresponding SQL function.
+//        final String op = this.filterType == null
+//                ? "INTERSECTS"
+//                : this.filterType.toUpperCase(Locale.ROOT);
+        String op = this.filterType;
+
+        switch (op) {
+            case "INTERSECTS":
+                return String.format("ST_Intersects(%s, %s)", columnExpr, geomLiteral);
+
+            case "CONTAINS":
+                return String.format("ST_Contains(%s, %s)", columnExpr, geomLiteral);
+
+            case "WITHIN":
+                return String.format("ST_Within(%s, %s)", columnExpr, geomLiteral);
+
+            case "TOUCHES":
+                return String.format("ST_Touches(%s, %s)", columnExpr, geomLiteral);
+
+            case "OVERLAPS":
+                return String.format("ST_Overlaps(%s, %s)", columnExpr, geomLiteral);
+
+            case "CROSSES":
+                return String.format("ST_Crosses(%s, %s)", columnExpr, geomLiteral);
+
+            case "DISJOINT":
+                return String.format("ST_Disjoint(%s, %s)", columnExpr, geomLiteral);
+
+            case "EQUALS":
+                return String.format("ST_Equals(%s, %s)", columnExpr, geomLiteral);
+
+            default:
+                throw new UnsupportedOperationException(
+                        "Unsupported spatial filter type for JDBC: " + this.filterType
+                );
+        }
     }
+
 
     @Override
     public String getLoadProfileEstimatorConfigurationKey() {
