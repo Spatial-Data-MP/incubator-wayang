@@ -21,6 +21,7 @@ package org.apache.wayang.jdbc.operators;
 import org.apache.wayang.basic.data.WGeometry;
 import org.apache.wayang.core.api.Configuration;
 import org.apache.wayang.core.api.Job;
+import org.apache.wayang.core.function.SpatialRelation;
 import org.apache.wayang.core.optimizer.DefaultOptimizationContext;
 import org.apache.wayang.core.plan.executionplan.ExecutionStage;
 import org.apache.wayang.core.plan.executionplan.ExecutionTask;
@@ -61,12 +62,12 @@ class JdbcSpatialFilterOperatorTest extends OperatorTestBase {
 
         private final Platform platform;
 
-        TestJdbcSpatialFilterOperator(String filterType,
+        TestJdbcSpatialFilterOperator(SpatialRelation relation,
                                       int columnIndex,
                                       WGeometry geometry,
                                       String geometryColumnSqlName,
                                       Platform platform) {
-            super(filterType, columnIndex, geometry);
+            super(relation, columnIndex, geometry);
             this.geometryColumnSqlName = geometryColumnSqlName;
             this.platform = platform;
         }
@@ -118,7 +119,7 @@ class JdbcSpatialFilterOperatorTest extends OperatorTestBase {
         // Spatial filter: INTERSECTS on column "geom".
         ExecutionOperator spatialFilterOperator =
                 new TestJdbcSpatialFilterOperator(
-                        "INTERSECTS",
+                        SpatialRelation.INTERSECTS,
                         1,
                         wGeometry,
                         "geom",

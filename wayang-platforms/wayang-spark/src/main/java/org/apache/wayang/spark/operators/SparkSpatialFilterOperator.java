@@ -30,10 +30,7 @@ import org.apache.wayang.core.platform.ChannelDescriptor;
 import org.apache.wayang.core.platform.ChannelInstance;
 import org.apache.wayang.core.platform.lineage.ExecutionLineageNode;
 import org.apache.wayang.core.util.Tuple;
-import org.apache.wayang.java.channels.JavaChannelInstance;
-import org.apache.wayang.java.channels.StreamChannel;
-import org.apache.wayang.java.execution.JavaExecutor;
-import org.apache.wayang.spark.channels.BroadcastChannel;
+ import org.apache.wayang.spark.channels.BroadcastChannel;
 import org.apache.wayang.spark.channels.RddChannel;
 import org.apache.wayang.spark.execution.SparkExecutor;
 import org.locationtech.jts.geom.Geometry;
@@ -41,12 +38,12 @@ import org.locationtech.jts.io.ParseException;
 import org.locationtech.jts.io.WKBReader;
 import org.postgresql.util.PGobject;
 
+import javax.management.relation.RelationType;
 import javax.xml.bind.DatatypeConverter;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
-import java.util.function.Predicate;
 
 /**
  * Spark implementation of the {@link SpatialFilterOperator}.
@@ -58,7 +55,7 @@ public class SparkSpatialFilterOperator
     /**
      * Creates a new instance.
      *
-     * @param relation the type of spatial filter (e.g., "INTERSECTS", "CONTAINS", "WITHIN")
+     * @param filterType the type of spatial filter (e.g., "INTERSECTS", "CONTAINS", "WITHIN")
      */
     public SparkSpatialFilterOperator(SpatialRelation relation, Integer columnIndex, WGeometry geometry) {
         super(relation, columnIndex, geometry, "");
@@ -77,38 +74,55 @@ public class SparkSpatialFilterOperator
     }
 
     @Override
-    public Tuple<Collection<ExecutionLineageNode>, Collection<ChannelInstance>> evaluate(ChannelInstance[] inputs, ChannelInstance[] outputs, SparkExecutor sparkExecutor, OptimizationContext.OperatorContext operatorContext) {
-        final Predicate<Record> filterPredicate = this.buildSpatialPredicate();
-        ((StreamChannel.Instance) outputs[0]).accept(
-                ((JavaChannelInstance) inputs[0]).<Record>provideStream().filter(filterPredicate)
-        );
+    @SuppressWarnings("unchecked")
+    public Tuple<Collection<ExecutionLineageNode>, Collection<ChannelInstance>> evaluate(
+            ChannelInstance[] inputs,
+            ChannelInstance[] outputs,
+            SparkExecutor sparkExecutor,
+            OptimizationContext.OperatorContext operatorContext) {
+        assert inputs.length == this.getNumInputs();
+        assert outputs.length == this.getNumOutputs();
+
+        final Function<Record, Boolean> spatialPredicate = this.createSpatialPredicate();
+        final JavaRDD<Record> inputRdd = ((RddChannel.Instance) inputs[0]).provideRdd();
+        final JavaRDD<Record> outputRdd = inputRdd.filter(spatialPredicate);
+        this.name(outputRdd);
+        ((RddChannel.Instance) outputs[0]).accept(outputRdd, sparkExecutor);
 
         return ExecutionOperator.modelLazyExecution(inputs, outputs, operatorContext);
-
     }
 
-    private Predicate<Record> buildSpatialPredicate() {
-        final Geometry reference = this.referenceGeometry.getGeometry();
+    private Function<Record, Boolean> createSpatialPredicate() {
 
-        return record -> {
-            Geometry candidate = this.extractGeometry(record);
-            if (candidate == null) {
-                return false;
-            }
-            return this.relation.test(candidate, reference);
-        };
+//        final SpatialRelation relation = this.relation;
+//        final int columnIndex = this.geometryColumnIndex;
+//        final Geometry reference = this.referenceGeometry.getGeometry();
+
+        return (record -> true);
+//        return record -> {
+//            if (reference == null) {
+//                return false;
+//            }
+//            final Geometry candidate = extractGeometry(record, columnIndex);
+//            if (candidate == null) {
+//                return false;
+//            }
+//            return this.relation.test(candidate, reference);
+//        };
     }
-
-    private Geometry extractGeometry(org.apache.wayang.basic.data.Record record) {
-        final Object field = record.getField(this.geometryColumnIndex);
-
-        // Code to convert
-        if (field instanceof WGeometry) {
-            return ((WGeometry) field).getGeometry();
-        } else {
-            return WGeometry.fromStringInput((String) (field.toString())).getGeometry();
-        }
-    }
+//
+//    private Geometry extractGeometry(Record record, int columnIndex) {
+//        final Object field = record.getField(this.geometryColumnIndex);
+//
+//        // Code to convert
+//        if (field instanceof WGeometry) {
+//            return ((WGeometry) field).getGeometry();
+//        }
+//        else
+//        {
+//            return WGeometry.fromStringInput((String) (field.toString())).getGeometry();
+//        }
+//    }
 
     @Override
     public String getLoadProfileEstimatorConfigurationKey() {
