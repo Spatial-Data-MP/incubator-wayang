@@ -44,9 +44,9 @@ public class SpatialFilterOperator extends UnaryToUnaryOperator<Record, Record> 
     /**
      * Creates a new instance.
      */
-    public SpatialFilterOperator(String filterType, Integer columnIndex, WGeometry geometry, String geometryColumnSqlName) {
+    public SpatialFilterOperator(SpatialRelation relation, Integer columnIndex, WGeometry geometry, String geometryColumnSqlName) {
         super(DataSetType.createDefault(Record.class), DataSetType.createDefault(Record.class), true);
-        this.relation = SpatialRelation.fromString(filterType);
+        this.relation = relation;
         this.geometryColumnIndex = columnIndex == null ? 0 : columnIndex;
 //        this.referenceGeometry = Objects.requireNonNull(geometry, "Reference geometry must not be null.");
         this.referenceGeometry = geometry;

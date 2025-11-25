@@ -20,6 +20,7 @@ package org.apache.wayang.java.mapping;
 
 import org.apache.wayang.basic.data.WGeometry;
 import org.apache.wayang.basic.operators.SpatialFilterOperator;
+import org.apache.wayang.core.function.SpatialRelation;
 import org.apache.wayang.core.mapping.*;
 import org.apache.wayang.java.operators.JavaSpatialFilterOperator;
 import org.apache.wayang.java.platform.JavaPlatform;
@@ -47,7 +48,7 @@ public class SpatialFilterMapping implements Mapping {
 
     private SubplanPattern createSubplanPattern() {
         final OperatorPattern operatorPattern = new OperatorPattern(
-                "spatialFilter", new SpatialFilterOperator((String) null, (Integer) null, (WGeometry) null, /*, DataSetType.none()*/""), false);
+                "spatialFilter", new SpatialFilterOperator((SpatialRelation) null, (Integer) null, (WGeometry) null, /*, DataSetType.none()*/""), false);
         return SubplanPattern.createSingleton(operatorPattern);
     }
 

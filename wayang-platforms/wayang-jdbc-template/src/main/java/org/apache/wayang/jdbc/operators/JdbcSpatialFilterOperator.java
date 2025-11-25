@@ -21,6 +21,7 @@ package org.apache.wayang.jdbc.operators;
 import org.apache.wayang.basic.data.WGeometry;
 import org.apache.wayang.basic.operators.FilterOperator;
 import org.apache.wayang.basic.operators.SpatialFilterOperator;
+import org.apache.wayang.core.function.SpatialRelation;
 import org.apache.wayang.core.types.BasicDataUnitType;
 import org.apache.wayang.jdbc.compiler.FunctionCompiler;
 import org.locationtech.jts.geom.Geometry;
@@ -36,10 +37,10 @@ public abstract class JdbcSpatialFilterOperator extends SpatialFilterOperator im
     /**
      * Creates a new instance.
      *
-     * @param filterType the type of spatial filter (e.g., "INTERSECTS", "CONTAINS", "WITHIN")
+     * @param relation the type of spatial filter (e.g., "INTERSECTS", "CONTAINS", "WITHIN")
      */
-    public JdbcSpatialFilterOperator(String filterType, Integer columnIndex, WGeometry geometry) {
-        super(filterType, columnIndex, geometry, /*, DataSetType.createDefault(Record.class)*/"");
+    public JdbcSpatialFilterOperator(SpatialRelation relation, Integer columnIndex, WGeometry geometry) {
+        super(relation, columnIndex, geometry, /*, DataSetType.createDefault(Record.class)*/"");
         if (this.geometryColumnIndex < 0) {
             throw new IllegalArgumentException("Column index must be >= 0.");
         }

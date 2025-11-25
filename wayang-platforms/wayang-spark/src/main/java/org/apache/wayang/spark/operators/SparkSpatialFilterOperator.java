@@ -23,6 +23,7 @@ import org.apache.spark.api.java.function.Function;
 import org.apache.wayang.basic.data.Record;
 import org.apache.wayang.basic.data.WGeometry;
 import org.apache.wayang.basic.operators.SpatialFilterOperator;
+import org.apache.wayang.core.function.SpatialRelation;
 import org.apache.wayang.core.optimizer.OptimizationContext;
 import org.apache.wayang.core.plan.wayangplan.ExecutionOperator;
 import org.apache.wayang.core.platform.ChannelDescriptor;
@@ -57,10 +58,10 @@ public class SparkSpatialFilterOperator
     /**
      * Creates a new instance.
      *
-     * @param filterType the type of spatial filter (e.g., "INTERSECTS", "CONTAINS", "WITHIN")
+     * @param relation the type of spatial filter (e.g., "INTERSECTS", "CONTAINS", "WITHIN")
      */
-    public SparkSpatialFilterOperator(String filterType, Integer columnIndex, WGeometry geometry) {
-        super(filterType, columnIndex, geometry, "");
+    public SparkSpatialFilterOperator(SpatialRelation relation, Integer columnIndex, WGeometry geometry) {
+        super(relation, columnIndex, geometry, "");
         if (this.geometryColumnIndex < 0) {
             throw new IllegalArgumentException("Column index must be >= 0.");
         }

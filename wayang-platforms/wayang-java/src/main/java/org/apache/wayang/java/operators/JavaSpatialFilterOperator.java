@@ -21,6 +21,7 @@ package org.apache.wayang.java.operators;
 import org.apache.wayang.basic.data.Record;
 import org.apache.wayang.basic.data.WGeometry;
 import org.apache.wayang.basic.operators.SpatialFilterOperator;
+import org.apache.wayang.core.function.SpatialRelation;
 import org.apache.wayang.core.optimizer.OptimizationContext;
 import org.apache.wayang.core.plan.wayangplan.ExecutionOperator;
 import org.apache.wayang.core.platform.ChannelDescriptor;
@@ -49,10 +50,10 @@ public class JavaSpatialFilterOperator
     /**
      * Creates a new instance.
      *
-     * @param filterType the type of spatial filter (e.g., "INTERSECTS", "CONTAINS", "WITHIN")
+     * @param relation the type of spatial filter (e.g., "INTERSECTS", "CONTAINS", "WITHIN")
      */
-    public JavaSpatialFilterOperator(String filterType, Integer columnIndex, WGeometry geometry) {
-        super(filterType, columnIndex, geometry, /*, DataSetType.createDefault(Record.class)*/"");
+    public JavaSpatialFilterOperator(SpatialRelation relation, Integer columnIndex, WGeometry geometry) {
+        super(relation, columnIndex, geometry, /*, DataSetType.createDefault(Record.class)*/"");
         if (this.geometryColumnIndex < 0) {
             throw new IllegalArgumentException("Column index must be >= 0.");
         }

@@ -23,6 +23,7 @@ import org.apache.wayang.basic.data.WGeometry;
 import org.apache.wayang.basic.operators.*;
 import org.apache.wayang.core.api.Configuration;
 import org.apache.wayang.core.api.WayangContext;
+import org.apache.wayang.core.function.SpatialRelation;
 import org.apache.wayang.core.plan.wayangplan.WayangPlan;
 import org.apache.wayang.java.Java;
 import org.apache.wayang.postgres.Postgres;
@@ -143,12 +144,12 @@ public class SqlTest {
 //        );
 
         SpatialFilterOperator spatialFilterOperator = new SpatialFilterOperator(
-                "INTERSECTS",
+                SpatialRelation.INTERSECTS,
                 1,
                 WGeometry.fromStringInput("POLYGON((0.00 0.00,0.4 0.00,0.4 0.4,0.00 0.4,0.00 0.00))"),
                 "geom");
 
-        spatialFilterOperator.addTargetPlatform(Spark.platform());
+        spatialFilterOperator.addTargetPlatform(Postgres.platform());
 //        spider.connectTo(0,mapToWGeometry,0);
         spider.connectTo(0, spatialFilterOperator, 0);
 //        mapToWGeometry.connectTo(0,spatialFilterOperator,0);

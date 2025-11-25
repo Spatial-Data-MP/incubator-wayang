@@ -20,6 +20,7 @@ package org.apache.wayang.java.operators;
 
 import org.apache.wayang.basic.data.Record;
 import org.apache.wayang.basic.data.WGeometry;
+import org.apache.wayang.core.function.SpatialRelation;
 import org.apache.wayang.java.channels.JavaChannelInstance;
 import org.junit.jupiter.api.Test;
 import org.locationtech.jts.geom.*;
@@ -50,7 +51,7 @@ class JavaSpatialFilterOperatorTest extends JavaExecutionOperatorTestBase {
 
         JavaSpatialFilterOperator filterOperator =
                 new JavaSpatialFilterOperator(
-                        "INTERSECTS",
+                        SpatialRelation.INTERSECTS,
                         1,
                         WGeometry.fromGeometry(queryGeometry)
                 );
@@ -85,7 +86,7 @@ class JavaSpatialFilterOperatorTest extends JavaExecutionOperatorTestBase {
         Stream<Record> input = Stream.of(rContains, rInside, rDisjoint);
 
         JavaSpatialFilterOperator op =
-                new JavaSpatialFilterOperator("CONTAINS", 1, WGeometry.fromGeometry(reference));
+                new JavaSpatialFilterOperator(SpatialRelation.CONTAINS, 1, WGeometry.fromGeometry(reference));
 
         JavaChannelInstance[] inputs = new JavaChannelInstance[]{createStreamChannelInstance(input)};
         JavaChannelInstance[] outputs = new JavaChannelInstance[]{createStreamChannelInstance()};
@@ -114,7 +115,7 @@ class JavaSpatialFilterOperatorTest extends JavaExecutionOperatorTestBase {
         Stream<Record> input = Stream.of(rInside, rOutside);
 
         JavaSpatialFilterOperator op =
-                new JavaSpatialFilterOperator("WITHIN", 1, WGeometry.fromGeometry(reference));
+                new JavaSpatialFilterOperator(SpatialRelation.WITHIN, 1, WGeometry.fromGeometry(reference));
 
         JavaChannelInstance[] inputs = new JavaChannelInstance[]{createStreamChannelInstance(input)};
         JavaChannelInstance[] outputs = new JavaChannelInstance[]{createStreamChannelInstance()};
@@ -145,7 +146,7 @@ class JavaSpatialFilterOperatorTest extends JavaExecutionOperatorTestBase {
         Stream<Record> input = Stream.of(rTouching, rNonTouching, rOverlapping);
 
         JavaSpatialFilterOperator op =
-                new JavaSpatialFilterOperator("TOUCHES", 1, WGeometry.fromGeometry(reference));
+                new JavaSpatialFilterOperator(SpatialRelation.TOUCHES, 1, WGeometry.fromGeometry(reference));
 
         JavaChannelInstance[] inputs = new JavaChannelInstance[]{createStreamChannelInstance(input)};
         JavaChannelInstance[] outputs = new JavaChannelInstance[]{createStreamChannelInstance()};
@@ -177,7 +178,7 @@ class JavaSpatialFilterOperatorTest extends JavaExecutionOperatorTestBase {
         Stream<Record> input = Stream.of(rOverlapping, rContaining, rDisjoint);
 
         JavaSpatialFilterOperator op =
-                new JavaSpatialFilterOperator("OVERLAPS", 1, WGeometry.fromGeometry(reference));
+                new JavaSpatialFilterOperator(SpatialRelation.OVERLAPS, 1, WGeometry.fromGeometry(reference));
 
         JavaChannelInstance[] inputs = new JavaChannelInstance[]{createStreamChannelInstance(input)};
         JavaChannelInstance[] outputs = new JavaChannelInstance[]{createStreamChannelInstance()};
@@ -214,7 +215,7 @@ class JavaSpatialFilterOperatorTest extends JavaExecutionOperatorTestBase {
         Stream<Record> input = Stream.of(rCrossing, rNonCrossing);
 
         JavaSpatialFilterOperator op =
-                new JavaSpatialFilterOperator("CROSSES", 1, WGeometry.fromGeometry(reference));
+                new JavaSpatialFilterOperator(SpatialRelation.CROSSES, 1, WGeometry.fromGeometry(reference));
 
         JavaChannelInstance[] inputs = new JavaChannelInstance[]{createStreamChannelInstance(input)};
         JavaChannelInstance[] outputs = new JavaChannelInstance[]{createStreamChannelInstance()};
@@ -242,7 +243,7 @@ class JavaSpatialFilterOperatorTest extends JavaExecutionOperatorTestBase {
         Stream<Record> input = Stream.of(rDisjoint, rIntersecting);
 
         JavaSpatialFilterOperator op =
-                new JavaSpatialFilterOperator("DISJOINT", 1, WGeometry.fromGeometry(reference));
+                new JavaSpatialFilterOperator(SpatialRelation.DISJOINT, 1, WGeometry.fromGeometry(reference));
 
         JavaChannelInstance[] inputs = new JavaChannelInstance[]{createStreamChannelInstance(input)};
         JavaChannelInstance[] outputs = new JavaChannelInstance[]{createStreamChannelInstance()};
@@ -270,7 +271,7 @@ class JavaSpatialFilterOperatorTest extends JavaExecutionOperatorTestBase {
         Stream<Record> input = Stream.of(rSame, rDifferent);
 
         JavaSpatialFilterOperator op =
-                new JavaSpatialFilterOperator("EQUALS", 1, WGeometry.fromGeometry(reference));
+                new JavaSpatialFilterOperator(SpatialRelation.EQUALS, 1, WGeometry.fromGeometry(reference));
 
         JavaChannelInstance[] inputs = new JavaChannelInstance[]{createStreamChannelInstance(input)};
         JavaChannelInstance[] outputs = new JavaChannelInstance[]{createStreamChannelInstance()};
