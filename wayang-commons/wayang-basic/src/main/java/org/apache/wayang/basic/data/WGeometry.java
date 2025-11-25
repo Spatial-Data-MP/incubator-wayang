@@ -1,5 +1,6 @@
 package org.apache.wayang.basic.data;
 
+import com.google.gson.JsonElement;
 import org.locationtech.jts.geom.Geometry;
 import org.locationtech.jts.geom.GeometryFactory;
 import org.locationtech.jts.io.*;
@@ -46,6 +47,12 @@ public class WGeometry implements Serializable {
             wg.data.put("wkb", trimmed);
         }
 
+        return wg;
+    }
+
+    public static WGeometry fromJsonInput(JsonElement input) {
+        WGeometry wg = new WGeometry();
+        wg.data.put("geojson", input.toString());
         return wg;
     }
 
