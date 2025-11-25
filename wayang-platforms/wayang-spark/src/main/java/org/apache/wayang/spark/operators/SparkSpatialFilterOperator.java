@@ -21,7 +21,7 @@ package org.apache.wayang.spark.operators;
 import org.apache.spark.api.java.JavaRDD;
 import org.apache.spark.api.java.function.Function;
 import org.apache.wayang.basic.data.Record;
-import org.apache.wayang.basic.data.geometry.WGeometry;
+import org.apache.wayang.basic.data.WGeometry;
 import org.apache.wayang.basic.operators.SpatialFilterOperator;
 import org.apache.wayang.core.optimizer.OptimizationContext;
 import org.apache.wayang.core.plan.wayangplan.ExecutionOperator;

@@ -19,7 +19,7 @@
 package org.apache.wayang.java.operators;
 
 import org.apache.wayang.basic.data.Record;
-import org.apache.wayang.basic.data.geometry.WGeometry;
+import org.apache.wayang.basic.data.WGeometry;
 import org.apache.wayang.basic.operators.SpatialFilterOperator;
 import org.apache.wayang.core.optimizer.OptimizationContext;
 import org.apache.wayang.core.plan.wayangplan.ExecutionOperator;
@@ -40,7 +40,7 @@ import java.util.List;
 import java.util.function.Predicate;
 
 /**
- * Java implementation of the {@link FilterOperator}.
+ * Java implementation of the {@link SpatialFilterOperator}.
  */
 public class JavaSpatialFilterOperator
         extends SpatialFilterOperator
@@ -89,22 +89,14 @@ public class JavaSpatialFilterOperator
     }
 
     private Predicate<Record> buildSpatialPredicate() {
+        final Geometry reference = this.referenceGeometry.getGeometry();
+
         return record -> {
-//            Geometry candidate = this.extractGeometry((SpatialRecord) record);
             Geometry candidate = this.extractGeometry(record);
             if (candidate == null) {
                 return false;
             }
-            switch (this.filterType) {
-                case "INTERSECTS":
-                    return candidate.intersects(this.referenceGeometry.getGeometry());
-                case "CONTAINS":
-                    return candidate.contains(this.referenceGeometry.getGeometry());
-                case "WITHIN":
-                    return candidate.within(this.referenceGeometry.getGeometry());
-                default:
-                    throw new IllegalArgumentException("Unsupported spatial filter type: " + this.filterType);
-            }
+            return this.relation.test(candidate, reference);
         };
     }
 

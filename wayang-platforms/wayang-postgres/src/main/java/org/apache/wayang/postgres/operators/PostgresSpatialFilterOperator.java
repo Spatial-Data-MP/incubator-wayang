@@ -19,7 +19,7 @@
 package org.apache.wayang.postgres.operators;
 
 import org.apache.wayang.basic.data.Record;
-import org.apache.wayang.basic.data.geometry.WGeometry;
+import org.apache.wayang.basic.data.WGeometry;
 import org.apache.wayang.basic.operators.FilterOperator;
 import org.apache.wayang.basic.operators.SpatialFilterOperator;
 import org.apache.wayang.core.function.PredicateDescriptor;

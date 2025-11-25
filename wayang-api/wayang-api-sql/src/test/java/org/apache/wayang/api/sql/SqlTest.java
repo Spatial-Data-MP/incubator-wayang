@@ -19,7 +19,7 @@ package org.apache.wayang.api.sql;
 
 import org.apache.wayang.basic.data.Record;
 //import org.apache.wayang.basic.data.SpatialRecord;
-import org.apache.wayang.basic.data.geometry.WGeometry;
+import org.apache.wayang.basic.data.WGeometry;
 import org.apache.wayang.basic.operators.*;
 import org.apache.wayang.core.api.Configuration;
 import org.apache.wayang.core.api.WayangContext;
@@ -90,14 +90,6 @@ public class SqlTest {
             }
         }
         System.out.println("Done");
-
-
-
-
-
-
-
-
     }
 
     WayangContext getTestWayangContext() {
@@ -130,7 +122,8 @@ public class SqlTest {
         Envelope envelope = new Envelope(0.00, 0.4, 0.00, 0.40);
         Geometry geom2 = geometryFactory.toGeometry(envelope);
 
-        TableSource spider = new PostgresTableSource("spider", "id", "geom");
+        TableSource spider =
+                new PostgresTableSource("spider", "id", "geom");
 
 //        MapOperator<Record, SpatialRecord> mapToSpatial = new MapOperator<Record,SpatialRecord>(
 //                (record -> new SpatialRecord(record.getValues())), Record.class, SpatialRecord.class
@@ -141,7 +134,7 @@ public class SqlTest {
 //                (record -> {
 //                    Object[] values = Arrays.copyOf(record.getValues(), record.getValues().length);
 //                    String wkb = values[1].toString();
-//                    values[1] = new org.apache.wayang.basic.data.geometry.WGeometry("POLYGON((0.19793055784917613 0.1257896454307232,0.20481163436045868 0.1257896454307232,0.20481163436045868 0.12801131389541112,0.19793055784917613 0.12801131389541112,0.19793055784917613 0.1257896454307232))\n");
+//                    values[1] = new org.apache.wayang.basic.data.WGeometry("POLYGON((0.19793055784917613 0.1257896454307232,0.20481163436045868 0.1257896454307232,0.20481163436045868 0.12801131389541112,0.19793055784917613 0.12801131389541112,0.19793055784917613 0.1257896454307232))\n");
 //                    values[1] = WGeometry.fromStringInput(wkb);
 //                    return new Record(values);
 //                }),
@@ -155,7 +148,7 @@ public class SqlTest {
                 WGeometry.fromStringInput("POLYGON((0.00 0.00,0.4 0.00,0.4 0.4,0.00 0.4,0.00 0.00))"),
                 "geom");
 
-//        spatialFilterOperator.addTargetPlatform(Java.platform());
+        spatialFilterOperator.addTargetPlatform(Spark.platform());
 //        spider.connectTo(0,mapToWGeometry,0);
         spider.connectTo(0, spatialFilterOperator, 0);
 //        mapToWGeometry.connectTo(0,spatialFilterOperator,0);

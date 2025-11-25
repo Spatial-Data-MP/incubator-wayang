@@ -18,7 +18,7 @@
 
 package org.apache.wayang.java.mapping;
 
-import org.apache.wayang.basic.data.geometry.WGeometry;
+import org.apache.wayang.basic.data.WGeometry;
 import org.apache.wayang.basic.operators.SpatialFilterOperator;
 import org.apache.wayang.core.mapping.*;
 import org.apache.wayang.java.operators.JavaSpatialFilterOperator;

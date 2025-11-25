@@ -19,25 +19,11 @@
 package org.apache.wayang.java.operators;
 
 import org.apache.wayang.basic.data.Record;
-import org.apache.wayang.basic.data.Record;
-import org.apache.wayang.basic.operators.LocalCallbackSink;
-import org.apache.wayang.basic.operators.MapOperator;
-import org.apache.wayang.basic.operators.TableSource;
-import org.apache.wayang.core.api.Configuration;
-import org.apache.wayang.core.api.WayangContext;
-import org.apache.wayang.core.plan.wayangplan.WayangPlan;
-import org.apache.wayang.java.Java;
+import org.apache.wayang.basic.data.WGeometry;
 import org.apache.wayang.java.channels.JavaChannelInstance;
-//import org.apache.wayang.postgres.Postgres;
-//import org.apache.wayang.postgres.operators.PostgresTableSource;
 import org.junit.jupiter.api.Test;
-import org.locationtech.jts.geom.Coordinate;
-import org.locationtech.jts.geom.Envelope;
-import org.locationtech.jts.geom.Geometry;
-import org.locationtech.jts.geom.GeometryFactory;
+import org.locationtech.jts.geom.*;
 
-import java.util.ArrayList;
-import java.util.Collection;
 import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -51,7 +37,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 class JavaSpatialFilterOperatorTest extends JavaExecutionOperatorTestBase {
 
     @Test
-    void testExecution() {
+    void testExecutionIntersects() {
         GeometryFactory geometryFactory = new GeometryFactory();
         Envelope envelope = new Envelope(0.00, 0.2, 0.00, 0.20);
         Geometry queryGeometry = geometryFactory.toGeometry(envelope);
@@ -66,7 +52,7 @@ class JavaSpatialFilterOperatorTest extends JavaExecutionOperatorTestBase {
                 new JavaSpatialFilterOperator(
                         "INTERSECTS",
                         1,
-                        queryGeometry
+                        WGeometry.fromGeometry(queryGeometry)
                 );
 
         JavaChannelInstance[] inputs = new JavaChannelInstance[]{createStreamChannelInstance(inputStream)};
@@ -78,16 +64,233 @@ class JavaSpatialFilterOperatorTest extends JavaExecutionOperatorTestBase {
         assertEquals(asList(hits, boundary), result);
     }
 
-//    @Test
-//    void testConnect() {
+    @Test
+    void testContains() {
+        GeometryFactory gf = new GeometryFactory();
 
-//
-//    }
+        // Reference: small square [0,1] x [0,1]
+        Geometry reference = gf.toGeometry(new Envelope(0.0, 1.0, 0.0, 1.0));
+
+        // Candidate 1 strictly contains reference
+        Geometry contains = gf.toGeometry(new Envelope(-1.0, 2.0, -1.0, 2.0));
+        // Candidate 2 is inside reference (does not contain it)
+        Geometry inside = gf.toGeometry(new Envelope(0.25, 0.75, 0.25, 0.75));
+        // Candidate 3 is disjoint
+        Geometry disjoint = gf.toGeometry(new Envelope(2.0, 3.0, 2.0, 3.0));
+
+        Record rContains = createRecord(1, contains);
+        Record rInside = createRecord(2, inside);
+        Record rDisjoint = createRecord(3, disjoint);
+
+        Stream<Record> input = Stream.of(rContains, rInside, rDisjoint);
+
+        JavaSpatialFilterOperator op =
+                new JavaSpatialFilterOperator("CONTAINS", 1, WGeometry.fromGeometry(reference));
+
+        JavaChannelInstance[] inputs = new JavaChannelInstance[]{createStreamChannelInstance(input)};
+        JavaChannelInstance[] outputs = new JavaChannelInstance[]{createStreamChannelInstance()};
+        evaluate(op, inputs, outputs);
+
+        List<Record> result = outputs[0].<Record>provideStream().collect(Collectors.toList());
+        // Only the geometry that strictly contains the reference should remain.
+        assertEquals(asList(rContains), result);
+    }
+
+    @Test
+    void testWithin() {
+        GeometryFactory gf = new GeometryFactory();
+
+        // Reference: big square [-1,2] x [-1,2]
+        Geometry reference = gf.toGeometry(new Envelope(-1.0, 2.0, -1.0, 2.0));
+
+        // Candidate 1: inside reference
+        Geometry inside = gf.toGeometry(new Envelope(0.0, 1.0, 0.0, 1.0));
+        // Candidate 2: outside reference
+        Geometry outside = gf.toGeometry(new Envelope(3.0, 4.0, 3.0, 4.0));
+
+        Record rInside = createRecordWithWGeometry(1, inside);  // store as WGeometry to exercise that path
+        Record rOutside = createRecordWithWGeometry(2, outside);
+
+        Stream<Record> input = Stream.of(rInside, rOutside);
+
+        JavaSpatialFilterOperator op =
+                new JavaSpatialFilterOperator("WITHIN", 1, WGeometry.fromGeometry(reference));
+
+        JavaChannelInstance[] inputs = new JavaChannelInstance[]{createStreamChannelInstance(input)};
+        JavaChannelInstance[] outputs = new JavaChannelInstance[]{createStreamChannelInstance()};
+        evaluate(op, inputs, outputs);
+
+        List<Record> result = outputs[0].<Record>provideStream().collect(Collectors.toList());
+        assertEquals(asList(rInside), result);
+    }
+
+    @Test
+    void testTouches() {
+        GeometryFactory gf = new GeometryFactory();
+
+        // Reference: square [0,1] x [0,1]
+        Geometry reference = gf.toGeometry(new Envelope(0.0, 1.0, 0.0, 1.0));
+
+        // Candidate 1: adjacent square [1,2] x [0,1], sharing the vertical edge x=1
+        Geometry touching = gf.toGeometry(new Envelope(1.0, 2.0, 0.0, 1.0));
+        // Candidate 2: separate square [2,3] x [0,1]
+        Geometry nonTouching = gf.toGeometry(new Envelope(2.0, 3.0, 0.0, 1.0));
+        // Candidate 3: overlapping/intersecting square [-0.5,0.5] x [0,1] (touches+overlaps, but intersects interior)
+        Geometry overlapping = gf.toGeometry(new Envelope(-0.5, 0.5, 0.0, 1.0));
+
+        Record rTouching = createRecord(1, touching);
+        Record rNonTouching = createRecord(2, nonTouching);
+        Record rOverlapping = createRecord(3, overlapping);
+
+        Stream<Record> input = Stream.of(rTouching, rNonTouching, rOverlapping);
+
+        JavaSpatialFilterOperator op =
+                new JavaSpatialFilterOperator("TOUCHES", 1, WGeometry.fromGeometry(reference));
+
+        JavaChannelInstance[] inputs = new JavaChannelInstance[]{createStreamChannelInstance(input)};
+        JavaChannelInstance[] outputs = new JavaChannelInstance[]{createStreamChannelInstance()};
+        evaluate(op, inputs, outputs);
+
+        List<Record> result = outputs[0].<Record>provideStream().collect(Collectors.toList());
+        // Only the purely touching geometry should remain.
+        assertEquals(asList(rTouching), result);
+    }
+
+    @Test
+    void testOverlaps() {
+        GeometryFactory gf = new GeometryFactory();
+
+        // Reference: rectangle [0,2] x [0,2]
+        Geometry reference = gf.toGeometry(new Envelope(0.0, 2.0, 0.0, 2.0));
+
+        // Candidate 1: overlapping rectangle [1,3] x [0,2]
+        Geometry overlapping = gf.toGeometry(new Envelope(1.0, 3.0, 0.0, 2.0));
+        // Candidate 2: containing rectangle [-1,3] x [-1,3] (contains, not overlaps)
+        Geometry containing = gf.toGeometry(new Envelope(-1.0, 3.0, -1.0, 3.0));
+        // Candidate 3: disjoint rectangle [3,4] x [0,1]
+        Geometry disjoint = gf.toGeometry(new Envelope(3.0, 4.0, 0.0, 1.0));
+
+        Record rOverlapping = createRecord(1, overlapping);
+        Record rContaining = createRecord(2, containing);
+        Record rDisjoint = createRecord(3, disjoint);
+
+        Stream<Record> input = Stream.of(rOverlapping, rContaining, rDisjoint);
+
+        JavaSpatialFilterOperator op =
+                new JavaSpatialFilterOperator("OVERLAPS", 1, WGeometry.fromGeometry(reference));
+
+        JavaChannelInstance[] inputs = new JavaChannelInstance[]{createStreamChannelInstance(input)};
+        JavaChannelInstance[] outputs = new JavaChannelInstance[]{createStreamChannelInstance()};
+        evaluate(op, inputs, outputs);
+
+        List<Record> result = outputs[0].<Record>provideStream().collect(Collectors.toList());
+        assertEquals(asList(rOverlapping), result);
+    }
+
+    @Test
+    void testCrosses() {
+        GeometryFactory gf = new GeometryFactory();
+
+        // Reference: square [0,1] x [0,1]
+        Geometry reference = gf.toGeometry(new Envelope(0.0, 1.0, 0.0, 1.0));
+
+        // Candidate 1: horizontal line crossing the square at y=0.5
+        Coordinate[] coordsCrossing = new Coordinate[]{
+                new Coordinate(-1.0, 0.5),
+                new Coordinate(2.0, 0.5)
+        };
+        LineString crossingLine = gf.createLineString(coordsCrossing);
+
+        // Candidate 2: horizontal line above the square
+        Coordinate[] coordsNonCrossing = new Coordinate[]{
+                new Coordinate(-1.0, 2.0),
+                new Coordinate(2.0, 2.0)
+        };
+        LineString nonCrossingLine = gf.createLineString(coordsNonCrossing);
+
+        Record rCrossing = createRecord(1, crossingLine);
+        Record rNonCrossing = createRecord(2, nonCrossingLine);
+
+        Stream<Record> input = Stream.of(rCrossing, rNonCrossing);
+
+        JavaSpatialFilterOperator op =
+                new JavaSpatialFilterOperator("CROSSES", 1, WGeometry.fromGeometry(reference));
+
+        JavaChannelInstance[] inputs = new JavaChannelInstance[]{createStreamChannelInstance(input)};
+        JavaChannelInstance[] outputs = new JavaChannelInstance[]{createStreamChannelInstance()};
+        evaluate(op, inputs, outputs);
+
+        List<Record> result = outputs[0].<Record>provideStream().collect(Collectors.toList());
+        assertEquals(asList(rCrossing), result);
+    }
+
+    @Test
+    void testDisjoint() {
+        GeometryFactory gf = new GeometryFactory();
+
+        // Reference: square [0,1] x [0,1]
+        Geometry reference = gf.toGeometry(new Envelope(0.0, 1.0, 0.0, 1.0));
+
+        // Candidate 1: disjoint square [2,3] x [2,3]
+        Geometry disjoint = gf.toGeometry(new Envelope(2.0, 3.0, 2.0, 3.0));
+        // Candidate 2: intersecting square [0.5,1.5] x [0.5,1.5]
+        Geometry intersecting = gf.toGeometry(new Envelope(0.5, 1.5, 0.5, 1.5));
+
+        Record rDisjoint = createRecord(1, disjoint);
+        Record rIntersecting = createRecord(2, intersecting);
+
+        Stream<Record> input = Stream.of(rDisjoint, rIntersecting);
+
+        JavaSpatialFilterOperator op =
+                new JavaSpatialFilterOperator("DISJOINT", 1, WGeometry.fromGeometry(reference));
+
+        JavaChannelInstance[] inputs = new JavaChannelInstance[]{createStreamChannelInstance(input)};
+        JavaChannelInstance[] outputs = new JavaChannelInstance[]{createStreamChannelInstance()};
+        evaluate(op, inputs, outputs);
+
+        List<Record> result = outputs[0].<Record>provideStream().collect(Collectors.toList());
+        assertEquals(asList(rDisjoint), result);
+    }
+
+    @Test
+    void testEqualsTopo() {
+        GeometryFactory gf = new GeometryFactory();
+
+        // Reference: square [0,1] x [0,1]
+        Geometry reference = gf.toGeometry(new Envelope(0.0, 1.0, 0.0, 1.0));
+
+        // Candidate 1: same square (topologically equal)
+        Geometry same = gf.toGeometry(new Envelope(0.0, 1.0, 0.0, 1.0));
+        // Candidate 2: different square
+        Geometry different = gf.toGeometry(new Envelope(0.0, 2.0, 0.0, 1.0));
+
+        Record rSame = createRecord(1, same);
+        Record rDifferent = createRecord(2, different);
+
+        Stream<Record> input = Stream.of(rSame, rDifferent);
+
+        JavaSpatialFilterOperator op =
+                new JavaSpatialFilterOperator("EQUALS", 1, WGeometry.fromGeometry(reference));
+
+        JavaChannelInstance[] inputs = new JavaChannelInstance[]{createStreamChannelInstance(input)};
+        JavaChannelInstance[] outputs = new JavaChannelInstance[]{createStreamChannelInstance()};
+        evaluate(op, inputs, outputs);
+
+        List<Record> result = outputs[0].<Record>provideStream().collect(Collectors.toList());
+        assertEquals(asList(rSame), result);
+    }
 
     private static Record createRecord(Object id, Geometry geometry) {
         Record record = new Record();
         record.addField(id);
         record.addField(geometry);
+        return record;
+    }
+
+    private static Record createRecordWithWGeometry(Object id, Geometry geometry) {
+        Record record = new Record();
+        record.addField(id);
+        record.addField(WGeometry.fromGeometry(geometry));
         return record;
     }
 }

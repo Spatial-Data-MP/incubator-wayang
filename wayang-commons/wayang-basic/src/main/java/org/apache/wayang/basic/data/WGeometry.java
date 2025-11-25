@@ -1,4 +1,4 @@
-package org.apache.wayang.basic.data.geometry;
+package org.apache.wayang.basic.data;
 
 import org.locationtech.jts.geom.Geometry;
 import org.locationtech.jts.geom.GeometryFactory;
@@ -48,6 +48,25 @@ public class WGeometry implements Serializable {
 
         return wg;
     }
+
+    /**
+     * Create WGeometry from an existing JTS Geometry object.
+     * The geometry is stored, and all other formats (WKT/WKB/GeoJSON)
+     * are generated lazily when their getters are called.
+     *
+     * @param geometry JTS Geometry instance
+     * @return WGeometry wrapper
+     */
+    public static WGeometry fromGeometry(Geometry geometry) {
+        if (geometry == null) {
+            throw new IllegalArgumentException("Geometry must not be null.");
+        }
+        WGeometry wg = new WGeometry();
+        wg.data.put("geometry", geometry);
+        return wg;
+    }
+
+
 
     /**
      * Get the geometry as WKT. If WKT is not yet available, it is

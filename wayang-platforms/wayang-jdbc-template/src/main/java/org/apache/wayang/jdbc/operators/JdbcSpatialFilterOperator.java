@@ -18,7 +18,7 @@
 
 package org.apache.wayang.jdbc.operators;
 
-import org.apache.wayang.basic.data.geometry.WGeometry;
+import org.apache.wayang.basic.data.WGeometry;
 import org.apache.wayang.basic.operators.FilterOperator;
 import org.apache.wayang.basic.operators.SpatialFilterOperator;
 import org.apache.wayang.core.types.BasicDataUnitType;
@@ -64,10 +64,9 @@ public abstract class JdbcSpatialFilterOperator extends SpatialFilterOperator im
 
         // Geometry literal as ST_GeomFromText('WKT', srid)
         final String wkt = this.referenceGeometry.getWKT();
-//        final int srid = this.geometry.getSRID();
+        // TODO: Check which SRID to use.
         final int srid = 4326;
 
-        // TODO: Check which SRID to use.
         final String geomLiteral;
         if (srid > 0) {
             geomLiteral = String.format("ST_GeomFromText('%s', %d)", wkt, srid);
@@ -75,43 +74,16 @@ public abstract class JdbcSpatialFilterOperator extends SpatialFilterOperator im
             geomLiteral = String.format("ST_GeomFromText('%s')", wkt);
         }
 
-        // Map the Java-level spatial filter type to the corresponding SQL function.
-//        final String op = this.filterType == null
-//                ? "INTERSECTS"
-//                : this.filterType.toUpperCase(Locale.ROOT);
-        String op = this.filterType;
-
-        switch (op) {
-            case "INTERSECTS":
-                return String.format("ST_Intersects(%s, %s)", columnExpr, geomLiteral);
-
-            case "CONTAINS":
-                return String.format("ST_Contains(%s, %s)", columnExpr, geomLiteral);
-
-            case "WITHIN":
-                return String.format("ST_Within(%s, %s)", columnExpr, geomLiteral);
-
-            case "TOUCHES":
-                return String.format("ST_Touches(%s, %s)", columnExpr, geomLiteral);
-
-            case "OVERLAPS":
-                return String.format("ST_Overlaps(%s, %s)", columnExpr, geomLiteral);
-
-            case "CROSSES":
-                return String.format("ST_Crosses(%s, %s)", columnExpr, geomLiteral);
-
-            case "DISJOINT":
-                return String.format("ST_Disjoint(%s, %s)", columnExpr, geomLiteral);
-
-            case "EQUALS":
-                return String.format("ST_Equals(%s, %s)", columnExpr, geomLiteral);
-
-            default:
-                throw new UnsupportedOperationException(
-                        "Unsupported spatial filter type for JDBC: " + this.filterType
-                );
+        // Use the SpatialRelation to generate the SQL instead of a switch.
+        // If you allow null filterType → default to INTERSECTS, that should be
+        // handled when initializing `relation` in SpatialFilterOperator.
+        if (this.relation == null) {
+            throw new IllegalStateException("Spatial relation must not be null.");
         }
+
+        return this.relation.toSql(columnExpr, geomLiteral);
     }
+
 
 
     @Override

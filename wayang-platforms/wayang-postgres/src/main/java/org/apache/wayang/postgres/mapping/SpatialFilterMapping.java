@@ -18,7 +18,7 @@
 
 package org.apache.wayang.postgres.mapping;
 
-import org.apache.wayang.basic.data.geometry.WGeometry;
+import org.apache.wayang.basic.data.WGeometry;
 import org.apache.wayang.core.mapping.*;
 import org.apache.wayang.postgres.operators.PostgresSpatialFilterOperator;
 import org.apache.wayang.postgres.platform.PostgresPlatform;
