@@ -29,6 +29,9 @@ import org.apache.wayang.core.platform.ChannelDescriptor;
 import org.apache.wayang.core.platform.ChannelInstance;
 import org.apache.wayang.core.platform.lineage.ExecutionLineageNode;
 import org.apache.wayang.core.util.Tuple;
+import org.apache.wayang.java.channels.JavaChannelInstance;
+import org.apache.wayang.java.channels.StreamChannel;
+import org.apache.wayang.java.execution.JavaExecutor;
 import org.apache.wayang.spark.channels.BroadcastChannel;
 import org.apache.wayang.spark.channels.RddChannel;
 import org.apache.wayang.spark.execution.SparkExecutor;
@@ -42,6 +45,7 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
+import java.util.function.Predicate;
 
 /**
  * Spark implementation of the {@link SpatialFilterOperator}.
@@ -72,81 +76,37 @@ public class SparkSpatialFilterOperator
     }
 
     @Override
-    @SuppressWarnings("unchecked")
-    public Tuple<Collection<ExecutionLineageNode>, Collection<ChannelInstance>> evaluate(
-            ChannelInstance[] inputs,
-            ChannelInstance[] outputs,
-            SparkExecutor sparkExecutor,
-            OptimizationContext.OperatorContext operatorContext) {
-        assert inputs.length == this.getNumInputs();
-        assert outputs.length == this.getNumOutputs();
-
-        final Function<Record, Boolean> spatialPredicate = this.createSpatialPredicate();
-        final JavaRDD<Record> inputRdd = ((RddChannel.Instance) inputs[0]).provideRdd();
-        final JavaRDD<Record> outputRdd = inputRdd.filter(spatialPredicate);
-        this.name(outputRdd);
-        ((RddChannel.Instance) outputs[0]).accept(outputRdd, sparkExecutor);
+    public Tuple<Collection<ExecutionLineageNode>, Collection<ChannelInstance>> evaluate(ChannelInstance[] inputs, ChannelInstance[] outputs, SparkExecutor sparkExecutor, OptimizationContext.OperatorContext operatorContext) {
+        final Predicate<Record> filterPredicate = this.buildSpatialPredicate();
+        ((StreamChannel.Instance) outputs[0]).accept(
+                ((JavaChannelInstance) inputs[0]).<Record>provideStream().filter(filterPredicate)
+        );
 
         return ExecutionOperator.modelLazyExecution(inputs, outputs, operatorContext);
+
     }
 
-    private Function<Record, Boolean> createSpatialPredicate() {
-        final String filter = this.filterType;
-        final int columnIndex = this.geometryColumnIndex;
+    private Predicate<Record> buildSpatialPredicate() {
         final Geometry reference = this.referenceGeometry.getGeometry();
 
         return record -> {
-            if (reference == null) {
-                return false;
-            }
-            final Geometry candidate = extractGeometry(record, columnIndex);
+            Geometry candidate = this.extractGeometry(record);
             if (candidate == null) {
                 return false;
             }
-            switch (filter) {
-                case "INTERSECTS":
-                    return candidate.intersects(reference);
-                case "CONTAINS":
-                    return candidate.contains(reference);
-                case "WITHIN":
-                    return candidate.within(reference);
-                default:
-                    throw new IllegalArgumentException("Unsupported spatial filter type: " + filter);
-            }
+            return this.relation.test(candidate, reference);
         };
     }
 
-    private static Geometry extractGeometry(Record record, int columnIndex) {
-        final Object field = record.getField(columnIndex);
-        if (field == null) {
-            return null;
-        }
+    private Geometry extractGeometry(org.apache.wayang.basic.data.Record record) {
+        final Object field = record.getField(this.geometryColumnIndex);
 
+        // Code to convert
         if (field instanceof WGeometry) {
             return ((WGeometry) field).getGeometry();
-        } else if (field instanceof Geometry) {
-            return (Geometry) field;
-        } else if (field instanceof PGobject) {
-            final PGobject pgObject = (PGobject) field;
-            final String value = pgObject.getValue();
-            if (value == null) {
-                return null;
-            }
-            try {
-                return (new WKBReader()).read(DatatypeConverter.parseHexBinary(value));
-            } catch (ParseException e) {
-                throw new RuntimeException(e);
-            }
-        } else if (field instanceof String) {
-            try {
-                return (new WKBReader()).read(DatatypeConverter.parseHexBinary((String) field));
-            } catch (ParseException e) {
-                throw new RuntimeException(e);
-            }
+        } else {
+            return WGeometry.fromStringInput((String) (field.toString())).getGeometry();
         }
-        throw new ClassCastException(
-                "Field at index " + columnIndex + " is not a Geometry-compatible value: " + field.getClass()
-        );
     }
 
     @Override
