@@ -25,6 +25,7 @@ import org.apache.wayang.java.channels.JavaChannelInstance;
 import org.junit.jupiter.api.Test;
 import org.locationtech.jts.geom.*;
 
+import java.net.URL;
 import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -279,6 +280,47 @@ class JavaSpatialFilterOperatorTest extends JavaExecutionOperatorTestBase {
 
         List<Record> result = outputs[0].<Record>provideStream().collect(Collectors.toList());
         assertEquals(asList(rSame), result);
+    }
+
+    @Test
+    void TestReadLocalCsv() {
+        final String testFileName = "/uniform.csv";
+
+        // Prepare the source.
+        final URL inputUrl = this.getClass().getResource(testFileName);
+        System.out.println("* " + inputUrl + " *");
+        final JavaTextFileSource source = new JavaTextFileSource(
+                inputUrl.toString());
+
+        // Execute.
+        final JavaChannelInstance[] inputs = new JavaChannelInstance[]{};
+        final JavaChannelInstance[] outputs = new JavaChannelInstance[]{createStreamChannelInstance()};
+
+        evaluate(source, inputs, outputs);
+
+        // Feed to spatial filter
+        Stream<Record> records = outputs[0].<String>provideStream()
+                .map(line -> {
+                    String[] tokens = line.split(",");
+                    double x = Double.parseDouble(tokens[0]);
+                    double y = Double.parseDouble(tokens[1]);
+                    GeometryFactory gf = new GeometryFactory();
+                    Point point = gf.createPoint(new Coordinate(x, y));
+                    return createRecord(line, point);
+                });
+    JavaSpatialFilterOperator filterOperator =
+            new JavaSpatialFilterOperator(
+                    SpatialRelation.INTERSECTS,
+                    1,
+                    WGeometry.fromGeometry(new GeometryFactory().toGeometry(new Envelope(0.4, 0.6, 0.4, 0.6)))
+            );
+    JavaChannelInstance[] filterInputs = new JavaChannelInstance[]{createStreamChannelInstance(records)};
+    JavaChannelInstance[] filterOutputs = new JavaChannelInstance[]{createStreamChannelInstance()};
+    evaluate(filterOperator, filterInputs, filterOutputs);
+
+    final List<Record> result = filterOutputs[0].<Record>provideStream().toList();
+    // There should be 2 points within the envelope
+    assertEquals(2, result.size());
     }
 
     private static Record createRecord(Object id, Geometry geometry) {
