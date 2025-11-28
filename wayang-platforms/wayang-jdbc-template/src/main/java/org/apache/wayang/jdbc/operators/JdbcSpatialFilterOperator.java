@@ -21,6 +21,7 @@ package org.apache.wayang.jdbc.operators;
 import org.apache.wayang.basic.data.WGeometry;
 import org.apache.wayang.basic.operators.FilterOperator;
 import org.apache.wayang.basic.operators.SpatialFilterOperator;
+import org.apache.wayang.core.function.FunctionDescriptor;
 import org.apache.wayang.core.function.SpatialRelation;
 import org.apache.wayang.core.types.BasicDataUnitType;
 import org.apache.wayang.jdbc.compiler.FunctionCompiler;
@@ -32,21 +33,22 @@ import java.sql.Connection;
 /**
  * Template for JDBC-based {@link FilterOperator}.
  */
-public abstract class JdbcSpatialFilterOperator extends SpatialFilterOperator implements JdbcExecutionOperator {
+public abstract class JdbcSpatialFilterOperator<Type> extends SpatialFilterOperator<Type> implements JdbcExecutionOperator {
 
     /**
      * Creates a new instance.
      *
      * @param relation the type of spatial filter (e.g., "INTERSECTS", "CONTAINS", "WITHIN")
      */
-    public JdbcSpatialFilterOperator(SpatialRelation relation, Integer columnIndex, WGeometry geometry) {
-        super(relation, columnIndex, geometry, /*, DataSetType.createDefault(Record.class)*/"");
-        if (this.geometryColumnIndex < 0) {
-            throw new IllegalArgumentException("Column index must be >= 0.");
-        }
+    public JdbcSpatialFilterOperator(SpatialRelation relation,
+                                     FunctionDescriptor.SerializableFunction<Type, WGeometry> keyExtractor,
+                                     Class<Type> inputClass,
+                                     WGeometry geometry,
+                                     String geometryColumnSqlName) {
+        super(relation, keyExtractor, inputClass, geometry, geometryColumnSqlName);
     }
 
-    public JdbcSpatialFilterOperator(SpatialFilterOperator that) {
+    public JdbcSpatialFilterOperator(SpatialFilterOperator<Type> that) {
         super(that);
     }
 
@@ -61,7 +63,8 @@ public abstract class JdbcSpatialFilterOperator extends SpatialFilterOperator im
         }
 
         // Column expression (e.g. "geom" or "t.geom")
-        final String columnExpr = this.geometryColumnSqlName;
+//        final String columnExpr = this.geometryColumnSqlName;
+        final String columnExpr = this.keyDescriptor.getSqlImplementation().getField1();
 
         // Geometry literal as ST_GeomFromText('WKT', srid)
         final String wkt = this.referenceGeometry.getWKT();

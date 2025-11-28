@@ -18,11 +18,15 @@
 
 package org.apache.wayang.spark.operators;
 
+import org.apache.sedona.core.spatialOperator.RangeQuery;
+import org.apache.sedona.core.spatialOperator.SpatialPredicate;
+import org.apache.sedona.core.spatialRDD.SpatialRDD;
 import org.apache.spark.api.java.JavaRDD;
 import org.apache.spark.api.java.function.Function;
 import org.apache.wayang.basic.data.Record;
 import org.apache.wayang.basic.data.WGeometry;
 import org.apache.wayang.basic.operators.SpatialFilterOperator;
+import org.apache.wayang.core.function.FunctionDescriptor;
 import org.apache.wayang.core.function.SpatialRelation;
 import org.apache.wayang.core.optimizer.OptimizationContext;
 import org.apache.wayang.core.plan.wayangplan.ExecutionOperator;
@@ -30,38 +34,39 @@ import org.apache.wayang.core.platform.ChannelDescriptor;
 import org.apache.wayang.core.platform.ChannelInstance;
 import org.apache.wayang.core.platform.lineage.ExecutionLineageNode;
 import org.apache.wayang.core.util.Tuple;
- import org.apache.wayang.spark.channels.BroadcastChannel;
+import org.apache.wayang.spark.channels.BroadcastChannel;
 import org.apache.wayang.spark.channels.RddChannel;
 import org.apache.wayang.spark.execution.SparkExecutor;
 import org.locationtech.jts.geom.Geometry;
-import org.locationtech.jts.io.ParseException;
-import org.locationtech.jts.io.WKBReader;
-import org.postgresql.util.PGobject;
 
-import javax.management.relation.RelationType;
-import javax.xml.bind.DatatypeConverter;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
+import java.util.Objects;
 
 /**
  * Spark implementation of the {@link SpatialFilterOperator}.
  */
-public class SparkSpatialFilterOperator
-        extends SpatialFilterOperator
+public class SparkSpatialFilterOperator<Type>
+        extends SpatialFilterOperator<Type>
         implements SparkExecutionOperator {
 
     /**
      * Creates a new instance.
      *
-     * @param filterType the type of spatial filter (e.g., "INTERSECTS", "CONTAINS", "WITHIN")
+     * @param relation the type of spatial filter (e.g., "INTERSECTS", "CONTAINS", "WITHIN")
+     *
      */
-    public SparkSpatialFilterOperator(SpatialRelation relation, Integer columnIndex, WGeometry geometry) {
-        super(relation, columnIndex, geometry, "");
-        if (this.geometryColumnIndex < 0) {
-            throw new IllegalArgumentException("Column index must be >= 0.");
-        }
+    public SparkSpatialFilterOperator(SpatialRelation relation,
+                                      FunctionDescriptor.SerializableFunction<Type, WGeometry> keyExtractor,
+                                      Class<Type> inputClass,
+                                      WGeometry geometry,
+                                      String geometryColumnSqlName) {
+        super(relation, keyExtractor, inputClass, geometry, "");
+//        if (this.geometryColumnIndex < 0) {
+//            throw new IllegalArgumentException("Column index must be >= 0.");
+//        }
     }
 
     /**
@@ -83,46 +88,72 @@ public class SparkSpatialFilterOperator
         assert inputs.length == this.getNumInputs();
         assert outputs.length == this.getNumOutputs();
 
-        final Function<Record, Boolean> spatialPredicate = this.createSpatialPredicate();
-        final JavaRDD<Record> inputRdd = ((RddChannel.Instance) inputs[0]).provideRdd();
-        final JavaRDD<Record> outputRdd = inputRdd.filter(spatialPredicate);
+        final Geometry reference = this.referenceGeometry == null ? null : this.referenceGeometry.getGeometry();
+        if (reference == null) {
+            throw new IllegalStateException("Reference geometry must not be null for spatial filtering.");
+        }
+
+        final JavaRDD<Type> inputRdd = ((RddChannel.Instance) inputs[0]).provideRdd();
+        final JavaRDD<Geometry> geometryRdd = inputRdd
+                .map((input -> ((WGeometry) keyDescriptor.getJavaImplementation().apply(input)).getGeometry()))
+                .filter(Objects::nonNull);
+
+        final SpatialRDD<Geometry> spatialRDD = new SpatialRDD<>();
+        spatialRDD.setRawSpatialRDD(geometryRdd);
+        spatialRDD.analyze();
+
+        final JavaRDD<Record> outputRdd = this.applySedonaSpatialFilter(spatialRDD, reference);
         this.name(outputRdd);
         ((RddChannel.Instance) outputs[0]).accept(outputRdd, sparkExecutor);
 
         return ExecutionOperator.modelLazyExecution(inputs, outputs, operatorContext);
     }
 
-    private Function<Record, Boolean> createSpatialPredicate() {
+    private JavaRDD<Record> applySedonaSpatialFilter(SpatialRDD<Geometry> spatialRDD, Geometry reference) {
+        final SpatialPredicate predicate = this.toSedonaPredicate(this.relation);
+        if (predicate == null) {
+            // Fallback to JTS if we cannot express the relation via Sedona.
+            return spatialRDD.getRawSpatialRDD()
+                    .filter(geom -> geom != null && this.relation.test(geom, reference))
+                    .map(geom -> (Record) geom.getUserData());
+        }
 
-//        final SpatialRelation relation = this.relation;
-//        final int columnIndex = this.geometryColumnIndex;
-//        final Geometry reference = this.referenceGeometry.getGeometry();
-
-        return (record -> true);
-//        return record -> {
-//            if (reference == null) {
-//                return false;
-//            }
-//            final Geometry candidate = extractGeometry(record, columnIndex);
-//            if (candidate == null) {
-//                return false;
-//            }
-//            return this.relation.test(candidate, reference);
-//        };
+        try {
+            final JavaRDD<Geometry> matched = RangeQuery.SpatialRangeQuery(spatialRDD, reference, predicate, false);
+            if (this.relation == SpatialRelation.DISJOINT) {
+                // Sedona does not expose DISJOINT directly; invert INTERSECTS results.
+                final JavaRDD<Record> intersecting = matched.map(geom -> (Record) geom.getUserData());
+                final JavaRDD<Record> all = spatialRDD.getRawSpatialRDD().map(geom -> (Record) geom.getUserData());
+                return all.subtract(intersecting);
+            }
+            return matched.map(geom -> (Record) geom.getUserData());
+        } catch (Exception e) {
+            throw new RuntimeException("Sedona range query failed for spatial filter.", e);
+        }
     }
-//
-//    private Geometry extractGeometry(Record record, int columnIndex) {
-//        final Object field = record.getField(this.geometryColumnIndex);
-//
-//        // Code to convert
-//        if (field instanceof WGeometry) {
-//            return ((WGeometry) field).getGeometry();
-//        }
-//        else
-//        {
-//            return WGeometry.fromStringInput((String) (field.toString())).getGeometry();
-//        }
-//    }
+
+    private SpatialPredicate toSedonaPredicate(SpatialRelation relation) {
+        switch (relation) {
+            case INTERSECTS:
+            case DISJOINT:
+                return SpatialPredicate.INTERSECTS;
+            case CONTAINS:
+                return SpatialPredicate.CONTAINS;
+            case WITHIN:
+                return SpatialPredicate.WITHIN;
+            case TOUCHES:
+                return SpatialPredicate.TOUCHES;
+            case OVERLAPS:
+                return SpatialPredicate.OVERLAPS;
+            case CROSSES:
+                return SpatialPredicate.CROSSES;
+            case EQUALS:
+                return SpatialPredicate.EQUALS;
+            default:
+                return null;
+        }
+    }
+
 
     @Override
     public String getLoadProfileEstimatorConfigurationKey() {

@@ -19,12 +19,14 @@ package org.apache.wayang.api.sql;
 
 import org.apache.wayang.basic.data.Record;
 //import org.apache.wayang.basic.data.SpatialRecord;
+import org.apache.wayang.basic.data.Tuple2;
 import org.apache.wayang.basic.data.WGeometry;
 import org.apache.wayang.basic.operators.*;
 import org.apache.wayang.core.api.Configuration;
 import org.apache.wayang.core.api.WayangContext;
 import org.apache.wayang.core.function.SpatialRelation;
 import org.apache.wayang.core.plan.wayangplan.WayangPlan;
+import org.apache.wayang.core.util.ReflectionUtils;
 import org.apache.wayang.java.Java;
 import org.apache.wayang.postgres.Postgres;
 import org.apache.wayang.postgres.operators.PostgresTableSource;
@@ -33,8 +35,11 @@ import org.junit.jupiter.api.Test;
 import org.locationtech.jts.geom.Envelope;
 import org.locationtech.jts.geom.Geometry;
 import org.locationtech.jts.geom.GeometryFactory;
+import org.locationtech.jts.io.geojson.GeoJsonReader;
 import org.postgresql.core.v3.QueryExecutorImpl;
 
+import java.io.File;
+import java.io.FileReader;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.logging.ConsoleHandler;
@@ -103,6 +108,23 @@ public class SqlTest {
     }
 
     @Test
+    void testGeoJson() {
+        GeoJsonReader reader = new GeoJsonReader();
+        // Read from file
+        try {
+            File file = new File("/Users/maximilianspeer/wayang/incubator-wayang/wayang-platforms/wayang-java/src/test/resources/geojson-sample.json");
+            FileReader fileReader = new FileReader(file);
+            char[] chars = new char[(int) file.length()];
+            fileReader.read(chars);
+            String geoJson = new String(chars);
+            org.locationtech.jts.geom.Geometry geometry = reader.read(geoJson);
+            System.out.println(geometry);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+    @Test
     void testSpatialFilterOperator() {
         WayangContext wayangContext = getTestWayangContext()
                 .withPlugin(Java.basicPlugin())
@@ -126,6 +148,23 @@ public class SqlTest {
         TableSource spider =
                 new PostgresTableSource("spider", "id", "geom");
 
+//        GeoJsonFileSource spiderFileSource =
+//                new GeoJsonFileSource("data/spider_points.geojson",
+//                        Record.class,
+//                        "id", "geom");
+//        MapOperator<WGeometry, Record> mapToRecord = new MapOperator<WGeometry, Record>(
+//                (wGeometry -> {
+//                    Object[] values = new Object[2];
+//                    values[0] = wGeometry.getAttribute();
+//                    values[1] = wGeometry;
+//                    return new Record(values);
+//                }),
+//                WGeometry.class,
+//                Record.class
+//        );
+//        spiderFileSource.connectTo(0, mapToRecord, 0);
+
+
 //        MapOperator<Record, SpatialRecord> mapToSpatial = new MapOperator<Record,SpatialRecord>(
 //                (record -> new SpatialRecord(record.getValues())), Record.class, SpatialRecord.class
 //        );
@@ -143,13 +182,25 @@ public class SqlTest {
 //                Record.class
 //        );
 
-        SpatialFilterOperator spatialFilterOperator = new SpatialFilterOperator(
+        MapOperator<Record, Tuple2<Integer, WGeometry>> mapToTuple = new MapOperator<Record, Tuple2<Integer, WGeometry>>(
+                record -> {
+                    Tuple2<Integer, WGeometry> tuple = new Tuple2<>();
+                    tuple.field0 = record.getInt(0);
+                    tuple.field1 = WGeometry.fromStringInput(record.getField(1).toString());
+                    return tuple;
+                },
+                Record.class,
+                ReflectionUtils.specify(Tuple2.class)
+        );
+
+        SpatialFilterOperator<Tuple2> spatialFilterOperator = new SpatialFilterOperator<Tuple2>(
                 SpatialRelation.INTERSECTS,
-                1,
+                Tuple2::getField0,
+                Tuple2.class,
                 WGeometry.fromStringInput("POLYGON((0.00 0.00,0.4 0.00,0.4 0.4,0.00 0.4,0.00 0.00))"),
                 "geom");
 
-        spatialFilterOperator.addTargetPlatform(Postgres.platform());
+        spatialFilterOperator.addTargetPlatform(Spark.platform());
 //        spider.connectTo(0,mapToWGeometry,0);
         spider.connectTo(0, spatialFilterOperator, 0);
 //        mapToWGeometry.connectTo(0,spatialFilterOperator,0);

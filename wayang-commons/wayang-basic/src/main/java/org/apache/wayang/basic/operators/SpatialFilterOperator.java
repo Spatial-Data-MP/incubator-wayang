@@ -19,8 +19,11 @@
 package org.apache.wayang.basic.operators;
 
 import org.apache.wayang.basic.data.Record;
+import org.apache.wayang.basic.data.Tuple2;
 import org.apache.wayang.basic.data.WGeometry;
+import org.apache.wayang.core.function.FunctionDescriptor;
 import org.apache.wayang.core.function.SpatialRelation;
+import org.apache.wayang.core.function.TransformationDescriptor;
 import org.apache.wayang.core.optimizer.OptimizationContext;
 import org.apache.wayang.core.optimizer.cardinality.CardinalityEstimate;
 import org.apache.wayang.core.plan.wayangplan.UnaryToUnaryOperator;
@@ -33,22 +36,35 @@ import java.util.Locale;
 /**
  * This operator returns a new dataset after filtering by applying predicateDescriptor.
  */
-public class SpatialFilterOperator extends UnaryToUnaryOperator<Record, Record> {
+public class SpatialFilterOperator<Type> extends UnaryToUnaryOperator<Type, Type> {
 
 
     protected final SpatialRelation relation;
-    protected final int geometryColumnIndex;
+//    protected final int geometryColumnIndex;
+    protected final TransformationDescriptor<Type, WGeometry> keyDescriptor;
     protected final WGeometry referenceGeometry;
     protected String geometryColumnSqlName;
 
     /**
-     * Creates a new instance.
+     * Creates a new instance.SpatialRelation relation,
+     *                                  FunctionDescriptor.SerializableFunction<Type, WGeometry> keyExtractor,
+     *                                  Class<Type> inputClass,
+     *                                  WGeometry geometry,
+     *                                  String geometryColumnSqlName
      */
-    public SpatialFilterOperator(SpatialRelation relation, Integer columnIndex, WGeometry geometry, String geometryColumnSqlName) {
-        super(DataSetType.createDefault(Record.class), DataSetType.createDefault(Record.class), true);
+    public SpatialFilterOperator(SpatialRelation relation,
+                                 FunctionDescriptor.SerializableFunction<Type, WGeometry> keyExtractor,
+                                 Class<Type> inputClass,
+                                 WGeometry geometry,
+                                 String geometryColumnSqlName) {
+        super(DataSetType.createDefault(inputClass),
+                DataSetType.createDefault(inputClass), true);
+        // TODO: Find out what broadcast means
         this.relation = relation;
-        this.geometryColumnIndex = columnIndex == null ? 0 : columnIndex;
+        //this.geometryColumnIndex = columnIndex == null ? 0 : columnIndex;
 //        this.referenceGeometry = Objects.requireNonNull(geometry, "Reference geometry must not be null.");
+        this.keyDescriptor = new TransformationDescriptor<>(keyExtractor, inputClass, WGeometry.class);
+        this.keyDescriptor.withSqlImplementation("spider", geometryColumnSqlName);
         this.referenceGeometry = geometry;
         this.geometryColumnSqlName = geometryColumnSqlName;
     }
@@ -58,10 +74,11 @@ public class SpatialFilterOperator extends UnaryToUnaryOperator<Record, Record> 
      *
      * @param that that should be copied
      */
-    public SpatialFilterOperator(SpatialFilterOperator that) {
+    public SpatialFilterOperator(SpatialFilterOperator<Type> that) {
         super(that);
         this.relation = that.relation;
-        this.geometryColumnIndex = that.geometryColumnIndex;
+//        this.geometryColumnIndex = that.geometryColumnIndex;
+        this.keyDescriptor = that.keyDescriptor;
         this.referenceGeometry = that.referenceGeometry;
         this.geometryColumnSqlName = that.geometryColumnSqlName;
     }

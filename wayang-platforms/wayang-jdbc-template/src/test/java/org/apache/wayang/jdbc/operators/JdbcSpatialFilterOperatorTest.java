@@ -18,9 +18,11 @@
 
 package org.apache.wayang.jdbc.operators;
 
+import org.apache.wayang.basic.data.Record;
 import org.apache.wayang.basic.data.WGeometry;
 import org.apache.wayang.core.api.Configuration;
 import org.apache.wayang.core.api.Job;
+import org.apache.wayang.core.function.FunctionDescriptor;
 import org.apache.wayang.core.function.SpatialRelation;
 import org.apache.wayang.core.optimizer.DefaultOptimizationContext;
 import org.apache.wayang.core.plan.executionplan.ExecutionStage;
@@ -58,16 +60,18 @@ class JdbcSpatialFilterOperatorTest extends OperatorTestBase {
      * Minimal concrete subclass that lets us set the SQL geometry column name and platform.
      * This reuses the generic {@link JdbcSpatialFilterOperator} logic.
      */
-    private static class TestJdbcSpatialFilterOperator extends JdbcSpatialFilterOperator {
+    private static class TestJdbcSpatialFilterOperator<Type> extends JdbcSpatialFilterOperator<Type> {
 
         private final Platform platform;
 
         TestJdbcSpatialFilterOperator(SpatialRelation relation,
-                                      int columnIndex,
+                                      FunctionDescriptor.SerializableFunction<Type, WGeometry> keyExtractor,
+                                      Class<Type> inputClass,
                                       WGeometry geometry,
                                       String geometryColumnSqlName,
-                                      Platform platform) {
-            super(relation, columnIndex, geometry);
+                                      Platform platform
+        ) {
+            super(relation, keyExtractor, inputClass, geometry, geometryColumnSqlName);
             this.geometryColumnSqlName = geometryColumnSqlName;
             this.platform = platform;
         }
@@ -118,13 +122,14 @@ class JdbcSpatialFilterOperatorTest extends OperatorTestBase {
 
         // Spatial filter: INTERSECTS on column "geom".
         ExecutionOperator spatialFilterOperator =
-                new TestJdbcSpatialFilterOperator(
+                new TestJdbcSpatialFilterOperator<Record>(
                         SpatialRelation.INTERSECTS,
-                        1,
+                        (record -> WGeometry.fromStringInput((String) record.getField(1))),
+                        Record.class,
                         wGeometry,
                         "geom",
                         HsqldbPlatform.getInstance()
-                );
+                ) {};
 
         ExecutionTask spatialFilterTask = new ExecutionTask(spatialFilterOperator);
         // Wire table source → spatial filter.

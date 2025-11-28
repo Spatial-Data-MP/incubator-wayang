@@ -48,7 +48,8 @@ public class SpatialFilterMapping implements Mapping {
 
     private SubplanPattern createSubplanPattern() {
         final OperatorPattern<SpatialFilterOperator> operatorPattern = new OperatorPattern<>(
-                "spatialFilter", new SpatialFilterOperator((SpatialRelation) null, (Integer) null, (WGeometry) null, ""), false
+                // TODO: add types
+                "spatialFilter", new SpatialFilterOperator(null, null, null, null,""), false
         )/*.withAdditionalTest(op -> op.getPredicateDescriptor().getSqlImplementation() != null)*/;
         return SubplanPattern.createSingleton(operatorPattern);
     }

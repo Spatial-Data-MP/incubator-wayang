@@ -262,3 +262,8 @@ limitations under the License.
 
 ## Acknowledgements
 The [Logo](http://wayang.apache.org/assets/img/logo/Apache_Wayang/Apache_Wayang.pdf) was donated by Brian Vera.
+
+
+## Sedona
+brew install geos
+pip install apache-sedona

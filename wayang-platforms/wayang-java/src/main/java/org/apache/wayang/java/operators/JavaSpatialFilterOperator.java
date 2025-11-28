@@ -19,8 +19,10 @@
 package org.apache.wayang.java.operators;
 
 import org.apache.wayang.basic.data.Record;
+import org.apache.wayang.basic.data.Tuple2;
 import org.apache.wayang.basic.data.WGeometry;
 import org.apache.wayang.basic.operators.SpatialFilterOperator;
+import org.apache.wayang.core.function.FunctionDescriptor;
 import org.apache.wayang.core.function.SpatialRelation;
 import org.apache.wayang.core.optimizer.OptimizationContext;
 import org.apache.wayang.core.plan.wayangplan.ExecutionOperator;
@@ -38,13 +40,15 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
+import java.util.function.Function;
 import java.util.function.Predicate;
+import java.util.stream.Stream;
 
 /**
  * Java implementation of the {@link SpatialFilterOperator}.
  */
-public class JavaSpatialFilterOperator
-        extends SpatialFilterOperator
+public class JavaSpatialFilterOperator<Type>
+        extends SpatialFilterOperator<Type>
         implements JavaExecutionOperator {
 
     /**
@@ -52,14 +56,18 @@ public class JavaSpatialFilterOperator
      *
      * @param relation the type of spatial filter (e.g., "INTERSECTS", "CONTAINS", "WITHIN")
      */
-    public JavaSpatialFilterOperator(SpatialRelation relation, Integer columnIndex, WGeometry geometry) {
-        super(relation, columnIndex, geometry, /*, DataSetType.createDefault(Record.class)*/"");
-        if (this.geometryColumnIndex < 0) {
+    public JavaSpatialFilterOperator(SpatialRelation relation,
+                                     FunctionDescriptor.SerializableFunction<Type, WGeometry> keyExtractor,
+                                     Class<Type> inputClass,
+                                     WGeometry geometry,
+                                     String geometryColumnSqlName) {
+        super(relation, keyExtractor, inputClass, geometry, geometryColumnSqlName);
+        /*if (this.geometryColumnIndex < 0) {
             throw new IllegalArgumentException("Column index must be >= 0.");
-        }
+        }*/
     }
 
-    public JavaSpatialFilterOperator(SpatialFilterOperator that) {
+    public JavaSpatialFilterOperator(SpatialFilterOperator<Type> that) {
         super(that);
     }
 
@@ -81,37 +89,45 @@ public class JavaSpatialFilterOperator
             JavaExecutor javaExecutor,
             OptimizationContext.OperatorContext operatorContext) {
 
-        final Predicate<Record> filterPredicate = this.buildSpatialPredicate();
+
+
+
+        final Predicate<Type> filterPredicate = this.buildSpatialPredicate(javaExecutor);
         ((StreamChannel.Instance) outputs[0]).accept(
-                ((JavaChannelInstance) inputs[0]).<Record>provideStream().filter(filterPredicate)
+                ((JavaChannelInstance) inputs[0]).<Type>provideStream().filter(filterPredicate)
         );
 
         return ExecutionOperator.modelLazyExecution(inputs, outputs, operatorContext);
     }
 
-    private Predicate<Record> buildSpatialPredicate() {
+    private Predicate<Type> buildSpatialPredicate(JavaExecutor javaExecutor) {
         final Geometry reference = this.referenceGeometry.getGeometry();
+        final Function<Type, WGeometry> keyExtractor = javaExecutor.getCompiler().compile(this.keyDescriptor);
 
-        return record -> {
-            Geometry candidate = this.extractGeometry(record);
-            if (candidate == null) {
-                return false;
-            }
-            return this.relation.test(candidate, reference);
+        return input -> {
+//            Geometry candidate = this.extractGeometry(record);
+            return this.relation.test(keyExtractor.apply(input).getGeometry(), reference);
+//            this.keyDescriptor.getJavaImplementation();
+//
+//            Geometry candidate = this.keyDescriptor.getJavaImplementation();
+//            if (candidate == null) {
+//                return false;
+//            }
+//            return this.relation.test(candidate, reference);
         };
     }
 
-    private Geometry extractGeometry(org.apache.wayang.basic.data.Record record) {
-        final Object field = record.getField(this.geometryColumnIndex);
-
-        // Code to convert
-        if (field instanceof WGeometry) {
-            return ((WGeometry) field).getGeometry();
-        }
-        else
-        {
-            return WGeometry.fromStringInput((String) (field.toString())).getGeometry();
-        }
+//    private Geometry extractGeometry(org.apache.wayang.basic.data.Record record) {
+//        final Object field = record.getField(this.geometryColumnIndex);
+//
+//        // Code to convert
+//        if (field instanceof WGeometry) {
+//            return ((WGeometry) field).getGeometry();
+//        }
+//        else
+//        {
+//            return WGeometry.fromStringInput((String) (field.toString())).getGeometry();
+//        }
 //
 //        if (field instanceof Geometry) {
 //            // Already a Geometry object
@@ -146,7 +162,7 @@ public class JavaSpatialFilterOperator
 //        } catch (ParseException e) {
 //            throw new RuntimeException(e);
 //        }
-    }
+//    }
 
 //    @Override
 //    public String getLoadProfileEstimatorConfigurationKey() {
