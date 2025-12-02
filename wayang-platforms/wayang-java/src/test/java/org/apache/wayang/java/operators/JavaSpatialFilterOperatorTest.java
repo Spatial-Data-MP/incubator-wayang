@@ -20,7 +20,7 @@ package org.apache.wayang.java.operators;
 
 import org.apache.wayang.basic.data.Record;
 import org.apache.wayang.basic.data.WGeometry;
-import org.apache.wayang.core.function.SpatialRelation;
+import org.apache.wayang.core.function.SpatialPredicate;
 import org.apache.wayang.core.types.DataSetType;
 import org.apache.wayang.java.channels.JavaChannelInstance;
 import org.junit.jupiter.api.Test;
@@ -52,7 +52,7 @@ class JavaSpatialFilterOperatorTest extends JavaExecutionOperatorTestBase {
         Stream<Record> inputStream = Stream.of(hits, misses, boundary);
 
         JavaSpatialFilterOperator<Record> filterOperator = createSpatialFilterOperator(
-                SpatialRelation.INTERSECTS,
+                SpatialPredicate.INTERSECTS,
                 WGeometry.fromGeometry(queryGeometry)
         );
 
@@ -86,7 +86,7 @@ class JavaSpatialFilterOperatorTest extends JavaExecutionOperatorTestBase {
         Stream<Record> input = Stream.of(rContains, rInside, rDisjoint);
 
         JavaSpatialFilterOperator<Record> op = createSpatialFilterOperator(
-                SpatialRelation.CONTAINS,
+                SpatialPredicate.CONTAINS,
                 WGeometry.fromGeometry(reference)
         );
 
@@ -117,7 +117,7 @@ class JavaSpatialFilterOperatorTest extends JavaExecutionOperatorTestBase {
         Stream<Record> input = Stream.of(rInside, rOutside);
 
         JavaSpatialFilterOperator<Record> op = createSpatialFilterOperator(
-                SpatialRelation.WITHIN,
+                SpatialPredicate.WITHIN,
                 WGeometry.fromGeometry(reference)
         );
 
@@ -150,7 +150,7 @@ class JavaSpatialFilterOperatorTest extends JavaExecutionOperatorTestBase {
         Stream<Record> input = Stream.of(rTouching, rNonTouching, rOverlapping);
 
         JavaSpatialFilterOperator<Record> op = createSpatialFilterOperator(
-                SpatialRelation.TOUCHES,
+                SpatialPredicate.TOUCHES,
                 WGeometry.fromGeometry(reference)
         );
 
@@ -184,7 +184,7 @@ class JavaSpatialFilterOperatorTest extends JavaExecutionOperatorTestBase {
         Stream<Record> input = Stream.of(rOverlapping, rContaining, rDisjoint);
 
         JavaSpatialFilterOperator<Record> op = createSpatialFilterOperator(
-                SpatialRelation.OVERLAPS,
+                SpatialPredicate.OVERLAPS,
                 WGeometry.fromGeometry(reference)
         );
 
@@ -223,7 +223,7 @@ class JavaSpatialFilterOperatorTest extends JavaExecutionOperatorTestBase {
         Stream<Record> input = Stream.of(rCrossing, rNonCrossing);
 
         JavaSpatialFilterOperator<Record> op = createSpatialFilterOperator(
-                SpatialRelation.CROSSES,
+                SpatialPredicate.CROSSES,
                 WGeometry.fromGeometry(reference)
         );
 
@@ -253,7 +253,7 @@ class JavaSpatialFilterOperatorTest extends JavaExecutionOperatorTestBase {
         Stream<Record> input = Stream.of(rDisjoint, rIntersecting);
 
         JavaSpatialFilterOperator<Record> op = createSpatialFilterOperator(
-                SpatialRelation.DISJOINT,
+                SpatialPredicate.DISJOINT,
                 WGeometry.fromGeometry(reference)
         );
 
@@ -283,7 +283,7 @@ class JavaSpatialFilterOperatorTest extends JavaExecutionOperatorTestBase {
         Stream<Record> input = Stream.of(rSame, rDifferent);
 
         JavaSpatialFilterOperator<Record> op = createSpatialFilterOperator(
-                SpatialRelation.EQUALS,
+                SpatialPredicate.EQUALS,
                 WGeometry.fromGeometry(reference)
         );
 
@@ -313,7 +313,7 @@ class JavaSpatialFilterOperatorTest extends JavaExecutionOperatorTestBase {
         // Feed to spatial filter
         JavaSpatialFilterOperator<Record> filterOperator =
                 createSpatialFilterOperator(
-                        SpatialRelation.WITHIN,
+                        SpatialPredicate.WITHIN,
                         WGeometry.fromGeometry(new GeometryFactory().toGeometry(new Envelope(-180, 180, -90, 90))),
                         0
                 );
@@ -353,7 +353,7 @@ class JavaSpatialFilterOperatorTest extends JavaExecutionOperatorTestBase {
                 });
         JavaSpatialFilterOperator<Record> filterOperator =
                 createSpatialFilterOperator(
-                        SpatialRelation.INTERSECTS,
+                        SpatialPredicate.INTERSECTS,
                         WGeometry.fromGeometry(new GeometryFactory().toGeometry(new Envelope(0.4, 0.6, 0.4, 0.6)))
                 );
         JavaChannelInstance[] filterInputs = new JavaChannelInstance[]{createStreamChannelInstance(records)};
@@ -365,7 +365,7 @@ class JavaSpatialFilterOperatorTest extends JavaExecutionOperatorTestBase {
         assertEquals(2, result.size());
     }
 
-    private static JavaSpatialFilterOperator<Record> createSpatialFilterOperator(SpatialRelation relation,
+    private static JavaSpatialFilterOperator<Record> createSpatialFilterOperator(SpatialPredicate relation,
                                                                                  WGeometry referenceGeometry) {
         return new JavaSpatialFilterOperator<>(
                 relation,
@@ -375,7 +375,7 @@ class JavaSpatialFilterOperatorTest extends JavaExecutionOperatorTestBase {
         );
     }
 
-    private static JavaSpatialFilterOperator<Record> createSpatialFilterOperator(SpatialRelation relation,
+    private static JavaSpatialFilterOperator<Record> createSpatialFilterOperator(SpatialPredicate relation,
                                                                                  WGeometry referenceGeometry,
                                                                                  int index) {
         return new JavaSpatialFilterOperator<>(

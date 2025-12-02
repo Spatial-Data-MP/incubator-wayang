@@ -5,7 +5,7 @@ import org.locationtech.jts.geom.Geometry;
 import java.util.Arrays;
 import java.util.function.BiPredicate;
 
-public enum SpatialRelation {
+public enum SpatialPredicate {
 
     INTERSECTS("INTERSECTS", "ST_Intersects", Geometry::intersects),
     CONTAINS("CONTAINS", "ST_Contains", Geometry::contains),
@@ -20,15 +20,15 @@ public enum SpatialRelation {
     private final String sqlFunctionName;
     private final BiPredicate<Geometry, Geometry> predicate;
 
-    SpatialRelation(String opName,
-                    String sqlFunctionName,
-                    BiPredicate<Geometry, Geometry> predicate) {
+    SpatialPredicate(String opName,
+                     String sqlFunctionName,
+                     BiPredicate<Geometry, Geometry> predicate) {
         this.opName = opName;
         this.sqlFunctionName = sqlFunctionName;
         this.predicate = predicate;
     }
 
-    public static SpatialRelation fromString(String opName) {
+    public static SpatialPredicate fromString(String opName) {
         return Arrays.stream(values())
                 .filter(r -> r.opName.equalsIgnoreCase(opName))
                 .findFirst()

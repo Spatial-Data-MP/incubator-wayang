@@ -36,13 +36,11 @@ import org.apache.wayang.core.optimizer.costs.LoadProfileEstimator
 import org.apache.wayang.core.plan.wayangplan._
 import org.apache.wayang.core.platform.Platform
 import org.apache.wayang.core.util.{Tuple => WayangTuple}
-import org.apache.wayang.basic.data.{Record, SpatialRecord, Tuple2 => WayangTuple2}
+import org.apache.wayang.basic.data.{WGeometry, Tuple2 => WayangTuple2}
 import org.apache.wayang.basic.model.{DLModel, DecisionTreeRegressionModel, LogisticRegressionModel}
 import org.apache.wayang.commons.util.profiledb.model.Experiment
 import com.google.protobuf.ByteString
 import org.apache.wayang.api.python.function._
-import org.apache.wayang.core.types.DataSetType
-import org.locationtech.jts.geom.{Envelope, Geometry, GeometryFactory}
 import org.tensorflow.ndarray.NdArray
 
 import scala.collection.JavaConversions
@@ -281,52 +279,27 @@ class DataQuanta[Out: ClassTag](val operator: ElementaryOperator, outputIndex: I
     filterOperator
   }
 
-//  def spatialFilterJava(udf: SerializablePredicate[Out],
-//                 sqlUdf: String = null,
-//                 selectivity: ProbabilisticDoubleInterval = null,
-//                 udfLoad: LoadProfileEstimator = null):
-  def spatialFilterJava(filterType: String = "INTERSECTS",
-                        column1Id: Integer = 1,
-                        geometry: Geometry,
-//                        column1: String = "col1",
-//                        column2: String = "col2",
-                        selectivity: ProbabilisticDoubleInterval = null,
-                        udfLoad: LoadProfileEstimator = null
-                       ): DataQuanta[Out] = {
+  /*def join[ThatOut: ClassTag, Key: ClassTag]
+  (thisKeyUdf: Out => Key,
+   that: DataQuanta[ThatOut],
+   thatKeyUdf: ThatOut => Key)
+  : DataQuanta[WayangTuple2[Out, ThatOut]] =
+    joinJava(toSerializableFunction(thisKeyUdf), that, toSerializableFunction(thatKeyUdf))
+*/
 
-//    val tag = classTag[Out]
-//    require(classOf[Record].isAssignableFrom(tag.runtimeClass),
-//      s"spatialFilterJava requires Record outputs but found ${tag.runtimeClass}")
+  def spatialFilter(keySelector: SerializableFunction[Out, WGeometry],
+                    spatialPredicate: SpatialPredicate,
+                    filterGeometry: WGeometry) = spatialFilterJava(keySelector, spatialPredicate, filterGeometry)
+
+  def spatialFilterJava(keySelector: SerializableFunction[Out, WGeometry],
+                        spatialPredicate: SpatialPredicate,
+                        filterGeometry: WGeometry): DataQuanta[Out ]= {
 
     val spatialFilterOperator = new SpatialFilterOperator(
-      filterType,column1Id,geometry, DataSetType.createDefault(classOf[SpatialRecord])
+      spatialPredicate, keySelector,  dataSetType[Out], filterGeometry
     )
-
     this.connectTo(spatialFilterOperator, 0)
     spatialFilterOperator
-
-
-//    val filterOperator = new FilterOperator(new PredicateDescriptor(
-//      predicate, this.output.getType.getDataUnitType.toBasicDataUnitType, selectivity, udfLoad
-//    ))
-
-    /// ### Concept
-//    GeometrySqlConverter.getSqlImplementationFor(geometry);
-
-    // SQL implementation
-//    filterOperator.getPredicateDescriptor.withSqlImplementation(
-//      "ST_Within(spider.geom, ST_MakeEnvelope(0.50, 0.00, 0.00, 0.50, 4326))"
-//    );
-
-
-    /// ### Concept
-//    filterOperator.getPredicateDescriptor.withSqlImplementation(
-//      filterType.getSql() + "("
-//        + col1.getSqlImplementation()            // column name or geometry sql expression
-//        + ", "
-//        + col2.getSqlImplementation()
-//    );
-
   }
 
   /**

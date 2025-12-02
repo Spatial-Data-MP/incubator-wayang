@@ -26,11 +26,12 @@ import java.util.function.{Consumer, IntUnaryOperator, Function => JavaFunction}
 import java.util.{Collection => JavaCollection}
 import org.apache.wayang.api.graph.{Edge, EdgeDataQuantaBuilder, EdgeDataQuantaBuilderDecorator}
 import org.apache.wayang.api.util.{DataQuantaBuilderCache, TypeTrap}
-import org.apache.wayang.basic.data.{Record, Tuple2 => RT2}
- import org.apache.wayang.basic.model.{DLModel, DecisionTreeRegressionModel, LogisticRegressionModel, Model}
+import org.apache.wayang.basic.data.{Record, WGeometry, Tuple2 => RT2}
+import org.apache.wayang.basic.model.{DLModel, DecisionTreeRegressionModel, LogisticRegressionModel, Model}
 import org.apache.wayang.basic.operators.{DLTrainingOperator, DecisionTreeRegressionOperator, GlobalReduceOperator, LinearSVCOperator, LocalCallbackSink, LogisticRegressionOperator, MapOperator, SampleOperator}
 import org.apache.wayang.commons.util.profiledb.model.Experiment
 import org.apache.wayang.core.function.FunctionDescriptor.{SerializableBiFunction, SerializableBinaryOperator, SerializableFunction, SerializableIntUnaryOperator, SerializablePredicate}
+import org.apache.wayang.core.function.SpatialPredicate
 import org.apache.wayang.core.optimizer.ProbabilisticDoubleInterval
 import org.apache.wayang.core.optimizer.cardinality.CardinalityEstimator
 import org.apache.wayang.core.optimizer.costs.{LoadEstimator, LoadProfile, LoadProfileEstimator}
@@ -41,6 +42,7 @@ import org.apache.wayang.core.util.{Logging, ReflectionUtils, WayangCollections,
 import org.apache.wayang.core.plan.wayangplan.OutputSlot
 import org.locationtech.jts.geom.Geometry
 
+import javax.xml.crypto.KeySelector
 import scala.collection.mutable.ListBuffer
 import scala.reflect.ClassTag
 
@@ -167,16 +169,10 @@ trait DataQuantaBuilder[+This <: DataQuantaBuilder[_, Out], Out] extends Logging
     */
   def filter(udf: SerializablePredicate[Out]) = new FilterDataQuantaBuilder(this, udf)
 
-  /**
-   * Feed the built [[DataQuanta]] into a [[org.apache.wayang.basic.operators.FilterOperator]].
-   *
-   * @param udf filter UDF
-   * @return a [[FilterDataQuantaBuilder]]
-   */
-//  def spatialFilter(udf: SerializablePredicate[Out]) = new SpatialFilterDataQuantaBuilder(this, udf)
-//  def spatialFilter[Key](spatialFilterType: String) = new SpatialFilterDataQuantaBuilder(this, spatialFilterType)
+  def spatialFilter(keyUdf: SerializableFunction[Out, WGeometry], spatialRelation: SpatialPredicate, filterGeometry: WGeometry) = new SpatialFilterDataQuantaBuilder(this, keyUdf, spatialRelation, filterGeometry)
 
-  def spatialFilter[Key](spatialFilterType: String, column1Id: Integer, geometry: Geometry) = new SpatialFilterDataQuantaBuilder(this, spatialFilterType, column1Id, geometry)
+  // TODO: support String input
+//  def spatialFilter(keyUdf: KeySelector, spatialRelation: SpatialPredicate, filterGeometryString: String) = new SpatialFilterDataQuantaBuilder(this, keyUdf, spatialRelation, filterGeometryString)
 
   /**
     * Feed the built [[DataQuanta]] into a [[org.apache.wayang.basic.operators.FlatMapOperator]].
@@ -858,11 +854,10 @@ class FilterDataQuantaBuilder[T](inputDataQuanta: DataQuantaBuilder[_, T], udf: 
 
 }
 
-
 class SpatialFilterDataQuantaBuilder[T](inputDataQuanta: DataQuantaBuilder[_, T],
-                                        spatialFilterType: String,
-                                        column1Id: Integer,
-                                        geometry: Geometry)
+                                        keySelector: SerializableFunction[T, WGeometry],
+                                        spatialPredicate: SpatialPredicate,
+                                        filterGeometry: WGeometry)
                                 (implicit javaPlanBuilder: JavaPlanBuilder)
   extends BasicDataQuantaBuilder[SpatialFilterDataQuantaBuilder[T], T] {
 
@@ -871,8 +866,8 @@ class SpatialFilterDataQuantaBuilder[T](inputDataQuanta: DataQuantaBuilder[_, T]
    *
    * @return the created and partially configured [[DataQuanta]]
    */
-  override protected def build: DataQuanta[T] = inputDataQuanta.dataQuanta().spatialFilterJava(
-    spatialFilterType, column1Id = column1Id, geometry = geometry
+  override protected def build = inputDataQuanta.dataQuanta().spatialFilterJava(
+    keySelector, spatialPredicate, filterGeometry
   )
 }
 

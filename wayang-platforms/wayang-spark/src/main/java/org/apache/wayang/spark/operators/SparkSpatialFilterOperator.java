@@ -19,15 +19,13 @@
 package org.apache.wayang.spark.operators;
 
 import org.apache.sedona.core.spatialOperator.RangeQuery;
-import org.apache.sedona.core.spatialOperator.SpatialPredicate;
 import org.apache.sedona.core.spatialRDD.SpatialRDD;
 import org.apache.spark.api.java.JavaRDD;
-import org.apache.spark.api.java.function.Function;
 import org.apache.wayang.basic.data.Record;
 import org.apache.wayang.basic.data.WGeometry;
 import org.apache.wayang.basic.operators.SpatialFilterOperator;
 import org.apache.wayang.core.function.FunctionDescriptor;
-import org.apache.wayang.core.function.SpatialRelation;
+import org.apache.wayang.core.function.SpatialPredicate;
 import org.apache.wayang.core.optimizer.OptimizationContext;
 import org.apache.wayang.core.plan.wayangplan.ExecutionOperator;
 import org.apache.wayang.core.platform.ChannelDescriptor;
@@ -59,7 +57,7 @@ public class SparkSpatialFilterOperator<Type>
      * @param relation the type of spatial filter (e.g., "INTERSECTS", "CONTAINS", "WITHIN")
      *
      */
-    public SparkSpatialFilterOperator(SpatialRelation relation,
+    public SparkSpatialFilterOperator(SpatialPredicate relation,
                                       FunctionDescriptor.SerializableFunction<Type, WGeometry> keyExtractor,
                                       DataSetType<Type> inputClassDatasetType,
                                       WGeometry geometry) {
@@ -115,7 +113,7 @@ public class SparkSpatialFilterOperator<Type>
     }
 
     private JavaRDD<Record> applySedonaSpatialFilter(SpatialRDD<Geometry> spatialRDD, Geometry reference) {
-        final SpatialPredicate predicate = this.toSedonaPredicate(this.relation);
+        final org.apache.sedona.core.spatialOperator.SpatialPredicate predicate = this.toSedonaPredicate(this.relation);
         if (predicate == null) {
             // Fallback to JTS if we cannot express the relation via Sedona.
             return spatialRDD.getRawSpatialRDD()
@@ -125,7 +123,7 @@ public class SparkSpatialFilterOperator<Type>
 
         try {
             final JavaRDD<Geometry> matched = RangeQuery.SpatialRangeQuery(spatialRDD, reference, predicate, false);
-            if (this.relation == SpatialRelation.DISJOINT) {
+            if (this.relation == SpatialPredicate.DISJOINT) {
                 // Sedona does not expose DISJOINT directly; invert INTERSECTS results.
                 final JavaRDD<Record> intersecting = matched.map(geom -> (Record) geom.getUserData());
                 final JavaRDD<Record> all = spatialRDD.getRawSpatialRDD().map(geom -> (Record) geom.getUserData());
@@ -161,23 +159,23 @@ public class SparkSpatialFilterOperator<Type>
 //        return WGeometry.fromStringInput(field.toString()).getGeometry();
 //    }
 
-    private SpatialPredicate toSedonaPredicate(SpatialRelation relation) {
+    private org.apache.sedona.core.spatialOperator.SpatialPredicate toSedonaPredicate(SpatialPredicate relation) {
         switch (relation) {
             case INTERSECTS:
             case DISJOINT:
-                return SpatialPredicate.INTERSECTS;
+                return org.apache.sedona.core.spatialOperator.SpatialPredicate.INTERSECTS;
             case CONTAINS:
-                return SpatialPredicate.CONTAINS;
+                return org.apache.sedona.core.spatialOperator.SpatialPredicate.CONTAINS;
             case WITHIN:
-                return SpatialPredicate.WITHIN;
+                return org.apache.sedona.core.spatialOperator.SpatialPredicate.WITHIN;
             case TOUCHES:
-                return SpatialPredicate.TOUCHES;
+                return org.apache.sedona.core.spatialOperator.SpatialPredicate.TOUCHES;
             case OVERLAPS:
-                return SpatialPredicate.OVERLAPS;
+                return org.apache.sedona.core.spatialOperator.SpatialPredicate.OVERLAPS;
             case CROSSES:
-                return SpatialPredicate.CROSSES;
+                return org.apache.sedona.core.spatialOperator.SpatialPredicate.CROSSES;
             case EQUALS:
-                return SpatialPredicate.EQUALS;
+                return org.apache.sedona.core.spatialOperator.SpatialPredicate.EQUALS;
             default:
                 return null;
         }

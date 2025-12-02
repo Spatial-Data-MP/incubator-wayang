@@ -22,11 +22,9 @@ import org.apache.wayang.basic.data.WGeometry;
 import org.apache.wayang.basic.operators.FilterOperator;
 import org.apache.wayang.basic.operators.SpatialFilterOperator;
 import org.apache.wayang.core.function.FunctionDescriptor;
-import org.apache.wayang.core.function.SpatialRelation;
-import org.apache.wayang.core.types.BasicDataUnitType;
+import org.apache.wayang.core.function.SpatialPredicate;
 import org.apache.wayang.core.types.DataSetType;
 import org.apache.wayang.jdbc.compiler.FunctionCompiler;
-import org.locationtech.jts.geom.Geometry;
 
 import java.sql.Connection;
 
@@ -41,7 +39,7 @@ public abstract class JdbcSpatialFilterOperator<Type> extends SpatialFilterOpera
      *
      * @param relation the type of spatial filter (e.g., "INTERSECTS", "CONTAINS", "WITHIN")
      */
-    public JdbcSpatialFilterOperator(SpatialRelation relation,
+    public JdbcSpatialFilterOperator(SpatialPredicate relation,
                                      FunctionDescriptor.SerializableFunction<Type, WGeometry> keyExtractor,
                                      DataSetType<Type> inputClassDatasetType,
                                      WGeometry geometry) {

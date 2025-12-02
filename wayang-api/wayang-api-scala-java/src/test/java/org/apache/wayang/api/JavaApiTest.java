@@ -19,12 +19,10 @@
 package org.apache.wayang.api;
 
 import org.apache.wayang.basic.data.Tuple2;
+import org.apache.wayang.basic.data.WGeometry;
 import org.apache.wayang.core.api.Configuration;
 import org.apache.wayang.core.api.WayangContext;
-import org.apache.wayang.core.function.ExecutionContext;
-import org.apache.wayang.core.function.FunctionDescriptor;
-import org.apache.wayang.core.function.PredicateDescriptor;
-import org.apache.wayang.core.function.TransformationDescriptor;
+import org.apache.wayang.core.function.*;
 import org.apache.wayang.core.types.DataSetType;
 import org.apache.wayang.core.util.WayangArrays;
 import org.apache.wayang.core.util.WayangCollections;
@@ -32,6 +30,8 @@ import org.apache.wayang.core.util.Tuple;
 import org.apache.wayang.core.util.fs.LocalFileSystem;
 import org.apache.wayang.java.Java;
 import org.apache.wayang.java.operators.JavaMapOperator;
+import org.apache.wayang.postgres.Postgres;
+import org.apache.wayang.postgres.operators.PostgresTableSource;
 import org.apache.wayang.spark.Spark;
 import org.apache.wayang.sqlite3.Sqlite3;
 import org.apache.wayang.sqlite3.operators.Sqlite3TableSource;
@@ -112,6 +112,158 @@ class JavaApiTest {
 
         assertEquals(WayangCollections.asSet(4 + 16, 1 + 9), WayangCollections.asSet(outputCollection));
     }
+
+    @Test
+    void testFilter() {
+        // Set up WayangContext.
+        WayangContext wayangContext = new WayangContext().with(Java.basicPlugin());
+        JavaPlanBuilder builder = new JavaPlanBuilder(wayangContext);
+
+        // Generate test data.
+        final List<Integer> inputValues = Arrays.asList(1, 2, 3, 4, 5, 6);
+
+        // Execute the job: keep only even numbers.
+        final Collection<Integer> outputValues = builder
+                .loadCollection(inputValues).withName("Load input values")
+                .filter(i -> (i & 1) == 0).withName("Filter even numbers")
+                .collect();
+
+        // Verify the outcome.
+        Set<Integer> expectedValues = WayangCollections.asSet(2, 4, 6);
+        assertEquals(expectedValues, WayangCollections.asSet(outputValues));
+    }
+
+
+    /*
+    * GeometryFactory geometryFactory = new GeometryFactory();
+        Envelope envelope = new Envelope(0.00, 0.4, 0.00, 0.40);
+        Geometry geom2 = geometryFactory.toGeometry(envelope);
+
+        TableSource spider =
+                new PostgresTableSource("spider", "id", "geom");
+
+        SpatialFilterOperator<Record> spatialFilterOperator = new SpatialFilterOperator<Record>(
+                SpatialRelation.INTERSECTS,
+                (record -> (WGeometry.fromStringInput(record.getString(1)))),
+                DataSetType.createDefaultUnchecked(Record.class),
+                WGeometry.fromStringInput("POLYGON((0.00 0.00,0.4 0.00,0.4 0.4,0.00 0.4,0.00 0.00))"));
+
+        spatialFilterOperator.getKeyDescriptor().withSqlImplementation("spatialdb", "geom");
+        spatialFilterOperator.addTargetPlatform(Spark.platform());
+        spider.connectTo(0,spatialFilterOperator,0);
+
+        Collection<Tuple2<Integer, WGeometry>> collector = new ArrayList<>();
+        LocalCallbackSink<Tuple2<Integer, WGeometry>> sink
+                = LocalCallbackSink.createCollectingSink(collector, DataSetType.createDefaultUnchecked(Record.class));
+        spatialFilterOperator.connectTo(0, sink, 0);
+
+        wayangContext.execute("PostgreSql test", new WayangPlan(sink));
+
+        System.out.println(collector);
+    *
+    *
+    * */
+
+    WayangContext getTestWayangContext() {
+        Configuration configuration = new Configuration();
+        configuration.setProperty("wayang.postgres.jdbc.url", "jdbc:postgresql://localhost:5432/spatialdb"); // Default port 5432
+        configuration.setProperty("wayang.postgres.jdbc.user", "postgres");
+        configuration.setProperty("wayang.postgres.jdbc.password", "postgres");
+
+        return new WayangContext(configuration);
+    }
+
+//    @Test
+//    void testSpatialFilterAlt() {
+//
+//        JavaPlanBuilder builder = new JavaPlanBuilder(wayangContext);
+//
+//        final List<WGeometry> inputValues = Arrays.asList(
+//                WGeometry.fromStringInput("POLYGON((0.00 0.00,0.4 0.00,0.3 0.4,0.00 0.4,0.00 0.00))"),
+//                WGeometry.fromStringInput("POLYGON((0.00 0.00,0.3 0.00,0.3 0.3,0.00 0.3,0.00 0.00))"),
+//                WGeometry.fromStringInput("POLYGON((0.00 0.00,0.2 0.00,0.2 0.2,0.00 0.2,0.00 0.00))"),
+//                WGeometry.fromStringInput("POLYGON((0.00 0.00,0.1 0.00,0.1 0.1,0.00 0.1,0.00 0.00))")
+//        );
+//
+//
+//
+//        final Collection<WGeometry> outputValues = builder
+//                .loadCollection(inputValues).withName("Load input values")
+//                .spatialFilter(
+//                        (input -> (WGeometry) input),
+//                        SpatialPredicate.INTERSECTS,
+//                        WGeometry.fromStringInput("POLYGON((0.1 0.10,0.2 0.10,0.2 0.2,0.10 0.2,0.10 0.10))")
+//                ).withName("Filter even numbers")
+//                .collect();
+//
+//        System.out.println(outputValues);
+//    }
+
+    @Test
+    void testSpatialFilter() {
+        // Set up WayangContext.
+        WayangContext wayangContext = getTestWayangContext()
+                .withPlugin(Java.basicPlugin())
+//                .withPlugin(Postgres.plugin())
+                ;
+
+        JavaPlanBuilder builder = new JavaPlanBuilder(wayangContext);
+
+        // Input polygons: nested axis-aligned squares.
+        final List<WGeometry> inputValues = Arrays.asList(
+                WGeometry.fromStringInput("POLYGON((0.00 0.00,0.40 0.00,0.40 0.40,0.00 0.40,0.00 0.00))"),
+                WGeometry.fromStringInput("POLYGON((0.00 0.00,0.30 0.00,0.30 0.30,0.00 0.30,0.00 0.00))"),
+                WGeometry.fromStringInput("POLYGON((0.00 0.00,0.20 0.00,0.20 0.20,0.00 0.20,0.00 0.00))"),
+                WGeometry.fromStringInput("POLYGON((0.00 0.00,0.10 0.00,0.10 0.10,0.00 0.10,0.00 0.00))")
+        );
+
+        // Query geometry: a square entirely inside the 0.4 and 0.3 squares,
+        // but outside the 0.2 and 0.1 squares.
+        WGeometry queryGeometry = WGeometry.fromStringInput(
+                "POLYGON((0.25 0.25,0.35 0.25,0.35 0.35,0.25 0.35,0.25 0.25))"
+        );
+
+        final Collection<WGeometry> outputValues = builder
+                .loadCollection(inputValues).withName("Load input values")
+                .spatialFilter(
+                        (input -> (WGeometry) input),
+                        SpatialPredicate.INTERSECTS,
+                        queryGeometry
+                ).withName("Spatial filter (INTERSECTS)")
+                .collect();
+
+        // We expect only the first two polygons to intersect the query geometry.
+        Set<WGeometry> expectedOutput = WayangCollections.asSet(
+                WGeometry.fromStringInput("POLYGON((0.00 0.00,0.40 0.00,0.40 0.40,0.00 0.40,0.00 0.00))"),
+                WGeometry.fromStringInput("POLYGON((0.00 0.00,0.30 0.00,0.30 0.30,0.00 0.30,0.00 0.00))")
+        );
+
+        assertEquals(expectedOutput, WayangCollections.asSet(outputValues));
+    }
+
+
+    @Test
+    void testSpatialFilterWithDbDataQuanta() {
+        WayangContext wayangContext = getTestWayangContext()
+                .withPlugin(Java.basicPlugin())
+                .withPlugin(Postgres.plugin());
+        JavaPlanBuilder builder = new JavaPlanBuilder(wayangContext);
+
+        final Collection<Integer> outputValues = builder
+                .readTable(new PostgresTableSource("spider", "id", "geom")) // TODO: create Table in Setup
+                .spatialFilter(
+                        (record -> WGeometry.fromStringInput(record.getString(1))),
+                        SpatialPredicate.INTERSECTS,
+                        WGeometry.fromStringInput("POLYGON((0.00 0.00,0.4 0.00,0.4 0.4,0.00 0.4,0.00 0.00))")
+                ).withTargetPlatform(Java.platform())
+//                .withSqlImplementation() TODO: API for SQL Column name
+                .map(record -> record.getInt(0))
+                .collect();
+
+
+        assertEquals(19, WayangCollections.asSet(outputValues).size());
+    }
+
 
     @Test
     void testBroadcast2() {

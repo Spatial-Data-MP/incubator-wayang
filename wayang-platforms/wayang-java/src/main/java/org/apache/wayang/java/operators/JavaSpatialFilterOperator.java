@@ -18,12 +18,10 @@
 
 package org.apache.wayang.java.operators;
 
-import org.apache.wayang.basic.data.Record;
-import org.apache.wayang.basic.data.Tuple2;
 import org.apache.wayang.basic.data.WGeometry;
 import org.apache.wayang.basic.operators.SpatialFilterOperator;
 import org.apache.wayang.core.function.FunctionDescriptor;
-import org.apache.wayang.core.function.SpatialRelation;
+import org.apache.wayang.core.function.SpatialPredicate;
 import org.apache.wayang.core.optimizer.OptimizationContext;
 import org.apache.wayang.core.plan.wayangplan.ExecutionOperator;
 import org.apache.wayang.core.platform.ChannelDescriptor;
@@ -43,7 +41,6 @@ import java.util.Collections;
 import java.util.List;
 import java.util.function.Function;
 import java.util.function.Predicate;
-import java.util.stream.Stream;
 
 /**
  * Java implementation of the {@link SpatialFilterOperator}.
@@ -57,9 +54,9 @@ public class JavaSpatialFilterOperator<Type>
      *
      * @param relation the type of spatial filter (e.g., "INTERSECTS", "CONTAINS", "WITHIN")
      */
-    public JavaSpatialFilterOperator(SpatialRelation relation,
+    public JavaSpatialFilterOperator(SpatialPredicate relation,
                                      FunctionDescriptor.SerializableFunction<Type, WGeometry> keyExtractor,
-                                     DataSetType<Type> inputClassDatasetType,                                     
+                                     DataSetType<Type> inputClassDatasetType,
                                      WGeometry geometry) {
         super(relation, keyExtractor, inputClassDatasetType, geometry);
         /*if (this.geometryColumnIndex < 0) {

@@ -23,11 +23,10 @@ import org.apache.wayang.basic.data.WGeometry;
 import org.apache.wayang.core.api.Configuration;
 import org.apache.wayang.core.api.Job;
 import org.apache.wayang.core.function.FunctionDescriptor;
-import org.apache.wayang.core.function.SpatialRelation;
+import org.apache.wayang.core.function.SpatialPredicate;
 import org.apache.wayang.core.optimizer.DefaultOptimizationContext;
 import org.apache.wayang.core.plan.executionplan.ExecutionStage;
 import org.apache.wayang.core.plan.executionplan.ExecutionTask;
-import org.apache.wayang.core.plan.wayangplan.ExecutionOperator;
 import org.apache.wayang.core.platform.CrossPlatformExecutor;
 import org.apache.wayang.core.platform.Platform;
 import org.apache.wayang.core.profiling.NoInstrumentationStrategy;
@@ -65,7 +64,7 @@ class JdbcSpatialFilterOperatorTest extends OperatorTestBase {
 
         private final Platform platform;
 
-        TestJdbcSpatialFilterOperator(SpatialRelation relation,
+        TestJdbcSpatialFilterOperator(SpatialPredicate relation,
                                       FunctionDescriptor.SerializableFunction<Type, WGeometry> keyExtractor,
                                       DataSetType<Type> inputClassDatasetType,
                                       WGeometry geometry,
@@ -122,7 +121,7 @@ class JdbcSpatialFilterOperatorTest extends OperatorTestBase {
         // Spatial filter: INTERSECTS on column "geom".
         TestJdbcSpatialFilterOperator<Record> spatialFilterOperator =
                 new TestJdbcSpatialFilterOperator<Record>(
-                        SpatialRelation.INTERSECTS,
+                        SpatialPredicate.INTERSECTS,
                         (record -> WGeometry.fromStringInput((String) record.getField(1))),
                         DataSetType.createDefault(Record.class),
                         wGeometry,

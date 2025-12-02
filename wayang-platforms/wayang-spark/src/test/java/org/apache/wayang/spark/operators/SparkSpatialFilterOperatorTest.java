@@ -20,7 +20,7 @@ package org.apache.wayang.spark.operators;
 
 import org.apache.wayang.basic.data.Record;
 import org.apache.wayang.basic.data.WGeometry;
-import org.apache.wayang.core.function.SpatialRelation;
+import org.apache.wayang.core.function.SpatialPredicate;
 import org.apache.wayang.core.platform.ChannelInstance;
 import org.apache.wayang.core.types.DataSetType;
 import org.apache.wayang.spark.channels.RddChannel;
@@ -52,7 +52,7 @@ class SparkSpatialFilterOperatorTest extends SparkOperatorTestBase {
         RddChannel.Instance output = this.createRddChannelInstance();
 
         SparkSpatialFilterOperator<Record> filterOperator = createSpatialFilterOperator(
-                SpatialRelation.INTERSECTS,
+                SpatialPredicate.INTERSECTS,
                 WGeometry.fromGeometry(queryGeometry)
         );
 
@@ -65,7 +65,7 @@ class SparkSpatialFilterOperatorTest extends SparkOperatorTestBase {
         assertEquals(asList(hits, boundary), result);
     }
 
-    private static SparkSpatialFilterOperator<Record> createSpatialFilterOperator(SpatialRelation relation,
+    private static SparkSpatialFilterOperator<Record> createSpatialFilterOperator(SpatialPredicate relation,
                                                                                   WGeometry referenceGeometry) {
         return new SparkSpatialFilterOperator<>(
                 relation,

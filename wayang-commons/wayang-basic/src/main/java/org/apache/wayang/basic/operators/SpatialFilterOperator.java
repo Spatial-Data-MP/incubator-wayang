@@ -18,20 +18,14 @@
 
 package org.apache.wayang.basic.operators;
 
-import org.apache.wayang.basic.data.Record;
-import org.apache.wayang.basic.data.Tuple2;
 import org.apache.wayang.basic.data.WGeometry;
 import org.apache.wayang.core.function.FunctionDescriptor;
-import org.apache.wayang.core.function.SpatialRelation;
+import org.apache.wayang.core.function.SpatialPredicate;
 import org.apache.wayang.core.function.TransformationDescriptor;
 import org.apache.wayang.core.optimizer.OptimizationContext;
 import org.apache.wayang.core.optimizer.cardinality.CardinalityEstimate;
 import org.apache.wayang.core.plan.wayangplan.UnaryToUnaryOperator;
 import org.apache.wayang.core.types.DataSetType;
-import org.apache.wayang.core.types.DataUnitType;
-import org.locationtech.jts.geom.Geometry;
-
-import java.util.Locale;
 
 
 /**
@@ -40,7 +34,7 @@ import java.util.Locale;
 public class SpatialFilterOperator<Type> extends UnaryToUnaryOperator<Type, Type> {
 
 
-    protected final SpatialRelation relation;
+    protected final SpatialPredicate relation;
 //    protected final int geometryColumnIndex;
     protected final TransformationDescriptor<Type, WGeometry> keyDescriptor;
     protected final WGeometry referenceGeometry;
@@ -52,7 +46,7 @@ public class SpatialFilterOperator<Type> extends UnaryToUnaryOperator<Type, Type
      *                                  WGeometry geometry,
      *                                  String geometryColumnSqlName
      */
-    public SpatialFilterOperator(SpatialRelation relation,
+    public SpatialFilterOperator(SpatialPredicate relation,
                                  FunctionDescriptor.SerializableFunction<Type, WGeometry> keyExtractor,
                                  DataSetType<Type> inputClassDatasetType,
 //                                 Class<Type> inputClass,

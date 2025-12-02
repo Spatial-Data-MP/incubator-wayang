@@ -24,7 +24,7 @@ import org.apache.wayang.basic.data.WGeometry;
 import org.apache.wayang.basic.operators.*;
 import org.apache.wayang.core.api.Configuration;
 import org.apache.wayang.core.api.WayangContext;
-import org.apache.wayang.core.function.SpatialRelation;
+import org.apache.wayang.core.function.SpatialPredicate;
 import org.apache.wayang.core.plan.wayangplan.WayangPlan;
 import org.apache.wayang.core.types.DataSetType;
 import org.apache.wayang.core.util.ReflectionUtils;
@@ -37,15 +37,11 @@ import org.locationtech.jts.geom.Envelope;
 import org.locationtech.jts.geom.Geometry;
 import org.locationtech.jts.geom.GeometryFactory;
 import org.locationtech.jts.io.geojson.GeoJsonReader;
-import org.postgresql.core.v3.QueryExecutorImpl;
 
 import java.io.File;
 import java.io.FileReader;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.logging.ConsoleHandler;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
@@ -101,9 +97,9 @@ public class SqlTest {
 
     WayangContext getTestWayangContext() {
         Configuration configuration = new Configuration();
-        configuration.setProperty("wayang.postgres.jdbc.url", "jdbc:postgresql://localhost:5433/postgres"); // Default port 5432
+        configuration.setProperty("wayang.postgres.jdbc.url", "jdbc:postgresql://localhost:5432/spatialdb"); // Default port 5432
         configuration.setProperty("wayang.postgres.jdbc.user", "postgres");
-        configuration.setProperty("wayang.postgres.jdbc.password", "1234");
+        configuration.setProperty("wayang.postgres.jdbc.password", "postgres");
 
         return new WayangContext(configuration);
     }
@@ -149,11 +145,12 @@ public class SqlTest {
                 new PostgresTableSource("spider", "id", "geom");
 
         SpatialFilterOperator<Record> spatialFilterOperator = new SpatialFilterOperator<Record>(
-                SpatialRelation.INTERSECTS,
+                SpatialPredicate.INTERSECTS,
                 (record -> (WGeometry.fromStringInput(record.getString(1)))),
                 DataSetType.createDefaultUnchecked(Record.class),
                 WGeometry.fromStringInput("POLYGON((0.00 0.00,0.4 0.00,0.4 0.4,0.00 0.4,0.00 0.00))"));
 
+        spatialFilterOperator.getKeyDescriptor().withSqlImplementation("spatialdb", "geom");
         spatialFilterOperator.addTargetPlatform(Spark.platform());
         spider.connectTo(0,spatialFilterOperator,0);
 
@@ -196,7 +193,7 @@ public class SqlTest {
         );
 
         SpatialFilterOperator<Tuple2<Integer, WGeometry>> spatialFilterOperator = new SpatialFilterOperator<Tuple2<Integer, WGeometry>>(
-                SpatialRelation.INTERSECTS,
+                SpatialPredicate.INTERSECTS,
                 Tuple2::getField1,
                 DataSetType.createDefaultUnchecked(Tuple2.class),
                 WGeometry.fromStringInput("POLYGON((0.00 0.00,0.4 0.00,0.4 0.4,0.00 0.4,0.00 0.00))"));
@@ -223,9 +220,9 @@ public class SqlTest {
                 WayangPlan wayangPlan;
         //// Db Connection, local db credentials!
         Configuration configuration = new Configuration();
-        configuration.setProperty("wayang.postgres.jdbc.url", "jdbc:postgresql://localhost:5433/postgres"); // Default port 5432
+        configuration.setProperty("wayang.postgres.jdbc.url", "jdbc:postgresql://localhost:5432/spatialdb"); // Default port 5432
         configuration.setProperty("wayang.postgres.jdbc.user", "postgres");
-        configuration.setProperty("wayang.postgres.jdbc.password", "1234");
+        configuration.setProperty("wayang.postgres.jdbc.password", "postgres");
 
 
 

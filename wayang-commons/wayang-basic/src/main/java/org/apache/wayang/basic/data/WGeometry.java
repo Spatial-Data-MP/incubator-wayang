@@ -25,7 +25,6 @@ public class WGeometry implements Serializable {
         this();
         this.data.put("wkt", wkt);
     }
-
     /**
      * Create WGeometry from string input.
      * Detects WKT, WKB-hex, or GeoJSON and stores only that
@@ -205,4 +204,29 @@ public class WGeometry implements Serializable {
         }
         return wkt;
     }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (!(o instanceof WGeometry)) return false;
+
+        WGeometry that = (WGeometry) o;
+
+        Geometry g1 = this.getGeometry();
+        Geometry g2 = that.getGeometry();
+
+        if (g1 == null || g2 == null) {
+            return g1 == g2;
+        }
+
+        // Delegate to JTS Geometry equality (structural / topological, depending on JTS version).
+        return g1.equals(g2);
+    }
+
+    @Override
+    public int hashCode() {
+        Geometry geometry = this.getGeometry();
+        return geometry != null ? geometry.hashCode() : 0;
+    }
+
 }
