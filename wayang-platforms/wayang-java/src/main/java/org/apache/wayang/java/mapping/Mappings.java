@@ -63,7 +63,8 @@ public class Mappings {
             new KafkaTopicSinkMapping(),
             new AmazonS3SourceMapping(),
             new GoogleCloudStorageSourceMapping(),
-            new AzureBlobStorageSourceMapping()
+            new AzureBlobStorageSourceMapping(),
+            new GeoJsonFileSourceMapping()
     );
 
     public static Collection<Mapping> GRAPH_MAPPINGS = Arrays.asList(

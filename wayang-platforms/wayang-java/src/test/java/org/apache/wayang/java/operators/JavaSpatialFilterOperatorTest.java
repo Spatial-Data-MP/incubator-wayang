@@ -296,6 +296,37 @@ class JavaSpatialFilterOperatorTest extends JavaExecutionOperatorTestBase {
     }
 
     @Test
+    void testWithinGeoJson() {
+        final String testFileName = "/geojson-sample.json";
+
+        // Prepare the source.
+        final URL inputUrl = this.getClass().getResource(testFileName);
+        final JavaGeoJsonFileSource source = new JavaGeoJsonFileSource(
+                inputUrl.toString());
+
+        // Execute.
+        final JavaChannelInstance[] inputs = new JavaChannelInstance[]{};
+        final JavaChannelInstance[] outputs = new JavaChannelInstance[]{createStreamChannelInstance()};
+
+        evaluate(source, inputs, outputs);
+
+        // Feed to spatial filter
+        JavaSpatialFilterOperator<Record> filterOperator =
+                createSpatialFilterOperator(
+                        SpatialRelation.WITHIN,
+                        WGeometry.fromGeometry(new GeometryFactory().toGeometry(new Envelope(-180, 180, -90, 90))),
+                        0
+                );
+        JavaChannelInstance[] filterInputs = new JavaChannelInstance[]{outputs[0]};
+        JavaChannelInstance[] filterOutputs = new JavaChannelInstance[]{createStreamChannelInstance()};
+        evaluate(filterOperator, filterInputs, filterOutputs);
+
+        final List<Record> result = filterOutputs[0].<Record>provideStream().collect(Collectors.toList());
+        // All 3 geometries in the sample GeoJSON file should be within the global envelope
+        assertEquals(3, result.size());
+    }
+
+    @Test
     void testReadLocalCsv() {
         final String testFileName = "/uniform.csv";
 
@@ -344,8 +375,27 @@ class JavaSpatialFilterOperatorTest extends JavaExecutionOperatorTestBase {
         );
     }
 
+    private static JavaSpatialFilterOperator<Record> createSpatialFilterOperator(SpatialRelation relation,
+                                                                                 WGeometry referenceGeometry,
+                                                                                 int index) {
+        return new JavaSpatialFilterOperator<>(
+                relation,
+                record -> extractWGeometry(record, index),
+                DataSetType.createDefaultUnchecked(Record.class),
+                referenceGeometry
+        );
+    }
+
     private static WGeometry extractWGeometry(Record record) {
         Object field = record.getField(1);
+        if (field instanceof WGeometry) {
+            return (WGeometry) field;
+        }
+        return WGeometry.fromGeometry((Geometry) field);
+    }
+
+    private static WGeometry extractWGeometry(Record record, int index) {
+        Object field = record.getField(index);
         if (field instanceof WGeometry) {
             return (WGeometry) field;
         }

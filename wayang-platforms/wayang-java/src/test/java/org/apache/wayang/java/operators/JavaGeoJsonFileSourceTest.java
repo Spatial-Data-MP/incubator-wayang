@@ -31,7 +31,7 @@ class JavaGeoJsonFileSourceTest extends JavaExecutionOperatorTestBase {
         evaluate(source, inputs, outputs);
 
         //verify outcome
-        final List<JsonElement> result = outputs[0].<JsonElement>provideStream().toList();
+        final List<Record> result = outputs[0].<Record>provideStream().toList();
         assertEquals(3, result.size(), "Expected 3 geometries in the sample GeoJSON file.");
     }
 }

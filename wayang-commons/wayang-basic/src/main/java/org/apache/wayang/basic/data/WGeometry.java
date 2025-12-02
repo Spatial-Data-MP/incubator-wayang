@@ -1,6 +1,5 @@
 package org.apache.wayang.basic.data;
 
-import com.google.gson.JsonElement;
 import org.locationtech.jts.geom.Geometry;
 import org.locationtech.jts.geom.GeometryFactory;
 import org.locationtech.jts.io.*;
@@ -9,6 +8,7 @@ import org.locationtech.jts.io.geojson.GeoJsonWriter;
 
 import java.io.Serializable;
 import java.util.HashMap;
+import java.util.Map;
 
 public class WGeometry implements Serializable {
 
@@ -50,12 +50,6 @@ public class WGeometry implements Serializable {
         return wg;
     }
 
-    public static WGeometry fromJsonInput(JsonElement input) {
-        WGeometry wg = new WGeometry();
-        wg.data.put("geojson", input.toString());
-        return wg;
-    }
-
     /**
      * Create WGeometry from an existing JTS Geometry object.
      * The geometry is stored, and all other formats (WKT/WKB/GeoJSON)
@@ -73,7 +67,12 @@ public class WGeometry implements Serializable {
         return wg;
     }
 
-
+    public static WGeometry fromGeoJson(String geoJson) {
+        WGeometry wg = new WGeometry();
+        wg.data.put("geojson", geoJson);
+        // could directely create the rescpective geometry with jts
+        return wg;
+    }
 
     /**
      * Get the geometry as WKT. If WKT is not yet available, it is
