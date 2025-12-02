@@ -23,6 +23,7 @@ import org.apache.wayang.basic.operators.FilterOperator;
 import org.apache.wayang.basic.operators.SpatialFilterOperator;
 import org.apache.wayang.core.function.SpatialRelation;
 import org.apache.wayang.core.mapping.*;
+import org.apache.wayang.core.types.DataSetType;
 import org.apache.wayang.spark.operators.SparkFilterOperator;
 import org.apache.wayang.spark.operators.SparkSpatialFilterOperator;
 import org.apache.wayang.spark.platform.SparkPlatform;
@@ -49,7 +50,7 @@ public class SpatialFilterMapping implements Mapping {
     private SubplanPattern createSubplanPattern() {
         final OperatorPattern<SpatialFilterOperator> operatorPattern = new OperatorPattern<>(
                 // TODO: add types
-                "spatialFilter", new SpatialFilterOperator(null, null, null, null,""), false
+                "spatialFilter", new SpatialFilterOperator(null, null, DataSetType.none(), null), false
         )/*.withAdditionalTest(op -> op.getPredicateDescriptor().getSqlImplementation() != null)*/;
         return SubplanPattern.createSingleton(operatorPattern);
     }

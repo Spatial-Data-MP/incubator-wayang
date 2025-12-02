@@ -26,6 +26,7 @@ import org.apache.wayang.core.api.Configuration;
 import org.apache.wayang.core.api.WayangContext;
 import org.apache.wayang.core.function.SpatialRelation;
 import org.apache.wayang.core.plan.wayangplan.WayangPlan;
+import org.apache.wayang.core.types.DataSetType;
 import org.apache.wayang.core.util.ReflectionUtils;
 import org.apache.wayang.java.Java;
 import org.apache.wayang.postgres.Postgres;
@@ -139,7 +140,6 @@ public class SqlTest {
 //        logger.addHandler(handler);
 //        logger.setLevel(Level.FINEST);
 
-
         ///  Scalar Geometry
         GeometryFactory geometryFactory = new GeometryFactory();
         Envelope envelope = new Envelope(0.00, 0.4, 0.00, 0.40);
@@ -148,39 +148,41 @@ public class SqlTest {
         TableSource spider =
                 new PostgresTableSource("spider", "id", "geom");
 
-//        GeoJsonFileSource spiderFileSource =
-//                new GeoJsonFileSource("data/spider_points.geojson",
-//                        Record.class,
-//                        "id", "geom");
-//        MapOperator<WGeometry, Record> mapToRecord = new MapOperator<WGeometry, Record>(
-//                (wGeometry -> {
-//                    Object[] values = new Object[2];
-//                    values[0] = wGeometry.getAttribute();
-//                    values[1] = wGeometry;
-//                    return new Record(values);
-//                }),
-//                WGeometry.class,
-//                Record.class
-//        );
-//        spiderFileSource.connectTo(0, mapToRecord, 0);
+        SpatialFilterOperator<Record> spatialFilterOperator = new SpatialFilterOperator<Record>(
+                SpatialRelation.INTERSECTS,
+                (record -> (WGeometry.fromStringInput(record.getString(1)))),
+                DataSetType.createDefaultUnchecked(Record.class),
+                WGeometry.fromStringInput("POLYGON((0.00 0.00,0.4 0.00,0.4 0.4,0.00 0.4,0.00 0.00))"));
 
+        spatialFilterOperator.addTargetPlatform(Spark.platform());
+        spider.connectTo(0,spatialFilterOperator,0);
 
-//        MapOperator<Record, SpatialRecord> mapToSpatial = new MapOperator<Record,SpatialRecord>(
-//                (record -> new SpatialRecord(record.getValues())), Record.class, SpatialRecord.class
-//        );
-//        spider.connectTo(0, mapToSpatial, 0);
+        Collection<Tuple2<Integer, WGeometry>> collector = new ArrayList<>();
+        LocalCallbackSink<Tuple2<Integer, WGeometry>> sink
+                = LocalCallbackSink.createCollectingSink(collector, DataSetType.createDefaultUnchecked(Record.class));
+        spatialFilterOperator.connectTo(0, sink, 0);
 
-//        MapOperator<Record, Record> mapToWGeometry = new MapOperator<Record, Record>(
-//                (record -> {
-//                    Object[] values = Arrays.copyOf(record.getValues(), record.getValues().length);
-//                    String wkb = values[1].toString();
-//                    values[1] = new org.apache.wayang.basic.data.WGeometry("POLYGON((0.19793055784917613 0.1257896454307232,0.20481163436045868 0.1257896454307232,0.20481163436045868 0.12801131389541112,0.19793055784917613 0.12801131389541112,0.19793055784917613 0.1257896454307232))\n");
-//                    values[1] = WGeometry.fromStringInput(wkb);
-//                    return new Record(values);
-//                }),
-//                Record.class,
-//                Record.class
-//        );
+        wayangContext.execute("PostgreSql test", new WayangPlan(sink));
+
+        System.out.println(collector);
+
+        assertEquals(19, collector.size());
+    }
+
+    @Test
+    void testSpatialFilterWithTuple() {
+        WayangContext wayangContext = getTestWayangContext()
+                .withPlugin(Java.basicPlugin())
+                .withPlugin(Spark.basicPlugin())
+                .withPlugin(Postgres.plugin());
+
+        ///  Scalar Geometry
+        GeometryFactory geometryFactory = new GeometryFactory();
+        Envelope envelope = new Envelope(0.00, 0.4, 0.00, 0.40);
+        Geometry geom2 = geometryFactory.toGeometry(envelope);
+
+        TableSource spider =
+                new PostgresTableSource("spider", "id", "geom");
 
         MapOperator<Record, Tuple2<Integer, WGeometry>> mapToTuple = new MapOperator<Record, Tuple2<Integer, WGeometry>>(
                 record -> {
@@ -193,26 +195,24 @@ public class SqlTest {
                 ReflectionUtils.specify(Tuple2.class)
         );
 
-        SpatialFilterOperator<Tuple2> spatialFilterOperator = new SpatialFilterOperator<Tuple2>(
+        SpatialFilterOperator<Tuple2<Integer, WGeometry>> spatialFilterOperator = new SpatialFilterOperator<Tuple2<Integer, WGeometry>>(
                 SpatialRelation.INTERSECTS,
-                Tuple2::getField0,
-                Tuple2.class,
-                WGeometry.fromStringInput("POLYGON((0.00 0.00,0.4 0.00,0.4 0.4,0.00 0.4,0.00 0.00))"),
-                "geom");
+                Tuple2::getField1,
+                DataSetType.createDefaultUnchecked(Tuple2.class),
+                WGeometry.fromStringInput("POLYGON((0.00 0.00,0.4 0.00,0.4 0.4,0.00 0.4,0.00 0.00))"));
 
-        spatialFilterOperator.addTargetPlatform(Spark.platform());
-//        spider.connectTo(0,mapToWGeometry,0);
-        spider.connectTo(0, spatialFilterOperator, 0);
-//        mapToWGeometry.connectTo(0,spatialFilterOperator,0);
+        spatialFilterOperator.addTargetPlatform(Java.platform());
+        spider.connectTo(0,mapToTuple,0);
+        mapToTuple.connectTo(0,spatialFilterOperator,0);
 
-        Collection<Record> collector = new ArrayList<>();
-        LocalCallbackSink<Record> sink = LocalCallbackSink.createCollectingSink(collector, Record.class);
+        Collection<Tuple2<Integer, WGeometry>> collector = new ArrayList<>();
+        LocalCallbackSink<Tuple2<Integer, WGeometry>> sink
+                = LocalCallbackSink.createCollectingSink(collector, DataSetType.createDefaultUnchecked(Tuple2.class));
         spatialFilterOperator.connectTo(0, sink, 0);
 
         wayangContext.execute("PostgreSql test", new WayangPlan(sink));
 
         System.out.println(collector);
-
         assertEquals(19, collector.size());
     }
 

@@ -31,6 +31,7 @@ import org.apache.wayang.core.plan.wayangplan.ExecutionOperator;
 import org.apache.wayang.core.platform.CrossPlatformExecutor;
 import org.apache.wayang.core.platform.Platform;
 import org.apache.wayang.core.profiling.NoInstrumentationStrategy;
+import org.apache.wayang.core.types.DataSetType;
 import org.apache.wayang.jdbc.channels.SqlQueryChannel;
 import org.apache.wayang.jdbc.execution.JdbcExecutor;
 import org.apache.wayang.jdbc.platform.JdbcPlatformTemplate;
@@ -66,13 +67,11 @@ class JdbcSpatialFilterOperatorTest extends OperatorTestBase {
 
         TestJdbcSpatialFilterOperator(SpatialRelation relation,
                                       FunctionDescriptor.SerializableFunction<Type, WGeometry> keyExtractor,
-                                      Class<Type> inputClass,
+                                      DataSetType<Type> inputClassDatasetType,
                                       WGeometry geometry,
-                                      String geometryColumnSqlName,
                                       Platform platform
         ) {
-            super(relation, keyExtractor, inputClass, geometry, geometryColumnSqlName);
-            this.geometryColumnSqlName = geometryColumnSqlName;
+            super(relation, keyExtractor, inputClassDatasetType, geometry);
             this.platform = platform;
         }
 
@@ -121,15 +120,15 @@ class JdbcSpatialFilterOperatorTest extends OperatorTestBase {
         WGeometry wGeometry = WGeometry.fromGeometry(queryGeometry);
 
         // Spatial filter: INTERSECTS on column "geom".
-        ExecutionOperator spatialFilterOperator =
+        TestJdbcSpatialFilterOperator<Record> spatialFilterOperator =
                 new TestJdbcSpatialFilterOperator<Record>(
                         SpatialRelation.INTERSECTS,
                         (record -> WGeometry.fromStringInput((String) record.getField(1))),
-                        Record.class,
+                        DataSetType.createDefault(Record.class),
                         wGeometry,
-                        "geom",
                         HsqldbPlatform.getInstance()
-                ) {};
+                );
+        spatialFilterOperator.getKeyDescriptor().withSqlImplementation("spider", "geom");
 
         ExecutionTask spatialFilterTask = new ExecutionTask(spatialFilterOperator);
         // Wire table source → spatial filter.

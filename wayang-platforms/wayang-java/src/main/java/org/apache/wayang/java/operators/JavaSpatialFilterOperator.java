@@ -29,6 +29,7 @@ import org.apache.wayang.core.plan.wayangplan.ExecutionOperator;
 import org.apache.wayang.core.platform.ChannelDescriptor;
 import org.apache.wayang.core.platform.ChannelInstance;
 import org.apache.wayang.core.platform.lineage.ExecutionLineageNode;
+import org.apache.wayang.core.types.DataSetType;
 import org.apache.wayang.core.util.Tuple;
 import org.apache.wayang.java.channels.CollectionChannel;
 import org.apache.wayang.java.channels.JavaChannelInstance;
@@ -58,10 +59,9 @@ public class JavaSpatialFilterOperator<Type>
      */
     public JavaSpatialFilterOperator(SpatialRelation relation,
                                      FunctionDescriptor.SerializableFunction<Type, WGeometry> keyExtractor,
-                                     Class<Type> inputClass,
-                                     WGeometry geometry,
-                                     String geometryColumnSqlName) {
-        super(relation, keyExtractor, inputClass, geometry, geometryColumnSqlName);
+                                     DataSetType<Type> inputClassDatasetType,                                     
+                                     WGeometry geometry) {
+        super(relation, keyExtractor, inputClassDatasetType, geometry);
         /*if (this.geometryColumnIndex < 0) {
             throw new IllegalArgumentException("Column index must be >= 0.");
         }*/
@@ -70,6 +70,10 @@ public class JavaSpatialFilterOperator<Type>
     public JavaSpatialFilterOperator(SpatialFilterOperator<Type> that) {
         super(that);
     }
+
+//    public <T> JavaSpatialFilterOperator(SpatialRelation spatialRelation, Object o, DataSetType<T> defaultUnchecked, WGeometry wGeometry, String s) {
+//        super();
+//    }
 
 
 //    /**

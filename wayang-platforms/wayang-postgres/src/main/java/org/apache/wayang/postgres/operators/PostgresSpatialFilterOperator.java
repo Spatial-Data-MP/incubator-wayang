@@ -22,8 +22,10 @@ import org.apache.wayang.basic.data.Record;
 import org.apache.wayang.basic.data.WGeometry;
 import org.apache.wayang.basic.operators.FilterOperator;
 import org.apache.wayang.basic.operators.SpatialFilterOperator;
+import org.apache.wayang.core.function.FunctionDescriptor;
 import org.apache.wayang.core.function.PredicateDescriptor;
 import org.apache.wayang.core.function.SpatialRelation;
+import org.apache.wayang.core.types.DataSetType;
 import org.apache.wayang.jdbc.operators.JdbcFilterOperator;
 import org.apache.wayang.jdbc.operators.JdbcSpatialFilterOperator;
 import org.locationtech.jts.geom.Geometry;
@@ -32,13 +34,18 @@ import org.locationtech.jts.geom.Geometry;
 /**
  * PostgreSQL implementation of the {@link FilterOperator}.
  */
-public class PostgresSpatialFilterOperator extends JdbcSpatialFilterOperator implements PostgresExecutionOperator {
+public class PostgresSpatialFilterOperator<Type> extends JdbcSpatialFilterOperator<Type> implements PostgresExecutionOperator {
 
     /**
      * Creates a new instance.
+     *
+     * @param relation the type of spatial filter (e.g., "INTERSECTS", "CONTAINS", "WITHIN")
      */
-    public PostgresSpatialFilterOperator(SpatialRelation relation, Integer columnIndex, WGeometry geometry) {
-        super(relation, columnIndex, geometry);
+    public PostgresSpatialFilterOperator(SpatialRelation relation,
+                                     FunctionDescriptor.SerializableFunction<Type, WGeometry> keyExtractor,
+                                     DataSetType<Type> inputClassDatasetType,
+                                     WGeometry geometry) {
+        super(relation, keyExtractor, inputClassDatasetType, geometry);
     }
 
     /**

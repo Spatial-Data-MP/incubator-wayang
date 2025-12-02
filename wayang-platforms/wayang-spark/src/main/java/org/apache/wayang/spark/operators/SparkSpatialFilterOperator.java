@@ -33,6 +33,7 @@ import org.apache.wayang.core.plan.wayangplan.ExecutionOperator;
 import org.apache.wayang.core.platform.ChannelDescriptor;
 import org.apache.wayang.core.platform.ChannelInstance;
 import org.apache.wayang.core.platform.lineage.ExecutionLineageNode;
+import org.apache.wayang.core.types.DataSetType;
 import org.apache.wayang.core.util.Tuple;
 import org.apache.wayang.spark.channels.BroadcastChannel;
 import org.apache.wayang.spark.channels.RddChannel;
@@ -60,10 +61,9 @@ public class SparkSpatialFilterOperator<Type>
      */
     public SparkSpatialFilterOperator(SpatialRelation relation,
                                       FunctionDescriptor.SerializableFunction<Type, WGeometry> keyExtractor,
-                                      Class<Type> inputClass,
-                                      WGeometry geometry,
-                                      String geometryColumnSqlName) {
-        super(relation, keyExtractor, inputClass, geometry, "");
+                                      DataSetType<Type> inputClassDatasetType,
+                                      WGeometry geometry) {
+        super(relation, keyExtractor, inputClassDatasetType, geometry);
 //        if (this.geometryColumnIndex < 0) {
 //            throw new IllegalArgumentException("Column index must be >= 0.");
 //        }
@@ -93,10 +93,15 @@ public class SparkSpatialFilterOperator<Type>
             throw new IllegalStateException("Reference geometry must not be null for spatial filtering.");
         }
 
-        final JavaRDD<Type> inputRdd = ((RddChannel.Instance) inputs[0]).provideRdd();
+        final JavaRDD<Record> inputRdd = ((RddChannel.Instance) inputs[0]).provideRdd();
         final JavaRDD<Geometry> geometryRdd = inputRdd
-                .map((input -> ((WGeometry) keyDescriptor.getJavaImplementation().apply(input)).getGeometry()))
-                .filter(Objects::nonNull);
+//                .map(this::attachGeometryUserData)
+//                .map((input -> (WGeometry.fromStringInput("POLYGON((0.00 0.00,0.4 0.00,0.4 0.4,0.00 0.4,0.00 0.00))")).getGeometry()))
+//                .map((record -> ((WGeometry.fromStringInput(record.getString(1))).getGeometry())))
+                .map(SparkSpatialFilterOperator::attachGeometryUserData)
+//                .map((input -> reference))
+                .filter(Objects::nonNull)
+                ;
 
         final SpatialRDD<Geometry> spatialRDD = new SpatialRDD<>();
         spatialRDD.setRawSpatialRDD(geometryRdd);
@@ -131,6 +136,30 @@ public class SparkSpatialFilterOperator<Type>
             throw new RuntimeException("Sedona range query failed for spatial filter.", e);
         }
     }
+
+    public static Geometry attachGeometryUserData(Record record) {
+        return (WGeometry.fromStringInput(record.getString(1))).getGeometry();
+        // TODO: attach user data
+//        final Geometry geometry = this.extractGeometry(record);
+//        if (geometry != null) {
+//            geometry.setUserData(record);
+//        }
+//        return geometry;
+    }
+
+//    private Geometry extractGeometry(Record record) {
+//        final Object field = record.getField(1);
+//        if (field == null) {
+//            return null;
+//        }
+//        if (field instanceof Geometry) {
+//            return (Geometry) field;
+//        }
+//        if (field instanceof WGeometry) {
+//            return ((WGeometry) field).getGeometry();
+//        }
+//        return WGeometry.fromStringInput(field.toString()).getGeometry();
+//    }
 
     private SpatialPredicate toSedonaPredicate(SpatialRelation relation) {
         switch (relation) {

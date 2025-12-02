@@ -24,6 +24,7 @@ import org.apache.wayang.basic.operators.SpatialFilterOperator;
 import org.apache.wayang.core.function.FunctionDescriptor;
 import org.apache.wayang.core.function.SpatialRelation;
 import org.apache.wayang.core.types.BasicDataUnitType;
+import org.apache.wayang.core.types.DataSetType;
 import org.apache.wayang.jdbc.compiler.FunctionCompiler;
 import org.locationtech.jts.geom.Geometry;
 
@@ -42,10 +43,9 @@ public abstract class JdbcSpatialFilterOperator<Type> extends SpatialFilterOpera
      */
     public JdbcSpatialFilterOperator(SpatialRelation relation,
                                      FunctionDescriptor.SerializableFunction<Type, WGeometry> keyExtractor,
-                                     Class<Type> inputClass,
-                                     WGeometry geometry,
-                                     String geometryColumnSqlName) {
-        super(relation, keyExtractor, inputClass, geometry, geometryColumnSqlName);
+                                     DataSetType<Type> inputClassDatasetType,
+                                     WGeometry geometry) {
+        super(relation, keyExtractor, inputClassDatasetType, geometry);
     }
 
     public JdbcSpatialFilterOperator(SpatialFilterOperator<Type> that) {
@@ -58,9 +58,9 @@ public abstract class JdbcSpatialFilterOperator<Type> extends SpatialFilterOpera
         if (this.referenceGeometry == null) {
             throw new IllegalStateException("Geometry for spatial filter must not be null.");
         }
-        if (this.geometryColumnSqlName == null || this.geometryColumnSqlName.isEmpty()) {
-            throw new IllegalStateException("geometryColumnSqlName must be set in SpatialFilterOperator.");
-        }
+//        if (this.geometryColumnSqlName == null || this.geometryColumnSqlName.isEmpty()) {
+//            throw new IllegalStateException("geometryColumnSqlName must be set in SpatialFilterOperator.");
+//        }
 
         // Column expression (e.g. "geom" or "t.geom")
 //        final String columnExpr = this.geometryColumnSqlName;
