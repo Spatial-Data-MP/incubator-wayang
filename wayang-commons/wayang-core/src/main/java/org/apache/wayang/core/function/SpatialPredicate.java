@@ -61,4 +61,8 @@ public enum SpatialPredicate {
     public String toSql(String columnExpr, String geomLiteral) {
         return String.format("%s(%s, %s)", this.sqlFunctionName, columnExpr, geomLiteral);
     }
+
+    public String toSql(String leftTable, String leftKey, String rightTable, String rightKey) {
+        return String.format("%s(%s.%s, %s.%s)", this.sqlFunctionName, leftTable, leftKey, rightTable, rightKey);
+    }
 }

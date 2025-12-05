@@ -180,7 +180,7 @@ public class JdbcExecutor extends ExecutorTemplate {
             } else if (nextTask.getOperator() instanceof JdbcProjectionOperator) {
                 assert projectionTask == null; // Allow one projection operator per stage for now.
                 projectionTask = nextTask;
-            } else if (nextTask.getOperator() instanceof JdbcJoinOperator) {
+            } else if (nextTask.getOperator() instanceof JdbcJoinOperator || nextTask.getOperator() instanceof JdbcSpatialJoinOperator) {
                 joinTasks.add(nextTask);
             } else {
                 throw new WayangException(String.format("Unsupported JDBC execution task %s", nextTask.toString()));
