@@ -303,6 +303,63 @@ class DataQuanta[Out: ClassTag](val operator: ElementaryOperator, outputIndex: I
   }
 
   /**
+   * Feeds this and a further instance into a [[JoinOperator]].
+   *
+   * @param thisKeyUdf UDF to extract keys from data quanta in this instance
+   * @param that       the other instance
+   * @param thatKeyUdf UDF to extract keys from data quanta from `that` instance
+   * @return a new instance representing the [[JoinOperator]]'s output
+   */
+  def spatialJoin[ThatOut: ClassTag]
+  (thisKeyUdf: Out => WGeometry,
+   that: DataQuanta[ThatOut],
+   thatKeyUdf: ThatOut => WGeometry,
+   spatialPredicate: SpatialPredicate)
+  : DataQuanta[WayangTuple2[Out, ThatOut]] =
+    spatialJoinJava(toSerializableFunction(thisKeyUdf), that, toSerializableFunction(thatKeyUdf), spatialPredicate)
+
+  /**
+   * Feeds this and a further instance into a [[JoinOperator]].
+   *
+   * @param thisKeyUdf UDF to extract keys from data quanta in this instance
+   * @param that       the other instance
+   * @param thatKeyUdf UDF to extract keys from data quanta from `that` instance
+   * @return a new instance representing the [[JoinOperator]]'s output
+   */
+  def spatialJoinJava[ThatOut: ClassTag]
+  (thisKeyUdf: SerializableFunction[Out, WGeometry],
+   that: DataQuanta[ThatOut],
+   thatKeyUdf: SerializableFunction[ThatOut, WGeometry],
+   spatialPredicate: SpatialPredicate)
+  : DataQuanta[WayangTuple2[Out, ThatOut]] = {
+    require(this.planBuilder eq that.planBuilder, s"$this and $that must use the same plan builders.")
+    val spatialJoinOperator = new SpatialJoinOperator(
+      new TransformationDescriptor(thisKeyUdf, basicDataUnitType[Out], basicDataUnitType[WGeometry]),
+      new TransformationDescriptor(thatKeyUdf, basicDataUnitType[ThatOut], basicDataUnitType[WGeometry]),
+      spatialPredicate
+    )
+    this.connectTo(spatialJoinOperator, 0)
+    that.connectTo(spatialJoinOperator, 1)
+    spatialJoinOperator
+  }
+
+//  def spatialJoin(keySelector: SerializableFunction[Out, WGeometry],
+//
+//                    spatialPredicate: SpatialPredicate,
+//                    filterGeometry: WGeometry) = spatialJoinJava(keySelector, spatialPredicate, filterGeometry)
+//
+//  def spatialJoinJava(keySelector: SerializableFunction[Out, WGeometry],
+//                        spatialPredicate: SpatialPredicate,
+//                        filterGeometry: WGeometry): DataQuanta[Out ]= {
+//
+//    val spatialJoinOperator = new SpatialJoinOperator(
+//      spatialPredicate, keySelector,  dataSetType[Out], filterGeometry
+//    )
+//    this.connectTo(spatialJoinOperator, 0)
+//    spatialJoinOperator
+//  }
+
+  /**
     * Feed this instance into a [[FlatMapOperator]].
     *
     * @param udf         UDF for the [[FlatMapOperator]]
