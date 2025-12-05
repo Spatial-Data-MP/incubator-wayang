@@ -281,6 +281,61 @@ public class SqlTest {
                         SpatialPredicate.INTERSECTS
                 );
 
+        spatialJoinOperator.addTargetPlatform(Postgres.platform());
+
+        // Wire up both DB sources as inputs to the spatial join.
+        table1.connectTo(0, spatialJoinOperator, 0);
+        table2.connectTo(0, spatialJoinOperator, 1);
+
+        // Collect results.
+        Collection<Tuple2<Record, Record>> collector = new ArrayList<>();
+        LocalCallbackSink<Tuple2<Record, Record>> sink =
+                LocalCallbackSink.createCollectingSink(
+                        collector,
+                        DataSetType.createDefaultUnchecked(Tuple2.class)
+                );
+        spatialJoinOperator.connectTo(0, sink, 0);
+
+        // Execute the plan.
+        wayangContext.execute("PostgreSql spatial join DB-DB", new WayangPlan(sink));
+
+        // Basic sanity check: we should get at least self-intersections.
+        assertFalse(collector.isEmpty(), "Spatial join result should not be empty.");
+
+        // Semantic check: every returned pair must actually intersect according to JTS.
+        for (Tuple2<Record, Record> pair : collector) {
+            Geometry g1 = WGeometry.fromStringInput(pair.field0.getString(1)).getGeometry();
+            Geometry g2 = WGeometry.fromStringInput(pair.field1.getString(1)).getGeometry();
+            assertTrue(
+                    g1.intersects(g2),
+                    "Found non-intersecting pair in spatial join result."
+            );
+        }
+    }
+
+
+    // TODO: Fix and Test
+    @Test
+    void testSpatialJoinDbSources() {
+        WayangContext wayangContext = getTestWayangContext()
+                .withPlugin(Java.basicPlugin())
+                .withPlugin(Spark.basicPlugin())
+                .withPlugin(Postgres.plugin());
+
+        // Two logical sources over the same table.
+        TableSource table1 = new PostgresTableSource("spider", "id", "geom");
+        TableSource table2 = new PostgresTableSource("spider", "id", "geom");
+
+        // Spatial join on INTERSECTS; both sides use the geom column (index 1).
+        SpatialJoinOperator<Record, Record> spatialJoinOperator =
+                new SpatialJoinOperator<>(
+                        record -> WGeometry.fromStringInput(record.getString(1)),
+                        record -> WGeometry.fromStringInput(record.getString(1)),
+                        Record.class,
+                        Record.class,
+                        SpatialPredicate.INTERSECTS
+                );
+
 //        spatialJoinOperator.addTargetPlatform(Postgres.platform());
 
         // Wire up both DB sources as inputs to the spatial join.
