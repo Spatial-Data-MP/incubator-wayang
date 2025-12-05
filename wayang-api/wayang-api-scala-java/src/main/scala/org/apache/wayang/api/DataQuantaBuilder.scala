@@ -42,7 +42,6 @@ import org.apache.wayang.core.util.{Logging, ReflectionUtils, WayangCollections,
 import org.apache.wayang.core.plan.wayangplan.OutputSlot
 import org.locationtech.jts.geom.Geometry
 
-import javax.xml.crypto.KeySelector
 import scala.collection.mutable.ListBuffer
 import scala.reflect.ClassTag
 
