@@ -91,73 +91,57 @@ public class SparkSpatialFilterOperator<Type>
             throw new IllegalStateException("Reference geometry must not be null for spatial filtering.");
         }
 
-        final JavaRDD<Record> inputRdd = ((RddChannel.Instance) inputs[0]).provideRdd();
+        final JavaRDD<Type> inputRdd = ((RddChannel.Instance) inputs[0]).provideRdd();
+
+        //TODO: double check this approach
+
+        // Get the Java implementation ONCE and keep it out of the operator instance.
+        // getJavaImplementation() returns Function<Input,Output>, but the underlying
+        // object is a SerializableFunction, so we can safely cast (unchecked).
+        @SuppressWarnings("unchecked")
+        final FunctionDescriptor.SerializableFunction<Type, WGeometry> keyExtractor =
+                (FunctionDescriptor.SerializableFunction<Type, WGeometry>) this.keyDescriptor.getJavaImplementation();
+
+        // Build an RDD of Geometries where userData = original element (Type)
         final JavaRDD<Geometry> geometryRdd = inputRdd
-//                .map(this::attachGeometryUserData)
-//                .map((input -> (WGeometry.fromStringInput("POLYGON((0.00 0.00,0.4 0.00,0.4 0.4,0.00 0.4,0.00 0.00))")).getGeometry()))
-//                .map((record -> ((WGeometry.fromStringInput(record.getString(1))).getGeometry())))
-                .map(SparkSpatialFilterOperator::attachGeometryUserData)
-//                .map((input -> reference))
-                .filter(Objects::nonNull)
-                ;
+                .map((Type value) -> {
+                    final WGeometry wGeom = keyExtractor.apply(value);
+                    if (wGeom == null) {
+                        return null;
+                    }
+                    final Geometry geom = wGeom.getGeometry();
+                    if (geom != null) {
+                        geom.setUserData(value); // keep original object
+                    }
+                    return geom;
+                })
+                .filter(Objects::nonNull);
 
         final SpatialRDD<Geometry> spatialRDD = new SpatialRDD<>();
         spatialRDD.setRawSpatialRDD(geometryRdd);
         spatialRDD.analyze();
 
-        final JavaRDD<Record> outputRdd = this.applySedonaSpatialFilter(spatialRDD, reference);
+        final JavaRDD<Type> outputRdd = this.applySedonaSpatialFilter(spatialRDD, reference);
         this.name(outputRdd);
         ((RddChannel.Instance) outputs[0]).accept(outputRdd, sparkExecutor);
 
         return ExecutionOperator.modelLazyExecution(inputs, outputs, operatorContext);
     }
 
-    private JavaRDD<Record> applySedonaSpatialFilter(SpatialRDD<Geometry> spatialRDD, Geometry reference) {
+
+    private JavaRDD<Type> applySedonaSpatialFilter(SpatialRDD<Geometry> spatialRDD, Geometry reference) {
         final org.apache.sedona.core.spatialOperator.SpatialPredicate predicate = this.toSedonaPredicate(this.relation);
-        if (predicate == null) {
-            // Fallback to JTS if we cannot express the relation via Sedona.
-            return spatialRDD.getRawSpatialRDD()
-                    .filter(geom -> geom != null && this.relation.test(geom, reference))
-                    .map(geom -> (Record) geom.getUserData());
-        }
 
         try {
-            final JavaRDD<Geometry> matched = RangeQuery.SpatialRangeQuery(spatialRDD, reference, predicate, false);
-            if (this.relation == SpatialPredicate.DISJOINT) {
-                // Sedona does not expose DISJOINT directly; invert INTERSECTS results.
-                final JavaRDD<Record> intersecting = matched.map(geom -> (Record) geom.getUserData());
-                final JavaRDD<Record> all = spatialRDD.getRawSpatialRDD().map(geom -> (Record) geom.getUserData());
-                return all.subtract(intersecting);
-            }
-            return matched.map(geom -> (Record) geom.getUserData());
+            final JavaRDD<Geometry> matched =
+                    RangeQuery.SpatialRangeQuery(spatialRDD, reference, predicate, false);
+
+            // Extract original input object from userData
+            return matched.map(geom -> (Type) geom.getUserData());
         } catch (Exception e) {
             throw new RuntimeException("Sedona range query failed for spatial filter.", e);
         }
     }
-
-    public static Geometry attachGeometryUserData(Record record) {
-        return (WGeometry.fromStringInput(record.getString(1))).getGeometry();
-        // TODO: attach user data
-//        final Geometry geometry = this.extractGeometry(record);
-//        if (geometry != null) {
-//            geometry.setUserData(record);
-//        }
-//        return geometry;
-    }
-
-//    private Geometry extractGeometry(Record record) {
-//        final Object field = record.getField(1);
-//        if (field == null) {
-//            return null;
-//        }
-//        if (field instanceof Geometry) {
-//            return (Geometry) field;
-//        }
-//        if (field instanceof WGeometry) {
-//            return ((WGeometry) field).getGeometry();
-//        }
-//        return WGeometry.fromStringInput(field.toString()).getGeometry();
-//    }
 
     private org.apache.sedona.core.spatialOperator.SpatialPredicate toSedonaPredicate(SpatialPredicate relation) {
         switch (relation) {
