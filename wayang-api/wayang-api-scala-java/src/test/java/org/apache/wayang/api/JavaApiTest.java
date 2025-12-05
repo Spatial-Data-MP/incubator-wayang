@@ -273,6 +273,48 @@ class JavaApiTest {
         assertEquals(2, WayangCollections.asSet(outputValues).size());
     }
 
+    @Test
+    void testSpatialJoin() {
+        // Set up WayangContext.
+        WayangContext wayangContext = new WayangContext(new Configuration());
+        wayangContext.withPlugin(Java.basicPlugin())
+//                .withPlugin(Postgres.plugin())
+                ;
+
+        JavaPlanBuilder builder = new JavaPlanBuilder(wayangContext);
+
+        // Input polygons: nested axis-aligned squares.
+        final List<Tuple2<Integer, WGeometry>> inputValues1 = Arrays.asList(
+                new Tuple2<Integer, WGeometry>(1, WGeometry.fromStringInput("POLYGON((0.00 0.00,0.40 0.00,0.40 0.40,0.00 0.40,0.00 0.00))")),
+                new Tuple2<Integer, WGeometry>(2, WGeometry.fromStringInput("POLYGON((0.00 0.00,0.30 0.00,0.30 0.30,0.00 0.30,0.00 0.00))")),
+                new Tuple2<Integer, WGeometry>(3, WGeometry.fromStringInput("POLYGON((0.00 0.00,0.20 0.00,0.20 0.20,0.00 0.20,0.00 0.00))")),
+                new Tuple2<Integer, WGeometry>(4, WGeometry.fromStringInput("POLYGON((0.00 0.00,0.10 0.00,0.10 0.10,0.00 0.10,0.00 0.00))"))
+        );
+        // Input polygons: nested axis-aligned squares.
+        final List<WGeometry> inputValues2 = Arrays.asList(
+                WGeometry.fromStringInput("POLYGON((0.00 0.00,0.40 0.00,0.40 0.40,0.00 0.40,0.00 0.00))")
+//                WGeometry.fromStringInput("POLYGON((0.00 0.00,0.30 0.00,0.30 0.30,0.00 0.30,0.00 0.00))"),
+//                WGeometry.fromStringInput("POLYGON((0.00 0.00,0.20 0.00,0.20 0.20,0.00 0.20,0.00 0.00))"),
+//                WGeometry.fromStringInput("POLYGON((0.00 0.00,0.10 0.00,0.10 0.10,0.00 0.10,0.00 0.00))")
+        );
+
+        final LoadCollectionDataQuantaBuilder<Tuple2<Integer, WGeometry>> dataQuanta1 = builder.loadCollection(inputValues1);
+        final LoadCollectionDataQuantaBuilder<WGeometry> dataQuanta2 = builder.loadCollection(inputValues2);
+
+
+        final Collection<Tuple2<Tuple2<Integer, WGeometry>, WGeometry>> outputValues = dataQuanta1
+                .spatialJoin(
+                        Tuple2::getField1,
+                        dataQuanta2,
+                        (wgeometry -> wgeometry),
+                        SpatialPredicate.INTERSECTS
+                )
+                .collect();
+
+        assertEquals(4, outputValues.size());
+
+    }
+
 
     @Test
     void testBroadcast2() {
