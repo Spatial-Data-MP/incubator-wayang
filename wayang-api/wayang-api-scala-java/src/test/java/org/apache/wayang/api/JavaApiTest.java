@@ -249,19 +249,28 @@ class JavaApiTest {
                 .withPlugin(Postgres.plugin());
         JavaPlanBuilder builder = new JavaPlanBuilder(wayangContext);
 
+        // Input polygons: nested axis-aligned squares.
+        final List<WGeometry> inputValues = Arrays.asList(
+                WGeometry.fromStringInput("POLYGON((0.00 0.00,0.40 0.00,0.40 0.40,0.00 0.40,0.00 0.00))"),
+                WGeometry.fromStringInput("POLYGON((0.00 0.00,0.30 0.00,0.30 0.30,0.00 0.30,0.00 0.00))"),
+                WGeometry.fromStringInput("POLYGON((0.00 0.00,0.20 0.00,0.20 0.20,0.00 0.20,0.00 0.00))"),
+                WGeometry.fromStringInput("POLYGON((0.00 0.00,0.10 0.00,0.10 0.10,0.00 0.10,0.00 0.00))")
+        );
+
         final Collection<Integer> outputValues = builder
-                .readTable(new PostgresTableSource("spider", "id", "geom")) // TODO: create Table in Setup
+                .loadCollection(inputValues).withName("Load input values")
+                .map(wgeometry -> new Tuple2<>(inputValues.indexOf(wgeometry), wgeometry))
                 .spatialFilter(
-                        (record -> WGeometry.fromStringInput(record.getString(1))),
+                        Tuple2::getField1,
                         SpatialPredicate.INTERSECTS,
-                        WGeometry.fromStringInput("POLYGON((0.00 0.00,0.4 0.00,0.4 0.4,0.00 0.4,0.00 0.00))")
+                        WGeometry.fromStringInput("POLYGON((0.25 0.25,0.35 0.25,0.35 0.35,0.25 0.35,0.25 0.25))")
                 ).withTargetPlatform(Java.platform())
 //                .withSqlImplementation() TODO: API for SQL Column name
-                .map(record -> record.getInt(0))
+                .map(Tuple2::getField0)
                 .collect();
 
 
-        assertEquals(19, WayangCollections.asSet(outputValues).size());
+        assertEquals(2, WayangCollections.asSet(outputValues).size());
     }
 
 
