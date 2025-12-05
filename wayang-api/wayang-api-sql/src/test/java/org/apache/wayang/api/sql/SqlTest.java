@@ -28,6 +28,8 @@ import org.apache.wayang.core.function.SpatialPredicate;
 import org.apache.wayang.core.plan.wayangplan.WayangPlan;
 import org.apache.wayang.core.types.DataSetType;
 import org.apache.wayang.core.util.ReflectionUtils;
+import org.apache.wayang.core.util.Tuple;
+import org.apache.wayang.core.util.WayangCollections;
 import org.apache.wayang.java.Java;
 import org.apache.wayang.postgres.Postgres;
 import org.apache.wayang.postgres.operators.PostgresTableSource;
@@ -41,7 +43,9 @@ import org.locationtech.jts.io.geojson.GeoJsonReader;
 import java.io.File;
 import java.io.FileReader;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
+import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
@@ -211,6 +215,47 @@ public class SqlTest {
 
         System.out.println(collector);
         assertEquals(19, collector.size());
+    }
+
+    @Test
+    void testSpatialJoin() {
+        WayangContext wayangContext = getTestWayangContext()
+                .withPlugin(Java.basicPlugin())
+                .withPlugin(Spark.basicPlugin())
+                .withPlugin(Postgres.plugin());
+
+        TableSource table1 = new PostgresTableSource("spider", "id", "geom");
+//        TableSource table2 = new PostgresTableSource("spider", "id", "geom");
+
+        // Input polygons: nested axis-aligned squares.
+        final List<WGeometry> inputValues = Arrays.asList(
+                WGeometry.fromStringInput("POLYGON((0.00 0.00,0.40 0.00,0.40 0.40,0.00 0.40,0.00 0.00))"),
+                WGeometry.fromStringInput("POLYGON((0.00 0.00,0.30 0.00,0.30 0.30,0.00 0.30,0.00 0.00))"),
+                WGeometry.fromStringInput("POLYGON((0.00 0.00,0.20 0.00,0.20 0.20,0.00 0.20,0.00 0.00))"),
+                WGeometry.fromStringInput("POLYGON((0.00 0.00,0.10 0.00,0.10 0.10,0.00 0.10,0.00 0.00))")
+        );
+        CollectionSource<WGeometry> inputCollection = new CollectionSource<>(inputValues, WGeometry.class);
+
+
+        SpatialJoinOperator<Record, WGeometry> spatialJoinOperator = new SpatialJoinOperator<Record, WGeometry>(
+                (record -> (WGeometry.fromStringInput(record.getString(1)))),
+                (wgeometry -> wgeometry),
+                Record.class,
+                WGeometry.class,
+                SpatialPredicate.INTERSECTS
+                );
+        table1.connectTo(0, spatialJoinOperator, 0);
+        inputCollection.connectTo(0, spatialJoinOperator, 1);
+
+        Collection<Tuple2<Record, Record>> collector = new ArrayList<>();
+        LocalCallbackSink<Tuple2<Record, Record>> sink
+                = LocalCallbackSink.createCollectingSink(collector, DataSetType.createDefaultUnchecked(Tuple2.class));
+        spatialJoinOperator.connectTo(0, sink, 0);
+        wayangContext.execute("PostgreSql test", new WayangPlan(sink));
+
+        System.out.println(collector);
+
+        assertEquals(31, collector.size());
     }
 
 

@@ -53,6 +53,7 @@ public class Mappings {
             new IntersectMapping(),
             new CartesianMapping(),
             new JoinMapping(),
+            new SpatialJoinMapping(),
             new CoGroupMapping(),
             new LoopMapping(),
             new DoWhileMapping(),
