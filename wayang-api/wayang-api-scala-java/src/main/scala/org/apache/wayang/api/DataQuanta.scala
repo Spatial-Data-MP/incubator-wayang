@@ -289,15 +289,18 @@ class DataQuanta[Out: ClassTag](val operator: ElementaryOperator, outputIndex: I
 
   def spatialFilter(keySelector: SerializableFunction[Out, WGeometry],
                     spatialPredicate: SpatialPredicate,
-                    filterGeometry: WGeometry) = spatialFilterJava(keySelector, spatialPredicate, filterGeometry)
+                    filterGeometry: WGeometry,
+                    columnName: String) = spatialFilterJava(keySelector, spatialPredicate, filterGeometry, columnName)
 
   def spatialFilterJava(keySelector: SerializableFunction[Out, WGeometry],
                         spatialPredicate: SpatialPredicate,
-                        filterGeometry: WGeometry): DataQuanta[Out ]= {
+                        filterGeometry: WGeometry,
+                        columnName: String): DataQuanta[Out ]= {
 
     val spatialFilterOperator = new SpatialFilterOperator(
       spatialPredicate, keySelector,  dataSetType[Out], filterGeometry
     )
+    spatialFilterOperator.getKeyDescriptor.withSqlImplementation(null, columnName)
     this.connectTo(spatialFilterOperator, 0)
     spatialFilterOperator
   }
