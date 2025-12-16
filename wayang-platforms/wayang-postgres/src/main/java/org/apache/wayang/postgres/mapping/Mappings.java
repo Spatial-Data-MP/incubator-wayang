@@ -32,6 +32,7 @@ public class Mappings {
             new FilterMapping(),
             new SpatialFilterMapping(),
             new JoinMapping(),
+            new SpatialJoinMapping(),
             new ProjectionMapping()
     );
 

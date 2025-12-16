@@ -17,6 +17,7 @@
 
 package org.apache.wayang.api.sql;
 
+import org.apache.spark.internal.config.R;
 import org.apache.wayang.basic.data.Record;
 //import org.apache.wayang.basic.data.SpatialRecord;
 import org.apache.wayang.basic.data.Tuple2;
@@ -24,6 +25,7 @@ import org.apache.wayang.basic.data.WGeometry;
 import org.apache.wayang.basic.operators.*;
 import org.apache.wayang.core.api.Configuration;
 import org.apache.wayang.core.api.WayangContext;
+import org.apache.wayang.core.function.FunctionDescriptor;
 import org.apache.wayang.core.function.SpatialPredicate;
 import org.apache.wayang.core.plan.wayangplan.WayangPlan;
 import org.apache.wayang.core.types.DataSetType;
@@ -101,7 +103,7 @@ public class SqlTest {
 
     WayangContext getTestWayangContext() {
         Configuration configuration = new Configuration();
-        configuration.setProperty("wayang.postgres.jdbc.url", "jdbc:postgresql://localhost:5432/spatialdb"); // Default port 5432
+        configuration.setProperty("wayang.postgres.jdbc.url", "jdbc:postgresql://localhost:5433/postgres"); // Default port 5432
         configuration.setProperty("wayang.postgres.jdbc.user", "postgres");
         configuration.setProperty("wayang.postgres.jdbc.password", "postgres");
 
@@ -224,7 +226,7 @@ public class SqlTest {
                 .withPlugin(Spark.basicPlugin())
                 .withPlugin(Postgres.plugin());
 
-        TableSource table1 = new PostgresTableSource("spider", "id", "geom");
+        TableSource table1 = new PostgresTableSource("spider_boxes", "id", "x_min", "y_min", "x_max", "y_max", "geom");
 //        TableSource table2 = new PostgresTableSource("spider", "id", "geom");
 
         // Input polygons: nested axis-aligned squares.
@@ -238,13 +240,12 @@ public class SqlTest {
 
 
         SpatialJoinOperator<Record, WGeometry> spatialJoinOperator = new SpatialJoinOperator<Record, WGeometry>(
-                (record -> (WGeometry.fromStringInput(record.getString(1)))),
+                (record -> (WGeometry.fromStringInput(record.getString(4)))),
                 (wgeometry -> wgeometry),
                 Record.class,
                 WGeometry.class,
                 SpatialPredicate.INTERSECTS
                 );
-        spatialJoinOperator.addTargetPlatform(Postgres.platform());
         table1.connectTo(0, spatialJoinOperator, 0);
         inputCollection.connectTo(0, spatialJoinOperator, 1);
 
@@ -256,7 +257,7 @@ public class SqlTest {
 
         System.out.println(collector);
 
-        assertEquals(31, collector.size());
+        assertEquals(30, collector.size());
     }
 
     // TODO: Fix and Test
@@ -268,75 +269,26 @@ public class SqlTest {
                 .withPlugin(Postgres.plugin());
 
         // Two logical sources over the same table.
-        TableSource table1 = new PostgresTableSource("spider", "id", "geom");
-        TableSource table2 = new PostgresTableSource("spider", "id", "geom");
+        TableSource table1 = new PostgresTableSource("spider_boxes",  "id", "x_min", "y_min", "x_max", "y_max", "geom");
+        TableSource table2 = new PostgresTableSource("spider_boxes",  "id", "x_min", "y_min", "x_max", "y_max", "geom");
 
-        // Spatial join on INTERSECTS; both sides use the geom column (index 1).
+        // Spatial join on INTERSECTS; both sides use the geom column (index 5).
         SpatialJoinOperator<Record, Record> spatialJoinOperator =
                 new SpatialJoinOperator<>(
-                        record -> WGeometry.fromStringInput(record.getString(1)),
-                        record -> WGeometry.fromStringInput(record.getString(1)),
+                        record -> WGeometry.fromStringInput(record.getString(5)),
+                        record -> WGeometry.fromStringInput(record.getString(5)),
                         Record.class,
                         Record.class,
                         SpatialPredicate.INTERSECTS
                 );
+
+        // Register SQL implementations for both inputs
+        spatialJoinOperator.getKeyDescriptor0()
+                .withSqlImplementation("spiderdb", "geom");
+        spatialJoinOperator.getKeyDescriptor1()
+                .withSqlImplementation("spiderdb", "geom");
 
         spatialJoinOperator.addTargetPlatform(Postgres.platform());
-
-        // Wire up both DB sources as inputs to the spatial join.
-        table1.connectTo(0, spatialJoinOperator, 0);
-        table2.connectTo(0, spatialJoinOperator, 1);
-
-        // Collect results.
-        Collection<Tuple2<Record, Record>> collector = new ArrayList<>();
-        LocalCallbackSink<Tuple2<Record, Record>> sink =
-                LocalCallbackSink.createCollectingSink(
-                        collector,
-                        DataSetType.createDefaultUnchecked(Tuple2.class)
-                );
-        spatialJoinOperator.connectTo(0, sink, 0);
-
-        // Execute the plan.
-        wayangContext.execute("PostgreSql spatial join DB-DB", new WayangPlan(sink));
-
-        // Basic sanity check: we should get at least self-intersections.
-        assertFalse(collector.isEmpty(), "Spatial join result should not be empty.");
-
-        // Semantic check: every returned pair must actually intersect according to JTS.
-        for (Tuple2<Record, Record> pair : collector) {
-            Geometry g1 = WGeometry.fromStringInput(pair.field0.getString(1)).getGeometry();
-            Geometry g2 = WGeometry.fromStringInput(pair.field1.getString(1)).getGeometry();
-            assertTrue(
-                    g1.intersects(g2),
-                    "Found non-intersecting pair in spatial join result."
-            );
-        }
-    }
-
-
-    // TODO: Fix and Test
-    @Test
-    void testSpatialJoinDbSources() {
-        WayangContext wayangContext = getTestWayangContext()
-                .withPlugin(Java.basicPlugin())
-                .withPlugin(Spark.basicPlugin())
-                .withPlugin(Postgres.plugin());
-
-        // Two logical sources over the same table.
-        TableSource table1 = new PostgresTableSource("spider", "id", "geom");
-        TableSource table2 = new PostgresTableSource("spider", "id", "geom");
-
-        // Spatial join on INTERSECTS; both sides use the geom column (index 1).
-        SpatialJoinOperator<Record, Record> spatialJoinOperator =
-                new SpatialJoinOperator<>(
-                        record -> WGeometry.fromStringInput(record.getString(1)),
-                        record -> WGeometry.fromStringInput(record.getString(1)),
-                        Record.class,
-                        Record.class,
-                        SpatialPredicate.INTERSECTS
-                );
-
-//        spatialJoinOperator.addTargetPlatform(Postgres.platform());
 
         // Wire up both DB sources as inputs to the spatial join.
         table1.connectTo(0, spatialJoinOperator, 0);
@@ -466,5 +418,55 @@ public class SqlTest {
 //        );
 
 
+    }
+
+
+
+    // TODO: Fix and Test
+    @Test
+    void testJoinDbSources() {
+        WayangContext wayangContext = getTestWayangContext()
+                .withPlugin(Java.basicPlugin())
+                .withPlugin(Spark.basicPlugin())
+                .withPlugin(Postgres.plugin());
+
+        // Two logical sources over the same table.poster_link
+        TableSource table1 = new PostgresTableSource("imdb_top_1000",  "series_title", "released_year", "certificate", "runtime", "genre", "imdb_rating", "overview", "meta_score", "director", "star1", "star2", "star3", "star4", "no_of_votes", "gross");
+        TableSource table2 = new PostgresTableSource("imdb_top_1000",  "series_title", "released_year", "certificate", "runtime", "genre", "imdb_rating", "overview", "meta_score", "director", "star1", "star2", "star3", "star4", "no_of_votes", "gross");
+
+        // Join on series_title
+        JoinOperator<Record, Record, String> joinOperator =
+                new JoinOperator<>(
+                        record -> record.getString(0),
+                        record -> record.getString(0),
+                        Record.class,
+                        Record.class,
+                        String.class
+                );
+
+        joinOperator.getKeyDescriptor0()
+                .withSqlImplementation("imdb_top_1000", "series_title");
+        joinOperator.getKeyDescriptor1()
+                .withSqlImplementation("imdb_top_1000", "series_title");
+
+        joinOperator.addTargetPlatform(Postgres.platform());
+
+        // Wire up both DB sources as inputs to the join.
+        table1.connectTo(0, joinOperator, 0);
+        table2.connectTo(0, joinOperator, 1);
+
+        // Collect results.
+        Collection<Tuple2<Record, Record>> collector = new ArrayList<>();
+        LocalCallbackSink<Tuple2<Record, Record>> sink =
+                LocalCallbackSink.createCollectingSink(
+                        collector,
+                        DataSetType.createDefaultUnchecked(Tuple2.class)
+                );
+        joinOperator.connectTo(0, sink, 0);
+        // Execute the plan.
+        wayangContext.execute("PostgreSql join DB-DB", new WayangPlan(sink));
+
+        // Basic sanity check: we should get at least self-joins.
+        assertFalse(collector.isEmpty(), "Join result should not be empty.");
     }
 }

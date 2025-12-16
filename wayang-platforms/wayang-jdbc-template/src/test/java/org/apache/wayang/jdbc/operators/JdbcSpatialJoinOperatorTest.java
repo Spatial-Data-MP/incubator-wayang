@@ -25,6 +25,7 @@ import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.Collections;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
@@ -131,14 +132,11 @@ class JdbcSpatialJoinOperatorTest extends OperatorTestBase {
 
         String sql = sqlQueryChannelInstance.getSqlQuery();
 
-        // Assert basic shape and that the spatial predicate references both tables' geom columns.
-        assertTrue(sql.startsWith("SELECT"), "SQL should be a SELECT statement, but was: " + sql);
-        assertTrue(sql.contains("testA"), "SQL should reference testA, but was: " + sql);
-        assertTrue(sql.contains("testB"), "SQL should reference testB, but was: " + sql);
-        assertTrue(sql.contains("ST_Intersects"), "SQL should contain ST_Intersects predicate, but was: " + sql);
-        assertTrue(sql.contains("testA.geom") || sql.contains("testA\".\"geom") || sql.contains("testA.`geom`"),
-                "SQL should reference testA.geom, but was: " + sql);
-        assertTrue(sql.contains("testB.geom") || sql.contains("testB\".\"geom") || sql.contains("testB.`geom`"),
-                "SQL should reference testB.geom, but was: " + sql);
+        System.out.println(sql);
+
+        assertEquals(
+                "SELECT * FROM testA JOIN testB ON ST_Intersects(testA.geom, testB.geom);",
+                sql
+        );
     }
 }

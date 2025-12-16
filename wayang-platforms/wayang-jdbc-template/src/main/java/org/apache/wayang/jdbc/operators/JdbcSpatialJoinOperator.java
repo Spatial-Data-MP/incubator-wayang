@@ -51,7 +51,7 @@ public abstract class JdbcSpatialJoinOperator
         final String rightTableName = right.field0;
         final String rightKey = right.field1;
 
-        return "JOIN " + leftTableName + " ON " +
+        return "JOIN " + rightTableName + " ON " +
                 this.predicate.toSql(leftTableName, leftKey, rightTableName, rightKey);
     }
 }
