@@ -21,7 +21,6 @@ package org.apache.wayang.spark.operators;
 import org.apache.sedona.core.spatialOperator.RangeQuery;
 import org.apache.sedona.core.spatialRDD.SpatialRDD;
 import org.apache.spark.api.java.JavaRDD;
-import org.apache.wayang.basic.data.Record;
 import org.apache.wayang.basic.data.WGeometry;
 import org.apache.wayang.basic.operators.SpatialFilterOperator;
 import org.apache.wayang.core.function.FunctionDescriptor;
