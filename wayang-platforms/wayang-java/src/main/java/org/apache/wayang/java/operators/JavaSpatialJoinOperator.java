@@ -21,6 +21,7 @@ import com.amazonaws.services.s3.model.WriteGetObjectResponseRequest;
 import org.apache.wayang.basic.data.Tuple2;
 import org.apache.wayang.basic.data.WGeometry;
 import org.apache.wayang.basic.operators.SpatialJoinOperator;
+import org.apache.wayang.core.function.FunctionDescriptor;
 import org.apache.wayang.core.function.SpatialPredicate;
 import org.apache.wayang.core.function.TransformationDescriptor;
 import org.apache.wayang.core.optimizer.OptimizationContext;
@@ -53,6 +54,15 @@ public class JavaSpatialJoinOperator<InputType0, InputType1>
                                    SpatialPredicate predicate) {
         super(keyDescriptor0, keyDescriptor1, inputType0, inputType1, predicate);
     }
+
+    public JavaSpatialJoinOperator(FunctionDescriptor.SerializableFunction<InputType0, WGeometry> keyExtractor0,
+                               FunctionDescriptor.SerializableFunction<InputType1, WGeometry> keyExtractor1,
+                               Class<InputType0> input0Class,
+                               Class<InputType1> input1Class,
+                               SpatialPredicate predicate) {
+        super(keyExtractor0, keyExtractor1, input0Class, input1Class, predicate);
+    }
+
 
     public JavaSpatialJoinOperator(SpatialJoinOperator<InputType0, InputType1> that) {
         super(that);

@@ -279,6 +279,7 @@ class JavaApiTest {
         WayangContext wayangContext = new WayangContext(new Configuration());
         wayangContext.withPlugin(Java.basicPlugin())
                 .withPlugin(Postgres.plugin())
+                .withPlugin(Spark.basicPlugin())
                 ;
 
         JavaPlanBuilder builder = new JavaPlanBuilder(wayangContext);
@@ -308,7 +309,7 @@ class JavaApiTest {
                         dataQuanta2,
                         (wgeometry -> wgeometry),
                         SpatialPredicate.INTERSECTS
-                ).withTargetPlatform(Postgres.platform())
+                ).withTargetPlatform(Spark.platform())
                 .collect();
 
         assertEquals(4, outputValues.size());

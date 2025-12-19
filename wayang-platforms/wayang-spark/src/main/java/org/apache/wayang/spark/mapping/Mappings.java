@@ -50,6 +50,7 @@ public class Mappings {
             new SortMapping(),
             new FilterMapping(),
             new SpatialFilterMapping(),
+            new SpatialJoinMapping(),
             new UnionAllMapping(),
             new IntersectMapping(),
             new CartesianMapping(),

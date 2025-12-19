@@ -142,26 +142,18 @@ public class SparkSpatialFilterOperator<Type>
         }
     }
 
-    private org.apache.sedona.core.spatialOperator.SpatialPredicate toSedonaPredicate(SpatialPredicate relation) {
-        switch (relation) {
-            case INTERSECTS:
-            case DISJOINT:
-                return org.apache.sedona.core.spatialOperator.SpatialPredicate.INTERSECTS;
-            case CONTAINS:
-                return org.apache.sedona.core.spatialOperator.SpatialPredicate.CONTAINS;
-            case WITHIN:
-                return org.apache.sedona.core.spatialOperator.SpatialPredicate.WITHIN;
-            case TOUCHES:
-                return org.apache.sedona.core.spatialOperator.SpatialPredicate.TOUCHES;
-            case OVERLAPS:
-                return org.apache.sedona.core.spatialOperator.SpatialPredicate.OVERLAPS;
-            case CROSSES:
-                return org.apache.sedona.core.spatialOperator.SpatialPredicate.CROSSES;
-            case EQUALS:
-                return org.apache.sedona.core.spatialOperator.SpatialPredicate.EQUALS;
-            default:
-                return null;
-        }
+    // TODO: fix code duplication with join
+    private org.apache.sedona.core.spatialOperator.SpatialPredicate toSedonaPredicate(SpatialPredicate predicate) {
+        return switch (predicate) {
+            case INTERSECTS -> org.apache.sedona.core.spatialOperator.SpatialPredicate.INTERSECTS;
+            case CONTAINS -> org.apache.sedona.core.spatialOperator.SpatialPredicate.CONTAINS;
+            case WITHIN -> org.apache.sedona.core.spatialOperator.SpatialPredicate.WITHIN;
+            case TOUCHES -> org.apache.sedona.core.spatialOperator.SpatialPredicate.TOUCHES;
+            case OVERLAPS -> org.apache.sedona.core.spatialOperator.SpatialPredicate.OVERLAPS;
+            case CROSSES -> org.apache.sedona.core.spatialOperator.SpatialPredicate.CROSSES;
+            case EQUALS -> org.apache.sedona.core.spatialOperator.SpatialPredicate.EQUALS;
+            default -> throw new IllegalStateException("Unsupported spatial filter predicate: " + predicate);
+        };
     }
 
 

@@ -110,22 +110,22 @@ public class SqlTest {
         return new WayangContext(configuration);
     }
 
-    @Test
-    void testGeoJson() {
-        GeoJsonReader reader = new GeoJsonReader();
-        // Read from file
-        try {
-            File file = new File("/Users/maximilianspeer/wayang/incubator-wayang/wayang-platforms/wayang-java/src/test/resources/geojson-sample.json");
-            FileReader fileReader = new FileReader(file);
-            char[] chars = new char[(int) file.length()];
-            fileReader.read(chars);
-            String geoJson = new String(chars);
-            org.locationtech.jts.geom.Geometry geometry = reader.read(geoJson);
-            System.out.println(geometry);
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-    }
+//    @Test
+//    void testGeoJson() {
+//        GeoJsonReader reader = new GeoJsonReader();
+//        // Read from file
+//        try {
+//            File file = new File("/Users/maximilianspeer/wayang/incubator-wayang/wayang-platforms/wayang-java/src/test/resources/geojson-sample.json");
+//            FileReader fileReader = new FileReader(file);
+//            char[] chars = new char[(int) file.length()];
+//            fileReader.read(chars);
+//            String geoJson = new String(chars);
+//            org.locationtech.jts.geom.Geometry geometry = reader.read(geoJson);
+//            System.out.println(geometry);
+//        } catch (Exception e) {
+//            e.printStackTrace();
+//        }
+//    }
 
     @Test
     void testSpatialFilterOperator() {
@@ -148,7 +148,7 @@ public class SqlTest {
         Geometry geom2 = geometryFactory.toGeometry(envelope);
 
         TableSource spider =
-                new PostgresTableSource("spider", "id", "geom");
+                new PostgresTableSource("spider_boxes", "id", "geom");
 
         SpatialFilterOperator<Record> spatialFilterOperator = new SpatialFilterOperator<Record>(
                 SpatialPredicate.INTERSECTS,
@@ -383,39 +383,19 @@ public class SqlTest {
 //        );
 //        simpleFilter.getPredicateDescriptor().withSqlImplementation("id > 30");
 //
-//        simpleFilter.addTargetPlatform(Postgres.platform());
-
-//        spatialFilterOperator.addTargetPlatform(Postgres.platform());
-//        customer.connectTo(0,spatialFilterOperator,0);
-//        mapToSpatial.connectTo(0,spatialFilterOperator,0);
-//        spatialFilterOperator.connectTo(0, sink, 0);
-
-//        customer.connectTo(0, simpleFilter, 0);
-//        simpleFilter.connectTo(0, sink, 0);
-
-
-
-        wayangPlan = new WayangPlan(sink);
-
-        wayangContext.execute("PostgreSql test", wayangPlan);
-
-        int count = 10;
-        for(Record r : collector) {
-            System.out.println(r.getField(0).toString());
-            if(--count == 0 ) {
-                break;
-            }
-        }
-        System.out.println("Done");
-
-        assertEquals(2, collector.size());
-
-//        List<RelDataType> columnTypes = Arrays.asList(null, null);
-//        JavaCSVTableSource<Record> textFileSource = new JavaCSVTableSource<>(
-//                "/data/spider_points.csv",
-//                DataSetType.createDefault(Record.class),
-//                columnTypes
-//        );
+//        // Basic sanity check: we should get at least self-intersections.
+//        assertFalse(collector.isEmpty(), "Spatial join result should not be empty.");
+//
+//        // Semantic check: every returned pair must actually intersect according to JTS.
+//        for (Tuple2<Record, Record> pair : collector) {
+//            Geometry g1 = WGeometry.fromStringInput(pair.field0.getString(1)).getGeometry();
+//            Geometry g2 = WGeometry.fromStringInput(pair.field1.getString(1)).getGeometry();
+//            assertTrue(
+//                    g1.intersects(g2),
+//                    "Found non-intersecting pair in spatial join result."
+//            );
+//        }
+//    }
 
 
     }
