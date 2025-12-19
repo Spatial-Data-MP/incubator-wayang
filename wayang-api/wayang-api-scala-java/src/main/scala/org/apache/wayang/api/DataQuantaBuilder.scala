@@ -896,9 +896,19 @@ class SpatialFilterDataQuantaBuilder[T](inputDataQuanta: DataQuantaBuilder[_, T]
    *
    * @return the created and partially configured [[DataQuanta]]
    */
+
+  private var columnName: String = _
+
+  def withSqlGeometryColumnName(columnName: String) = {
+    this.columnName = columnName
+    this
+  }
+
   override protected def build = inputDataQuanta.dataQuanta().spatialFilterJava(
-    keySelector, spatialPredicate, filterGeometry
+    keySelector, spatialPredicate, filterGeometry, this.columnName
   )
+
+
 }
 
 class SpatialJoinDataQuantaBuilder[In0, In1](inputDataQuanta0: DataQuantaBuilder[_, In0],
