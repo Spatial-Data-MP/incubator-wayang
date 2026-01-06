@@ -135,37 +135,6 @@ class JavaApiTest {
         assertEquals(expectedValues, WayangCollections.asSet(outputValues));
     }
 
-
-    /*
-    * GeometryFactory geometryFactory = new GeometryFactory();
-        Envelope envelope = new Envelope(0.00, 0.4, 0.00, 0.40);
-        Geometry geom2 = geometryFactory.toGeometry(envelope);
-
-        TableSource spider =
-                new PostgresTableSource("spider", "id", "geom");
-
-        SpatialFilterOperator<Record> spatialFilterOperator = new SpatialFilterOperator<Record>(
-                SpatialRelation.INTERSECTS,
-                (record -> (WGeometry.fromStringInput(record.getString(1)))),
-                DataSetType.createDefaultUnchecked(Record.class),
-                WGeometry.fromStringInput("POLYGON((0.00 0.00,0.4 0.00,0.4 0.4,0.00 0.4,0.00 0.00))"));
-
-        spatialFilterOperator.getKeyDescriptor().withSqlImplementation("spatialdb", "geom");
-        spatialFilterOperator.addTargetPlatform(Spark.platform());
-        spider.connectTo(0,spatialFilterOperator,0);
-
-        Collection<Tuple2<Integer, WGeometry>> collector = new ArrayList<>();
-        LocalCallbackSink<Tuple2<Integer, WGeometry>> sink
-                = LocalCallbackSink.createCollectingSink(collector, DataSetType.createDefaultUnchecked(Record.class));
-        spatialFilterOperator.connectTo(0, sink, 0);
-
-        wayangContext.execute("PostgreSql test", new WayangPlan(sink));
-
-        System.out.println(collector);
-    *
-    *
-    * */
-
     WayangContext getTestWayangContext() {
         Configuration configuration = new Configuration();
         configuration.setProperty("wayang.postgres.jdbc.url", "jdbc:postgresql://localhost:5432/spatialdb"); // Default port 5432
@@ -175,31 +144,6 @@ class JavaApiTest {
         return new WayangContext(configuration);
     }
 
-//    @Test
-//    void testSpatialFilterAlt() {
-//
-//        JavaPlanBuilder builder = new JavaPlanBuilder(wayangContext);
-//
-//        final List<WGeometry> inputValues = Arrays.asList(
-//                WGeometry.fromStringInput("POLYGON((0.00 0.00,0.4 0.00,0.3 0.4,0.00 0.4,0.00 0.00))"),
-//                WGeometry.fromStringInput("POLYGON((0.00 0.00,0.3 0.00,0.3 0.3,0.00 0.3,0.00 0.00))"),
-//                WGeometry.fromStringInput("POLYGON((0.00 0.00,0.2 0.00,0.2 0.2,0.00 0.2,0.00 0.00))"),
-//                WGeometry.fromStringInput("POLYGON((0.00 0.00,0.1 0.00,0.1 0.1,0.00 0.1,0.00 0.00))")
-//        );
-//
-//
-//
-//        final Collection<WGeometry> outputValues = builder
-//                .loadCollection(inputValues).withName("Load input values")
-//                .spatialFilter(
-//                        (input -> (WGeometry) input),
-//                        SpatialPredicate.INTERSECTS,
-//                        WGeometry.fromStringInput("POLYGON((0.1 0.10,0.2 0.10,0.2 0.2,0.10 0.2,0.10 0.10))")
-//                ).withName("Filter even numbers")
-//                .collect();
-//
-//        System.out.println(outputValues);
-//    }
 
     @Test
     void testSpatialFilter() {

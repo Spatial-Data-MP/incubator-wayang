@@ -20,15 +20,7 @@ package org.apache.wayang.basic.data;
 
 import org.apache.wayang.core.util.Copyable;
 import org.apache.wayang.core.util.ReflectionUtils;
-import org.locationtech.jts.geom.Coordinate;
-import org.locationtech.jts.geom.Geometry;
-import org.locationtech.jts.geom.GeometryFactory;
-import org.locationtech.jts.geom.Polygon;
-import org.locationtech.jts.io.ParseException;
-import org.locationtech.jts.io.WKBReader;
-import org.postgresql.util.PGobject;
 
-import javax.xml.bind.DatatypeConverter;
 import java.io.Serializable;
 import java.util.Arrays;
 import java.util.List;

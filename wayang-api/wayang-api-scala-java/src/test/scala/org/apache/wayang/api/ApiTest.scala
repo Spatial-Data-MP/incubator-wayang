@@ -329,13 +329,6 @@ class ApiTest {
   }
 
   @Test
-  def testSpatialJoin() = {
-    val wayang = new WayangContext().withPlugin(Java.basicPlugin).withPlugin(Spark.basicPlugin)
-
-    val inputValues1 = Array
-  }
-
-  @Test
   def testJoinAndAssemble() = {
     // Set up WayangContext.
     val wayang = new WayangContext().withPlugin(Java.basicPlugin).withPlugin(Spark.basicPlugin)

@@ -65,7 +65,6 @@ public class JoinOperator<InputType0, InputType1, Key>
         this.keyDescriptor0 = keyDescriptor0;
         this.keyDescriptor1 = keyDescriptor1;
     }
-
     public JoinOperator(TransformationDescriptor<InputType0, Key> keyDescriptor0,
                         TransformationDescriptor<InputType1, Key> keyDescriptor1,
                         DataSetType<InputType0> inputType0,
