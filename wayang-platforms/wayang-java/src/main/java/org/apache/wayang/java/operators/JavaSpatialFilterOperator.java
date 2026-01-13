@@ -59,28 +59,11 @@ public class JavaSpatialFilterOperator<Type>
                                      DataSetType<Type> inputClassDatasetType,
                                      WGeometry geometry) {
         super(relation, keyExtractor, inputClassDatasetType, geometry);
-        /*if (this.geometryColumnIndex < 0) {
-            throw new IllegalArgumentException("Column index must be >= 0.");
-        }*/
     }
 
     public JavaSpatialFilterOperator(SpatialFilterOperator<Type> that) {
         super(that);
     }
-
-//    public <T> JavaSpatialFilterOperator(SpatialRelation spatialRelation, Object o, DataSetType<T> defaultUnchecked, WGeometry wGeometry, String s) {
-//        super();
-//    }
-
-
-//    /**
-//     * Copies an instance (exclusive of broadcasts).
-//     *
-//     * @param that that should be copied
-//     */
-//    public JavaSpatialFilterOperator(FilterOperator<Type> that) {
-//        super(that);
-//    }
 
     @Override
     @SuppressWarnings("unchecked")
@@ -105,83 +88,8 @@ public class JavaSpatialFilterOperator<Type>
         final Geometry reference = this.referenceGeometry.getGeometry();
         final Function<Type, WGeometry> keyExtractor = javaExecutor.getCompiler().compile(this.keyDescriptor);
 
-        return input -> {
-//            Geometry candidate = this.extractGeometry(record);
-            return this.relation.test(keyExtractor.apply(input).getGeometry(), reference);
-//            this.keyDescriptor.getJavaImplementation();
-//
-//            Geometry candidate = this.keyDescriptor.getJavaImplementation();
-//            if (candidate == null) {
-//                return false;
-//            }
-//            return this.relation.test(candidate, reference);
-        };
+        return input -> this.relation.test(keyExtractor.apply(input).getGeometry(), reference);
     }
-
-//    private Geometry extractGeometry(org.apache.wayang.basic.data.Record record) {
-//        final Object field = record.getField(this.geometryColumnIndex);
-//
-//        // Code to convert
-//        if (field instanceof WGeometry) {
-//            return ((WGeometry) field).getGeometry();
-//        }
-//        else
-//        {
-//            return WGeometry.fromStringInput((String) (field.toString())).getGeometry();
-//        }
-//
-//        if (field instanceof Geometry) {
-//            // Already a Geometry object
-//            return (Geometry) field;
-//        } else if (field instanceof PGobject) {
-//            // Handle PostGIS geometry stored as a PGobject
-//            final PGobject pgObj = (PGobject) field;
-//            final String value = pgObj.getValue();
-//            if (value == null) {
-//                return null;
-//            }
-//            // Convert hex string to binary and parse as WKB
-//            try {
-//                return (new WKBReader()).read(DatatypeConverter.parseHexBinary(value));
-//            } catch (ParseException e) {
-//                throw new RuntimeException(e);
-//            }
-//        } else if (field instanceof String) {
-//            // Handle raw hex string geometry
-//            try {
-//                return (new WKBReader()).read(DatatypeConverter.parseHexBinary((String) field));
-//            } catch (ParseException e) {
-//                throw new RuntimeException(e);
-//            }
-//        } else {
-//            throw new ClassCastException("Field at index " + this.geometryColumnIndex + " is not a Geometry or PGobject: " + field);
-//        }
-
-//        return ((WGeometry) record.getField(1)).getGeometry();
-//        try {
-//            return record.getGeometry(this.geometryColumnIndex, new WKBReader());
-//        } catch (ParseException e) {
-//            throw new RuntimeException(e);
-//        }
-//    }
-
-//    @Override
-//    public String getLoadProfileEstimatorConfigurationKey() {
-//        return "wayang.java.filter.load";
-//    }
-//
-//    @Override
-//    public Optional<LoadProfileEstimator> createLoadProfileEstimator(Configuration configuration) {
-//        final Optional<LoadProfileEstimator> optEstimator =
-//                JavaExecutionOperator.super.createLoadProfileEstimator(configuration);
-//        LoadProfileEstimators.nestUdfEstimator(optEstimator, this.predicateDescriptor, configuration);
-//        return optEstimator;
-//    }
-
-//    @Override
-//    protected ExecutionOperator createCopy() {
-//        return new JavaSpatialFilterOperator<>(this.getInputType(), this.getPredicateDescriptor());
-//    }
 
     @Override
     public List<ChannelDescriptor> getSupportedInputChannels(int index) {
