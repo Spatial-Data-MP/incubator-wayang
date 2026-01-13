@@ -338,22 +338,6 @@ class DataQuanta[Out: ClassTag](val operator: ElementaryOperator, outputIndex: I
     spatialJoinOperator
   }
 
-//  def spatialJoin(keySelector: SerializableFunction[Out, WGeometry],
-//
-//                    spatialPredicate: SpatialPredicate,
-//                    filterGeometry: WGeometry) = spatialJoinJava(keySelector, spatialPredicate, filterGeometry)
-//
-//  def spatialJoinJava(keySelector: SerializableFunction[Out, WGeometry],
-//                        spatialPredicate: SpatialPredicate,
-//                        filterGeometry: WGeometry): DataQuanta[Out ]= {
-//
-//    val spatialJoinOperator = new SpatialJoinOperator(
-//      spatialPredicate, keySelector,  dataSetType[Out], filterGeometry
-//    )
-//    this.connectTo(spatialJoinOperator, 0)
-//    spatialJoinOperator
-//  }
-
   /**
     * Feed this instance into a [[FlatMapOperator]].
     *
