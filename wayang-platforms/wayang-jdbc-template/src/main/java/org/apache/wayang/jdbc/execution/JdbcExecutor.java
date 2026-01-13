@@ -36,11 +36,7 @@ import org.apache.wayang.core.util.fs.FileSystem;
 import org.apache.wayang.core.util.fs.FileSystems;
 import org.apache.wayang.jdbc.channels.SqlQueryChannel;
 import org.apache.wayang.jdbc.compiler.FunctionCompiler;
-import org.apache.wayang.jdbc.operators.JdbcExecutionOperator;
-import org.apache.wayang.jdbc.operators.JdbcFilterOperator;
-import org.apache.wayang.jdbc.operators.JdbcJoinOperator;
-import org.apache.wayang.jdbc.operators.JdbcProjectionOperator;
-import org.apache.wayang.jdbc.operators.JdbcTableSource;
+import org.apache.wayang.jdbc.operators.*;
 import org.apache.wayang.jdbc.platform.JdbcPlatformTemplate;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -171,35 +167,41 @@ public class JdbcExecutor extends ExecutorTemplate {
         final JdbcTableSource tableOp = (JdbcTableSource) startTask.getOperator();
         SqlQueryChannel.Instance tipChannelInstance = JdbcExecutor.instantiateOutboundChannel(startTask, context, jdbcExecutor);
         final Collection<JdbcFilterOperator> filterTasks = new ArrayList<>(4);
+        final Collection<JdbcSpatialFilterOperator> spatialFilterTasks = new ArrayList<>(4);
         JdbcProjectionOperator projectionTask = null;
         final Collection<JdbcJoinOperator<?>> joinTasks = new ArrayList<>();
+        final Collection<JdbcSpatialJoinOperator> spatialJoinTasks = new ArrayList<>();
         final Set<ExecutionTask> allTasks = stage.getAllTasks();
         assert allTasks.size() <= 3;
         ExecutionTask nextTask = JdbcExecutor.findJdbcExecutionOperatorTaskInStage(startTask, stage);
         while (nextTask != null) {
             // Evaluate the nextTask.
             // TODO: implement changes to check for Spatial Operators:
-//            if (nextTask.getOperator() instanceof JdbcFilterOperator || nextTask.getOperator() instanceof JdbcSpatialFilterOperator) {
-//                filterTasks.add(nextTask);
-//            } else if (nextTask.getOperator() instanceof JdbcProjectionOperator) {
-//                assert projectionTask == null; // Allow one projection operator per stage for now.
-//                projectionTask = nextTask;
-//            } else if (nextTask.getOperator() instanceof JdbcJoinOperator || nextTask.getOperator() instanceof JdbcSpatialJoinOperator) {
-//                joinTasks.add(nextTask);
-//            } else {
-//                throw new WayangException(String.format("Unsupported JDBC execution task %s", nextTask.toString()));
-//            }
-
-            if (nextTask.getOperator() instanceof final JdbcFilterOperator filterOperator) {
-                filterTasks.add(filterOperator);
-            } else if (nextTask.getOperator() instanceof JdbcProjectionOperator projectionOperator) {
+            if (nextTask.getOperator() instanceof JdbcSpatialFilterOperator) {
+                spatialFilterTasks.add((JdbcSpatialFilterOperator) nextTask.getOperator());
+            } else if (nextTask.getOperator() instanceof JdbcFilterOperator) {
+                filterTasks.add((JdbcFilterOperator) nextTask.getOperator());
+            } else if (nextTask.getOperator() instanceof JdbcProjectionOperator) {
                 assert projectionTask == null; // Allow one projection operator per stage for now.
-                projectionTask = projectionOperator;
-            } else if (nextTask.getOperator() instanceof JdbcJoinOperator joinOperator) {
-                joinTasks.add(joinOperator);
+                projectionTask = (JdbcProjectionOperator) nextTask.getOperator();
+            } else if (nextTask.getOperator() instanceof JdbcSpatialJoinOperator) {
+                spatialJoinTasks.add((JdbcSpatialJoinOperator) nextTask.getOperator());
+            } else if (nextTask.getOperator() instanceof JdbcJoinOperator) {
+                joinTasks.add((JdbcJoinOperator<?>) nextTask.getOperator());
             } else {
                 throw new WayangException(String.format("Unsupported JDBC execution task %s", nextTask.toString()));
             }
+
+//            if (nextTask.getOperator() instanceof final JdbcFilterOperator filterOperator) {
+//                filterTasks.add(filterOperator);
+//            } else if (nextTask.getOperator() instanceof JdbcProjectionOperator projectionOperator) {
+//                assert projectionTask == null; // Allow one projection operator per stage for now.
+//                projectionTask = projectionOperator;
+//            } else if (nextTask.getOperator() instanceof JdbcJoinOperator joinOperator) {
+//                joinTasks.add(joinOperator);
+//            } else {
+//                throw new WayangException(String.format("Unsupported JDBC execution task %s", nextTask.toString()));
+//            }
 
             // Move the tipChannelInstance.
             tipChannelInstance = JdbcExecutor.instantiateOutboundChannel(nextTask, context, tipChannelInstance, jdbcExecutor);
@@ -209,21 +211,30 @@ public class JdbcExecutor extends ExecutorTemplate {
         }
 
         // Create the SQL query.
-        final StringBuilder query = createSqlString(jdbcExecutor, tableOp, filterTasks, projectionTask, joinTasks);
+        final StringBuilder query = createSqlString(jdbcExecutor, tableOp, filterTasks, spatialFilterTasks, projectionTask, joinTasks, spatialJoinTasks);
         return new Tuple2<>(query.toString(), tipChannelInstance);
     }
 
     public static StringBuilder createSqlString(final JdbcExecutor jdbcExecutor, final JdbcTableSource tableOp,
-            final Collection<JdbcFilterOperator> filterTasks, JdbcProjectionOperator projectionTask,
-            final Collection<JdbcJoinOperator<?>> joinTasks) {
+            final Collection<JdbcFilterOperator> filterTasks, final Collection<JdbcSpatialFilterOperator> spatialFilterTasks,
+            JdbcProjectionOperator projectionTask, final Collection<JdbcJoinOperator<?>> joinTasks,
+            final Collection<JdbcSpatialJoinOperator> spatialJoinTasks) {
         final String tableName = tableOp.createSqlClause(jdbcExecutor.connection, jdbcExecutor.functionCompiler);
         final Collection<String> conditions = filterTasks.stream()
                 .map(op -> op.createSqlClause(jdbcExecutor.connection, jdbcExecutor.functionCompiler))
                 .collect(Collectors.toList());
+        final Collection<String> spatialConditions = spatialFilterTasks.stream()
+                .map(op -> op.createSqlClause(jdbcExecutor.connection, jdbcExecutor.functionCompiler))
+                .collect(Collectors.toList());
+        conditions.addAll(spatialConditions);
         final String projection = projectionTask == null ? "*" : projectionTask.createSqlClause(jdbcExecutor.connection, jdbcExecutor.functionCompiler);
         final Collection<String> joins = joinTasks.stream()
                 .map(op -> op.createSqlClause(jdbcExecutor.connection, jdbcExecutor.functionCompiler))
                 .collect(Collectors.toList());
+        final Collection<String> spatialJoins = spatialJoinTasks.stream()
+                .map(op -> op.createSqlClause(jdbcExecutor.connection, jdbcExecutor.functionCompiler))
+                .collect(Collectors.toList());
+        joins.addAll(spatialJoins);
 
         final StringBuilder sb = new StringBuilder(1000);
         sb.append("SELECT ").append(projection).append(" FROM ").append(tableName);
