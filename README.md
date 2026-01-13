@@ -61,7 +61,7 @@ Apache Wayang aims at freeing data engineers and software developers from the bu
 - [Apache Kafka](https://kafka.apache.org)
 - [Tensorflow](https://www.tensorflow.org/)
 
-Apache Wayang (incubating) can be used via the following APIs:
+Apache Wayang can be used via the following APIs:
 - Java scala-like
 - Scala
 - SQL
@@ -72,6 +72,20 @@ Apache Wayang provides a flexible architecture which enables easy addition of ne
 ## Quick Guide for Running Wayang
 
 For a quick guide on how to run WordCount see [here](guides/tutorial.md).
+
+### Spark Dataset / DataFrame pipelines
+
+Wayang’s Spark platform can now execute end-to-end pipelines on Spark `Dataset[Row]` (aka DataFrames). This is particularly useful when working with lakehouse-style storage (Parquet/Delta) or when you want to plug Spark ML stages into a Wayang plan without repeatedly falling back to RDDs.
+
+To build a Dataset-backed pipeline:
+
+1. **Use the Dataset-aware plan builder APIs.**
+   - `PlanBuilder.readParquet(..., preferDataset = true)` (or `JavaPlanBuilder.readParquet(..., ..., true)`) reads Parquet files directly into a Dataset channel.
+   - `DataQuanta.writeParquet(..., preferDataset = true)` writes a Dataset channel without converting it back to an RDD.
+2. **Keep operators dataset-compatible.** Most operators continue to work unchanged; if an operator explicitly prefers RDDs, Wayang will insert the necessary conversions automatically (at an additional cost). Custom operators can expose `DatasetChannel` descriptors to stay in the dataframe world.
+3. **Let the optimizer do the rest.** The optimizer now assigns a higher cost to Dataset↔RDD conversions, so once you opt into Dataset sources/sinks the plan will stay in Dataset form by default.
+
+No extra flags are required—just opt into the Dataset-based APIs where you want dataframe semantics. If you see unexpected conversions in your execution plan, check that the upstream/downstream operators you use can consume `DatasetChannel`s; otherwise Wayang will insert a conversion operator for you.
 
 ## Quick Guide for Developing with Wayang
 
@@ -102,7 +116,7 @@ source ~/.zshrc
 
 ### Requirements at Runtime
 
-Apache Wayang (incubating) relies on external execution engines and Java to function correctly. Below are the updated runtime requirements:
+Apache Wayang relies on external execution engines and Java to function correctly. Below are the updated runtime requirements:
 
 - **Java 17**: Make sure `JAVA_HOME` is correctly set to your Java 17 installation.
 - **Apache Spark 3.4.4**: Compatible with Scala 2.12. Set the `SPARK_HOME` environment variable.
@@ -171,7 +185,7 @@ In addition, you can obtain the most recent snapshot version of Wayang via Sonat
 ```
 
 ### Prerequisites
-Apache Wayang (incubating) is built with Java 17 and Scala 2.12. However, to run Apache Wayang it is sufficient to have just Java 17 installed. Please also consider that processing platforms employed by Wayang might have further requirements.
+Apache Wayang is built with Java 17 and Scala 2.12. However, to run Apache Wayang it is sufficient to have just Java 17 installed. Please also consider that processing platforms employed by Wayang might have further requirements.
 ```
 Java 17
 Scala 2.12.17
@@ -248,7 +262,7 @@ The list of [contributors](https://github.com/apache/incubator-wayang/graphs/con
 ## License
 All files in this repository are licensed under the Apache Software License 2.0
 
-Copyright 2020 - 2025 The Apache Software Foundation.
+Copyright 2020 - 2026 The Apache Software Foundation.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.

@@ -62,7 +62,8 @@ public class Mappings {
             new SampleMapping(),
             new ZipWithIdMapping(),
             new KafkaTopicSinkMapping(),
-            new KafkaTopicSourceMapping()
+            new KafkaTopicSourceMapping(),
+            new ParquetSinkMapping()
 
     );
 
