@@ -36,7 +36,7 @@ import org.apache.wayang.core.optimizer.costs.LoadProfileEstimator
 import org.apache.wayang.core.plan.wayangplan._
 import org.apache.wayang.core.platform.Platform
 import org.apache.wayang.core.util.{Tuple => WayangTuple}
-import org.apache.wayang.basic.data.{WGeometry, Tuple2 => WayangTuple2}
+import org.apache.wayang.basic.data.{WGeometry,Record, Tuple2 => WayangTuple2}
 import org.apache.wayang.basic.model.{DLModel, DecisionTreeRegressionModel, LogisticRegressionModel}
 import org.apache.wayang.commons.util.profiledb.model.Experiment
 import com.google.protobuf.ByteString
@@ -1110,6 +1110,11 @@ class DataQuanta[Out: ClassTag](val operator: ElementaryOperator, outputIndex: I
     writeTextFileJava(url, toSerializableFunction(formatterUdf), udfLoad)
   }
 
+  def writeParquet(url: String,
+                   overwrite: Boolean = false,
+                   preferDataset: Boolean = false)(implicit ev: Out =:= Record): Unit =
+    writeParquetJava(url, overwrite, preferDataset)
+
  /**
   * Write the data quanta in this instance to a text file. Triggers execution.
   *
@@ -1168,6 +1173,16 @@ class DataQuanta[Out: ClassTag](val operator: ElementaryOperator, outputIndex: I
     this.connectTo(sink, 0)
 
     // Do the execution.
+    this.planBuilder.sinks += sink
+    this.planBuilder.buildAndExecute()
+    this.planBuilder.sinks.clear()
+  }
+
+  private def writeParquetJava(url: String, overwrite: Boolean, preferDataset: Boolean)(implicit ev: Out =:= Record): Unit = {
+    val _ = ev
+    val sink = new ParquetSink(url, overwrite, preferDataset)
+    sink.setName(s"Write parquet $url")
+    this.connectTo(sink, 0)
     this.planBuilder.sinks += sink
     this.planBuilder.buildAndExecute()
     this.planBuilder.sinks.clear()
