@@ -90,14 +90,16 @@ public class SparkSpatialJoinOperator<InputType0, InputType1>
 
         final JavaRDD<Geometry> leftInGeometry = leftIn.map((InputType0 in1) -> {
             final WGeometry wGeom = keyExtractor0.apply(in1);
-            wGeom.getGeometry().setUserData(wGeom);
-            return wGeom.getGeometry();
+            Geometry geom = wGeom.getGeometry();
+            geom.setUserData(in1);
+            return geom;
         });
 
         final JavaRDD<Geometry> rightInGeometry = rightIn.map((InputType1 in2) -> {
             final WGeometry wGeom = keyExtractor1.apply(in2);
-            wGeom.getGeometry().setUserData(wGeom);
-            return wGeom.getGeometry();
+            Geometry geom = wGeom.getGeometry();
+            geom.setUserData(in2);
+            return geom;
         });
 
 
@@ -121,8 +123,13 @@ public class SparkSpatialJoinOperator<InputType0, InputType1>
                     spatialRDDRight,
                     new JoinQuery.JoinParams(false, toSedonaPredicate(this.predicate))
             );
-            final JavaRDD<Tuple2<WGeometry, WGeometry>> outputRdd = sedonaJoin.map(geoTuple ->
-                    new Tuple2<>((WGeometry) geoTuple._1().getUserData(), (WGeometry) geoTuple._2().getUserData()) );
+            final JavaRDD<Tuple2<InputType0, InputType1>> outputRdd =
+                    sedonaJoin.map(geoTuple ->
+                            new Tuple2<>(
+                                    (InputType0) geoTuple._1().getUserData(),
+                                    (InputType1) geoTuple._2().getUserData()
+                            )
+                    );
 
             ((RddChannel.Instance) outputs[0]).accept(outputRdd, sparkExecutor);
             return ExecutionOperator.modelLazyExecution(inputs, outputs, operatorContext);
