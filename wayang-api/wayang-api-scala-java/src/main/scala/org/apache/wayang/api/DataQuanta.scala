@@ -36,8 +36,8 @@ import org.apache.wayang.core.optimizer.costs.LoadProfileEstimator
 import org.apache.wayang.core.plan.wayangplan._
 import org.apache.wayang.core.platform.Platform
 import org.apache.wayang.core.util.{Tuple => WayangTuple}
-import org.apache.wayang.basic.data.{WGeometry,Record, Tuple2 => WayangTuple2}
-import org.apache.wayang.basic.model.{DLModel, DecisionTreeRegressionModel, LogisticRegressionModel}
+import org.apache.wayang.basic.data.{Record, WGeometry, Tuple2 => WayangTuple2}
+import org.apache.wayang.basic.model.{DLModel, LogisticRegressionModel,DecisionTreeRegressionModel}
 import org.apache.wayang.commons.util.profiledb.model.Experiment
 import com.google.protobuf.ByteString
 import org.apache.wayang.api.python.function._
@@ -279,14 +279,6 @@ class DataQuanta[Out: ClassTag](val operator: ElementaryOperator, outputIndex: I
     filterOperator
   }
 
-  /*def join[ThatOut: ClassTag, Key: ClassTag]
-  (thisKeyUdf: Out => Key,
-   that: DataQuanta[ThatOut],
-   thatKeyUdf: ThatOut => Key)
-  : DataQuanta[WayangTuple2[Out, ThatOut]] =
-    joinJava(toSerializableFunction(thisKeyUdf), that, toSerializableFunction(thatKeyUdf))
-*/
-
   def spatialFilter(keySelector: SerializableFunction[Out, WGeometry],
                     spatialPredicate: SpatialPredicate,
                     filterGeometry: WGeometry,
@@ -345,22 +337,6 @@ class DataQuanta[Out: ClassTag](val operator: ElementaryOperator, outputIndex: I
     that.connectTo(spatialJoinOperator, 1)
     spatialJoinOperator
   }
-
-//  def spatialJoin(keySelector: SerializableFunction[Out, WGeometry],
-//
-//                    spatialPredicate: SpatialPredicate,
-//                    filterGeometry: WGeometry) = spatialJoinJava(keySelector, spatialPredicate, filterGeometry)
-//
-//  def spatialJoinJava(keySelector: SerializableFunction[Out, WGeometry],
-//                        spatialPredicate: SpatialPredicate,
-//                        filterGeometry: WGeometry): DataQuanta[Out ]= {
-//
-//    val spatialJoinOperator = new SpatialJoinOperator(
-//      spatialPredicate, keySelector,  dataSetType[Out], filterGeometry
-//    )
-//    this.connectTo(spatialJoinOperator, 0)
-//    spatialJoinOperator
-//  }
 
   /**
     * Feed this instance into a [[FlatMapOperator]].

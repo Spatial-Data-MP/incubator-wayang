@@ -48,8 +48,6 @@ public class SpatialJoinMapping implements Mapping {
     private SubplanPattern createSubplanPattern() {
         final OperatorPattern operatorPattern = new OperatorPattern<>(
                 "spatialJoin", new SpatialJoinOperator<>(
-//                        (FunctionDescriptor.SerializableFunction) null,
-//                        (FunctionDescriptor.SerializableFunction) null,
                          null,
                          null,
                         DataSetType.none(),

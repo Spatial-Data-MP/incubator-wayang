@@ -17,21 +17,16 @@
 
 package org.apache.wayang.api.sql;
 
-import org.apache.spark.internal.config.R;
 import org.apache.wayang.basic.data.Record;
-//import org.apache.wayang.basic.data.SpatialRecord;
 import org.apache.wayang.basic.data.Tuple2;
 import org.apache.wayang.basic.data.WGeometry;
 import org.apache.wayang.basic.operators.*;
 import org.apache.wayang.core.api.Configuration;
 import org.apache.wayang.core.api.WayangContext;
-import org.apache.wayang.core.function.FunctionDescriptor;
 import org.apache.wayang.core.function.SpatialPredicate;
 import org.apache.wayang.core.plan.wayangplan.WayangPlan;
 import org.apache.wayang.core.types.DataSetType;
 import org.apache.wayang.core.util.ReflectionUtils;
-import org.apache.wayang.core.util.Tuple;
-import org.apache.wayang.core.util.WayangCollections;
 import org.apache.wayang.java.Java;
 import org.apache.wayang.postgres.Postgres;
 import org.apache.wayang.postgres.operators.PostgresTableSource;
@@ -40,10 +35,7 @@ import org.junit.jupiter.api.Test;
 import org.locationtech.jts.geom.Envelope;
 import org.locationtech.jts.geom.Geometry;
 import org.locationtech.jts.geom.GeometryFactory;
-import org.locationtech.jts.io.geojson.GeoJsonReader;
 
-import java.io.File;
-import java.io.FileReader;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;

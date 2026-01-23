@@ -150,8 +150,8 @@ class JavaApiTest {
         // Set up WayangContext.
         WayangContext wayangContext = getTestWayangContext()
                 .withPlugin(Java.basicPlugin())
-//                .withPlugin(Postgres.plugin())
-                ;
+                .withPlugin(Postgres.plugin())
+                .withPlugin(Spark.basicPlugin());
 
         JavaPlanBuilder builder = new JavaPlanBuilder(wayangContext);
 
@@ -208,7 +208,6 @@ class JavaApiTest {
                         (record -> (WGeometry) null),
                         SpatialPredicate.INTERSECTS,
                         WGeometry.fromStringInput("POLYGON((0.00 0.00,0.00 0.20,0.20 0.20,0.20 0.00,0.00 0.00))")
-//                        WGeometry.fromStringInput("POLYGON((0.00 0.00, 0.00 0.00, 0.00 0.00, 0.00 0.00, 0.00 0.00))")
                 ).withTargetPlatform(Postgres.platform())
                 .withSqlGeometryColumnName("geom")
                 .collect();
@@ -237,10 +236,7 @@ class JavaApiTest {
         );
         // Input polygons: nested axis-aligned squares.
         final List<WGeometry> inputValues2 = Arrays.asList(
-                WGeometry.fromStringInput("POLYGON((0.00 0.00,0.40 0.00,0.40 0.40,0.00 0.40,0.00 0.00))")
-//                WGeometry.fromStringInput("POLYGON((0.00 0.00,0.30 0.00,0.30 0.30,0.00 0.30,0.00 0.00))"),
-//                WGeometry.fromStringInput("POLYGON((0.00 0.00,0.20 0.00,0.20 0.20,0.00 0.20,0.00 0.00))"),
-//                WGeometry.fromStringInput("POLYGON((0.00 0.00,0.10 0.00,0.10 0.10,0.00 0.10,0.00 0.00))")
+                WGeometry.fromStringInput("POLYGON((0.30 0.30,0.40 0.30,0.40 0.40,0.30 0.40,0.30 0.30))")
         );
 
         final LoadCollectionDataQuantaBuilder<Tuple2<Integer, WGeometry>> dataQuanta1 = builder.loadCollection(inputValues1);
@@ -256,7 +252,7 @@ class JavaApiTest {
                 ).withTargetPlatform(Spark.platform())
                 .collect();
 
-        assertEquals(4, outputValues.size());
+        assertEquals(2, outputValues.size());
 
     }
 

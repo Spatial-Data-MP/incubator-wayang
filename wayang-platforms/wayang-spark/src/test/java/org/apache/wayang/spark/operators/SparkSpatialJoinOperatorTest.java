@@ -50,7 +50,6 @@ class SparkSpatialJoinOperatorTest extends SparkOperatorTestBase {
                 WGeometry.fromStringInput("POLYGON((0.00 0.00,0.0 0.10,0.10 0.10,0.10 0.10,0.00 0.00))"),
                 WGeometry.fromStringInput("POLYGON((0.20 0.20,0.20 0.30,0.30 0.30,0.30 0.20,0.20 0.20))"),
                 WGeometry.fromStringInput("POLYGON((0.40 0.00,0.40 0.50,0.50 0.50,0.50 0.40,0.40 0.00))")
-                //WGeometry.fromStringInput("POLYGON((0.00 0.00,0.10 0.00,0.10 0.10,0.00 0.10,0.00 0.00))")
         );
 
 
@@ -58,7 +57,6 @@ class SparkSpatialJoinOperatorTest extends SparkOperatorTestBase {
                 WGeometry.fromStringInput("POLYGON((0.90 0.90,0.90 1.00,1.00 1.00,1.00 0.90,0.90 0.90))"),
                 WGeometry.fromStringInput("POLYGON((0.20 0.20,0.20 0.30,0.30 0.30,0.30 0.20,0.20 0.20))"),
                 WGeometry.fromStringInput("POLYGON((0.00 0.80,0.00 0.90,0.10 0.90,0.10 0.80,0.00 0.80))")
-                //WGeometry.fromStringInput("POLYGON((0.00 0.00,0.10 0.00,0.10 0.10,0.00 0.10,0.00 0.00))")
         );
 
         RddChannel.Instance input1 = this.createRddChannelInstance(inputValues1);
@@ -80,6 +78,5 @@ class SparkSpatialJoinOperatorTest extends SparkOperatorTestBase {
 
         final List<Record> result = output.<Record>provideRdd().collect();
         assertEquals(1, result.size());
-//        assertEquals(asList(hits, boundary), result);
     }
 }

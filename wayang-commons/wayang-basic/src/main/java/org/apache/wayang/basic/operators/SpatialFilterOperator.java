@@ -35,7 +35,6 @@ public class SpatialFilterOperator<Type> extends UnaryToUnaryOperator<Type, Type
 
 
     protected final SpatialPredicate relation;
-//    protected final int geometryColumnIndex;
     protected final TransformationDescriptor<Type, WGeometry> keyDescriptor;
     protected final WGeometry referenceGeometry;
 
@@ -55,8 +54,6 @@ public class SpatialFilterOperator<Type> extends UnaryToUnaryOperator<Type, Type
                 inputClassDatasetType, true);
         // TODO: Find out what broadcast means
         this.relation = relation;
-        //this.geometryColumnIndex = columnIndex == null ? 0 : columnIndex;
-//        this.referenceGeometry = Objects.requireNonNull(geometry, "Reference geometry must not be null.");
         this.keyDescriptor = new TransformationDescriptor<>(keyExtractor, inputClassDatasetType.getDataUnitType().getTypeClass(), WGeometry.class);
         this.referenceGeometry = geometry;
     }
@@ -73,15 +70,9 @@ public class SpatialFilterOperator<Type> extends UnaryToUnaryOperator<Type, Type
     public SpatialFilterOperator(SpatialFilterOperator<Type> that) {
         super(that);
         this.relation = that.relation;
-//        this.geometryColumnIndex = that.geometryColumnIndex;
         this.keyDescriptor = that.keyDescriptor;
         this.referenceGeometry = that.referenceGeometry;
     }
-
-
-//    public DataSetType<Type> getType() {
-//        return this.getInputType();
-//    }
 
     /**
      * Custom {@link org.apache.wayang.core.optimizer.cardinality.CardinalityEstimator} for {@link SpatialFilterOperator}s.
