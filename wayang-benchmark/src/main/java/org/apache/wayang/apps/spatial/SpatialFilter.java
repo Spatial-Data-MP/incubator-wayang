@@ -19,10 +19,8 @@
 package org.apache.wayang.apps.spatial;
 
 import org.apache.wayang.api.JavaPlanBuilder;
-import org.apache.wayang.apps.wordcount.MyTestFilter;
 import org.apache.wayang.core.api.WayangContext;
 import org.apache.wayang.java.Java;
-import org.apache.wayang.spark.Spark;
 
 import java.util.Arrays;
 import java.util.Collection;
@@ -46,7 +44,7 @@ public class SpatialFilter {
         final Collection<Integer> outputValues = builder
                 .loadCollection(inputValues).withName("Load input values")
                 .filter(i -> (i & 1) == 0).withName("Filter even numbers")
-                .withUdfJarOf(MyTestFilter.class)
+                .withUdfJarOf(SpatialFilter.class)
                 .collect();
 
 

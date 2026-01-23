@@ -19,7 +19,6 @@
 package org.apache.wayang.apps.spatial;
 
 import org.apache.wayang.api.JavaPlanBuilder;
-import org.apache.wayang.apps.wordcount.MyTestFilter;
 import org.apache.wayang.core.api.WayangContext;
 import org.apache.wayang.spark.Spark;
 
