@@ -30,9 +30,7 @@ public class Mappings {
 
     public static final Collection<Mapping> ALL = Arrays.asList(
             new FilterMapping(),
-            new SpatialFilterMapping(),
             new JoinMapping(),
-            new SpatialJoinMapping(),
             new ProjectionMapping()
     );
 

@@ -48,12 +48,10 @@ public class Mappings {
             new DistinctMapping(),
             new SortMapping(),
             new FilterMapping(),
-            new SpatialFilterMapping(),
             new UnionAllMapping(),
             new IntersectMapping(),
             new CartesianMapping(),
             new JoinMapping(),
-            new SpatialJoinMapping(),
             new CoGroupMapping(),
             new LoopMapping(),
             new DoWhileMapping(),
@@ -64,8 +62,7 @@ public class Mappings {
             new KafkaTopicSinkMapping(),
             new AmazonS3SourceMapping(),
             new GoogleCloudStorageSourceMapping(),
-            new AzureBlobStorageSourceMapping(),
-            new GeoJsonFileSourceMapping()
+            new AzureBlobStorageSourceMapping()
     );
 
     public static Collection<Mapping> GRAPH_MAPPINGS = Arrays.asList(

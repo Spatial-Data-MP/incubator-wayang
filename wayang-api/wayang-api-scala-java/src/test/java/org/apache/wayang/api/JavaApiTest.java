@@ -20,7 +20,6 @@ package org.apache.wayang.api;
 
 import org.apache.wayang.basic.data.Record;
 import org.apache.wayang.basic.data.Tuple2;
-import org.apache.wayang.basic.data.WGeometry;
 import org.apache.wayang.basic.operators.TableSource;
 import org.apache.wayang.core.api.Configuration;
 import org.apache.wayang.core.api.WayangContext;
@@ -134,128 +133,6 @@ class JavaApiTest {
         Set<Integer> expectedValues = WayangCollections.asSet(2, 4, 6);
         assertEquals(expectedValues, WayangCollections.asSet(outputValues));
     }
-
-    WayangContext getTestWayangContext() {
-        Configuration configuration = new Configuration();
-        configuration.setProperty("wayang.postgres.jdbc.url", "jdbc:postgresql://localhost:5432/spatialdb"); // Default port 5432
-        configuration.setProperty("wayang.postgres.jdbc.user", "postgres");
-        configuration.setProperty("wayang.postgres.jdbc.password", "postgres");
-
-        return new WayangContext(configuration);
-    }
-
-
-    @Test
-    void testSpatialFilter() {
-        // Set up WayangContext.
-        WayangContext wayangContext = getTestWayangContext()
-                .withPlugin(Java.basicPlugin())
-                .withPlugin(Postgres.plugin())
-                .withPlugin(Spark.basicPlugin());
-
-        JavaPlanBuilder builder = new JavaPlanBuilder(wayangContext);
-
-        // Input polygons: nested axis-aligned squares.
-        final List<WGeometry> inputValues = Arrays.asList(
-                WGeometry.fromStringInput("POLYGON((0.00 0.00,0.40 0.00,0.40 0.40,0.00 0.40,0.00 0.00))"),
-                WGeometry.fromStringInput("POLYGON((0.00 0.00,0.30 0.00,0.30 0.30,0.00 0.30,0.00 0.00))"),
-                WGeometry.fromStringInput("POLYGON((0.00 0.00,0.20 0.00,0.20 0.20,0.00 0.20,0.00 0.00))"),
-                WGeometry.fromStringInput("POLYGON((0.00 0.00,0.10 0.00,0.10 0.10,0.00 0.10,0.00 0.00))")
-        );
-
-        // Query geometry: a square entirely inside the 0.4 and 0.3 squares,
-        // but outside the 0.2 and 0.1 squares.
-        WGeometry queryGeometry = WGeometry.fromStringInput(
-                "POLYGON((0.25 0.25,0.35 0.25,0.35 0.35,0.25 0.35,0.25 0.25))"
-        );
-
-        final Collection<WGeometry> outputValues = builder
-                .loadCollection(inputValues).withName("Load input values")
-                .spatialFilter(
-                        (input -> (WGeometry) input),
-                        SpatialPredicate.INTERSECTS,
-                        queryGeometry
-                ).withName("Spatial filter (INTERSECTS)")
-                .collect();
-
-        // We expect only the first two polygons to intersect the query geometry.
-        Set<WGeometry> expectedOutput = WayangCollections.asSet(
-                WGeometry.fromStringInput("POLYGON((0.00 0.00,0.40 0.00,0.40 0.40,0.00 0.40,0.00 0.00))"),
-                WGeometry.fromStringInput("POLYGON((0.00 0.00,0.30 0.00,0.30 0.30,0.00 0.30,0.00 0.00))")
-        );
-
-        assertEquals(expectedOutput, WayangCollections.asSet(outputValues));
-    }
-
-
-    @Test
-    void testSpatialFilterWithDbDataQuanta() {
-        Configuration configuration = new Configuration();
-        configuration.setProperty("wayang.postgres.jdbc.url", "jdbc:postgresql://localhost:5432/spatialdb"); // Default port 5432
-        configuration.setProperty("wayang.postgres.jdbc.user", "postgres");
-        configuration.setProperty("wayang.postgres.jdbc.password", "postgres");
-
-
-        WayangContext wayangContext = new WayangContext(configuration)
-                .withPlugin(Java.basicPlugin())
-                .withPlugin(Postgres.plugin());
-        JavaPlanBuilder builder = new JavaPlanBuilder(wayangContext);
-
-        TableSource tableSource = new PostgresTableSource("spider", "id", "geom");
-
-        final Collection<Record> outputValues = builder .readTable(tableSource)
-                .spatialFilter(
-                        (record -> (WGeometry) null),
-                        SpatialPredicate.INTERSECTS,
-                        WGeometry.fromStringInput("POLYGON((0.00 0.00,0.00 0.20,0.20 0.20,0.20 0.00,0.00 0.00))")
-                ).withTargetPlatform(Postgres.platform())
-                .withSqlGeometryColumnName("geom")
-                .collect();
-
-
-        assertEquals(2, WayangCollections.asSet(outputValues).size());
-    }
-
-    @Test
-    void testSpatialJoin() {
-        // Set up WayangContext.
-        WayangContext wayangContext = new WayangContext(new Configuration());
-        wayangContext.withPlugin(Java.basicPlugin())
-                .withPlugin(Postgres.plugin())
-                .withPlugin(Spark.basicPlugin())
-                ;
-
-        JavaPlanBuilder builder = new JavaPlanBuilder(wayangContext);
-
-        // Input polygons: nested axis-aligned squares.
-        final List<Tuple2<Integer, WGeometry>> inputValues1 = Arrays.asList(
-                new Tuple2<Integer, WGeometry>(1, WGeometry.fromStringInput("POLYGON((0.00 0.00,0.40 0.00,0.40 0.40,0.00 0.40,0.00 0.00))")),
-                new Tuple2<Integer, WGeometry>(2, WGeometry.fromStringInput("POLYGON((0.00 0.00,0.30 0.00,0.30 0.30,0.00 0.30,0.00 0.00))")),
-                new Tuple2<Integer, WGeometry>(3, WGeometry.fromStringInput("POLYGON((0.00 0.00,0.20 0.00,0.20 0.20,0.00 0.20,0.00 0.00))")),
-                new Tuple2<Integer, WGeometry>(4, WGeometry.fromStringInput("POLYGON((0.00 0.00,0.10 0.00,0.10 0.10,0.00 0.10,0.00 0.00))"))
-        );
-        // Input polygons: nested axis-aligned squares.
-        final List<WGeometry> inputValues2 = Arrays.asList(
-                WGeometry.fromStringInput("POLYGON((0.30 0.30,0.40 0.30,0.40 0.40,0.30 0.40,0.30 0.30))")
-        );
-
-        final LoadCollectionDataQuantaBuilder<Tuple2<Integer, WGeometry>> dataQuanta1 = builder.loadCollection(inputValues1);
-        final LoadCollectionDataQuantaBuilder<WGeometry> dataQuanta2 = builder.loadCollection(inputValues2);
-
-
-        final Collection<Tuple2<Tuple2<Integer, WGeometry>, WGeometry>> outputValues = dataQuanta1
-                .spatialJoin(
-                        Tuple2::getField1,
-                        dataQuanta2,
-                        (wgeometry -> wgeometry),
-                        SpatialPredicate.INTERSECTS
-                ).withTargetPlatform(Spark.platform())
-                .collect();
-
-        assertEquals(2, outputValues.size());
-
-    }
-
 
     @Test
     void testBroadcast2() {

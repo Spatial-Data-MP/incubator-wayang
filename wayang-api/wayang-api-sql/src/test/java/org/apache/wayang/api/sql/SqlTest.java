@@ -19,11 +19,13 @@ package org.apache.wayang.api.sql;
 
 import org.apache.wayang.basic.data.Record;
 import org.apache.wayang.basic.data.Tuple2;
-import org.apache.wayang.basic.data.WGeometry;
+import org.apache.wayang.spatial.data.WGeometry;
 import org.apache.wayang.basic.operators.*;
+import org.apache.wayang.spatial.operators.SpatialFilterOperator;
+import org.apache.wayang.spatial.operators.SpatialJoinOperator;
 import org.apache.wayang.core.api.Configuration;
 import org.apache.wayang.core.api.WayangContext;
-import org.apache.wayang.core.function.SpatialPredicate;
+import org.apache.wayang.spatial.function.SpatialPredicate;
 import org.apache.wayang.core.plan.wayangplan.WayangPlan;
 import org.apache.wayang.core.types.DataSetType;
 import org.apache.wayang.core.util.ReflectionUtils;

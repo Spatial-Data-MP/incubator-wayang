@@ -49,8 +49,6 @@ public class Mappings {
             new DistinctMapping(),
             new SortMapping(),
             new FilterMapping(),
-            new SpatialFilterMapping(),
-            new SpatialJoinMapping(),
             new UnionAllMapping(),
             new IntersectMapping(),
             new CartesianMapping(),

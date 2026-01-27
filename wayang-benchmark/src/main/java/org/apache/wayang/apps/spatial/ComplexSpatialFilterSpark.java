@@ -20,10 +20,10 @@ package org.apache.wayang.apps.spatial;
 
 import org.apache.wayang.api.CountDataQuantaBuilder;
 import org.apache.wayang.api.JavaPlanBuilder;
-import org.apache.wayang.basic.data.WGeometry;
+import org.apache.wayang.spatial.data.WGeometry;
 import org.apache.wayang.core.api.Configuration;
 import org.apache.wayang.core.api.WayangContext;
-import org.apache.wayang.core.function.SpatialPredicate;
+import org.apache.wayang.spatial.function.SpatialPredicate;
 import org.apache.wayang.java.Java;
 import org.apache.wayang.postgres.Postgres;
 import org.apache.wayang.spark.Spark;

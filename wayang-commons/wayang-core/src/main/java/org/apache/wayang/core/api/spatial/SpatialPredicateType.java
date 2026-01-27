@@ -1,0 +1,51 @@
+/*
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package org.apache.wayang.core.api.spatial;
+
+/**
+ * Spatial relationship predicates for filtering and joining.
+ * This enum provides a dependency-free way to specify spatial predicates
+ * in the core module. The spatial plugin maps these to actual JTS predicates.
+ */
+public enum SpatialPredicateType {
+
+    /** Tests if geometries intersect (share any portion of space). */
+    INTERSECTS,
+
+    /** Tests if the first geometry contains the second. */
+    CONTAINS,
+
+    /** Tests if the first geometry is within the second. */
+    WITHIN,
+
+    /** Tests if geometries overlap (share some but not all interior points). */
+    OVERLAPS,
+
+    /** Tests if geometries touch (share a boundary but not interiors). */
+    TOUCHES,
+
+    /** Tests if geometries cross (share some interior points). */
+    CROSSES,
+
+    /** Tests if geometries are disjoint (share no points). */
+    DISJOINT,
+
+    /** Tests if geometries are topologically equal. */
+    EQUALS
+}

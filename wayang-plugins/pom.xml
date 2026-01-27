@@ -39,6 +39,7 @@
 
     <modules>
         <module>wayang-iejoin</module>
+        <module>wayang-spatial</module>
     </modules>
 
 </project>
