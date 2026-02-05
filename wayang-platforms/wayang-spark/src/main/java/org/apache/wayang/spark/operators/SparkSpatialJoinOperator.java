@@ -112,10 +112,10 @@ public class SparkSpatialJoinOperator<InputType0, InputType1>
             spatialRDDRight.setRawSpatialRDD(rightInGeometry);
 
             spatialRDDLeft.analyze();
-            spatialRDDLeft.analyze();
+            spatialRDDRight.analyze();
 
             // TODO: fix num partitions max |spatialRDDLeft|/2
-            spatialRDDLeft.spatialPartitioning(GridType.KDBTREE, 1);
+            spatialRDDLeft.spatialPartitioning(GridType.QUADTREE, 64);
             spatialRDDRight.spatialPartitioning(spatialRDDLeft.getPartitioner());
 
             JavaPairRDD<Geometry, Geometry> sedonaJoin = JoinQuery.spatialJoin(

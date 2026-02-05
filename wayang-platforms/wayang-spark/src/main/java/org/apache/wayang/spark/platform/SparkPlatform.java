@@ -41,6 +41,8 @@ import org.apache.wayang.spark.operators.SparkLocalCallbackSink;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+import org.apache.sedona.core.spatialRDD.SpatialRDD; // oben hinzufügen
+
 import java.util.Collections;
 import java.util.Set;
 
@@ -85,7 +87,8 @@ public class SparkPlatform extends Platform {
             "spark.io.compression.codec",
             "spark.driver.memory",
             "spark.executor.heartbeatInterval",
-            "spark.network.timeout"
+            "spark.network.timeout",
+            "spark.jars"
             // "spark.extraListeners"
     };
 
@@ -161,6 +164,9 @@ public class SparkPlatform extends Platform {
             this.registerJarIfNotNull(ReflectionUtils.getDeclaringJar(SparkPlatform.class)); // wayang-spark
             this.registerJarIfNotNull(ReflectionUtils.getDeclaringJar(WayangBasic.class)); // wayang-basic
             this.registerJarIfNotNull(ReflectionUtils.getDeclaringJar(WayangContext.class)); // wayang-core
+
+            this.registerJarIfNotNull(ReflectionUtils.getDeclaringJar(SpatialRDD.class));
+
             final Set<String> udfJarPaths = job.getUdfJarPaths();
             if (udfJarPaths.isEmpty()) {
                 this.logger.warn("Non-local SparkContext but not UDF JARs have been declared.");
