@@ -25,6 +25,7 @@ import org.apache.wayang.core.function.FunctionDescriptor;
 import org.apache.wayang.core.function.SpatialPredicate;
 import org.apache.wayang.core.function.TransformationDescriptor;
 import org.apache.wayang.core.optimizer.OptimizationContext;
+import org.apache.wayang.core.optimizer.cardinality.CardinalityEstimate;
 import org.apache.wayang.core.platform.ChannelDescriptor;
 import org.apache.wayang.core.platform.ChannelInstance;
 import org.apache.wayang.core.platform.lineage.ExecutionLineageNode;
@@ -34,12 +35,10 @@ import org.apache.wayang.java.channels.CollectionChannel;
 import org.apache.wayang.java.channels.StreamChannel;
 import org.apache.wayang.java.execution.JavaExecutor;
 import org.locationtech.jts.geom.Geometry;
+import org.locationtech.jts.index.strtree.STRtree;
 
 import javax.xml.crypto.dsig.Transform;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.List;
+import java.util.*;
 import java.util.function.Function;
 import java.util.stream.Stream;
 
@@ -86,7 +85,11 @@ public class JavaSpatialJoinOperator<InputType0, InputType1>
         final Function<InputType1, WGeometry> keyExtractor1 =
                 javaExecutor.getCompiler().compile(this.keyDescriptor1);
 
-        // Get Java streams for both inputs.
+
+        final CardinalityEstimate cardinalityEstimate0 = operatorContext.getInputCardinality(0);
+        final CardinalityEstimate cardinalityEstimate1 = operatorContext.getInputCardinality(1);
+
+//        // Get Java streams for both inputs.
         final Stream<InputType0> leftStream =
                 ((org.apache.wayang.java.channels.JavaChannelInstance) inputs[0])
                         .<InputType0>provideStream();
@@ -94,32 +97,57 @@ public class JavaSpatialJoinOperator<InputType0, InputType1>
                 ((org.apache.wayang.java.channels.JavaChannelInstance) inputs[1])
                         .<InputType1>provideStream();
 
+        STRtree index = new STRtree();
+
+        rightStream.forEach(v1 -> {
+            WGeometry wGeom = keyExtractor1.apply(v1);
+            Geometry geom = (wGeom == null) ? null : wGeom.getGeometry();
+            if (geom != null) {
+                index.insert(geom.getEnvelopeInternal(), new AbstractMap.SimpleEntry<>(v1, geom));
+            }
+        });
+
+        index.build();
+
+
         // Materialize the right side with its JTS geometries.
-        final java.util.List<java.util.Map.Entry<InputType1, Geometry>> rightIndex =
-                rightStream
-                        .map(v1 -> {
-                            WGeometry wGeom = keyExtractor1.apply(v1);
-                            Geometry geom = (wGeom == null) ? null : wGeom.getGeometry();
-                            return new java.util.AbstractMap.SimpleImmutableEntry<>(v1, geom);
-                        })
-                        .filter(e -> e.getValue() != null)
-                        .collect(java.util.stream.Collectors.toList());
+//        final java.util.List<java.util.Map.Entry<InputType1, Geometry>> rightIndex =
+//                rightStream
+//                        .map(v1 -> {
+//                            WGeometry wGeom = keyExtractor1.apply(v1);
+//                            Geometry geom = (wGeom == null) ? null : wGeom.getGeometry();
+//                            return new java.util.AbstractMap.SimpleImmutableEntry<>(v1, geom);
+//                        })
+//                        .filter(e -> e.getValue() != null)
+//                        .collect(java.util.stream.Collectors.toList());
+
+        final Stream<Tuple2<InputType0, InputType1>> joinStream = leftStream.flatMap(v0 -> {
+            Geometry geom0 = Optional.ofNullable(keyExtractor0.apply(v0))
+                    .map(WGeometry::getGeometry).orElse(null);
+            if (geom0 == null) return Stream.empty();
+
+            List<Map.Entry<InputType1, Geometry>> candidates = index.query(geom0.getEnvelopeInternal());
+
+            return candidates.stream()
+                    .filter(e -> predicate.test(geom0, e.getValue()))
+                    .map(e -> new Tuple2<>(v0, e.getKey()));
+        });
 
         // Build the join stream: for each left geometry, find all right geometries
         // that satisfy the spatial predicate.
-        final Stream<Tuple2<InputType0, InputType1>> joinStream =
-                leftStream.flatMap(v0 -> {
-                    WGeometry wGeom0 = keyExtractor0.apply(v0);
-                    Geometry geom0 = (wGeom0 == null) ? null : wGeom0.getGeometry();
-                    if (geom0 == null) {
-                        return Stream.empty();
-                    }
-
-                    return rightIndex.stream()
-                            .filter(e -> e.getValue() != null
-                                    && this.predicate.test(geom0, e.getValue()))
-                            .map(e -> new Tuple2<>(v0, e.getKey()));
-                });
+//        final Stream<Tuple2<InputType0, InputType1>> joinStream =
+//                leftStream.flatMap(v0 -> {
+//                    WGeometry wGeom0 = keyExtractor0.apply(v0);
+//                    Geometry geom0 = (wGeom0 == null) ? null : wGeom0.getGeometry();
+//                    if (geom0 == null) {
+//                        return Stream.empty();
+//                    }
+//
+//                    return rightIndex.stream()
+//                            .filter(e -> e.getValue() != null
+//                                    && this.predicate.test(geom0, e.getValue()))
+//                            .map(e -> new Tuple2<>(v0, e.getKey()));
+//                });
 
         // Push the result into the output channel.
         ((org.apache.wayang.java.channels.StreamChannel.Instance) outputs[0]).accept(joinStream);
