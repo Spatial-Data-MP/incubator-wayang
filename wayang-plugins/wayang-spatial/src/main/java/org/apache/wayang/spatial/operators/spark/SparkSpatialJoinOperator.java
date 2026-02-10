@@ -38,6 +38,7 @@ import org.apache.wayang.core.util.Tuple;
 import org.apache.wayang.spark.channels.RddChannel;
 import org.apache.wayang.spark.execution.SparkExecutor;
 import org.apache.wayang.spark.operators.SparkExecutionOperator;
+import org.apache.wayang.core.util.ReflectionUtils;
 import org.locationtech.jts.geom.Geometry;
 
 import java.util.Arrays;
@@ -77,6 +78,14 @@ public class SparkSpatialJoinOperator<InputType0, InputType1>
 
     @Override
     public Tuple<Collection<ExecutionLineageNode>, Collection<ChannelInstance>> evaluate(ChannelInstance[] inputs, ChannelInstance[] outputs, SparkExecutor sparkExecutor, OptimizationContext.OperatorContext operatorContext) {
+        // Register Sedona JAR with Spark executors if running in cluster mode.
+        if (!sparkExecutor.sc.isLocal()) {
+            String sedonaJar = ReflectionUtils.getDeclaringJar(SpatialRDD.class);
+            if (sedonaJar != null) {
+                sparkExecutor.sc.addJar(sedonaJar);
+            }
+        }
+
         final JavaRDD<InputType0> leftIn = ((RddChannel.Instance) inputs[0]).provideRdd();
         final JavaRDD<InputType1> rightIn = ((RddChannel.Instance) inputs[1]).provideRdd();
 
@@ -110,10 +119,12 @@ public class SparkSpatialJoinOperator<InputType0, InputType1>
             spatialRDDRight.setRawSpatialRDD(rightInGeometry);
 
             spatialRDDLeft.analyze();
-            spatialRDDLeft.analyze();
+            spatialRDDRight.analyze();
 
+            int numPartitions = (int) Math.min(Math.floor((double) spatialRDDLeft.approximateTotalCount / 2), 64);
+            System.out.println(numPartitions);
             // TODO: fix num partitions max |spatialRDDLeft|/2
-            spatialRDDLeft.spatialPartitioning(GridType.KDBTREE, 1);
+            spatialRDDLeft.spatialPartitioning(GridType.QUADTREE, numPartitions);
             spatialRDDRight.spatialPartitioning(spatialRDDLeft.getPartitioner());
 
             JavaPairRDD<Geometry, Geometry> sedonaJoin = JoinQuery.spatialJoin(
