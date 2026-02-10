@@ -48,7 +48,7 @@ public class Spatial {
 
     // Register the spatial operator provider when this class is loaded
     static {
-        SpatialOperatorFactory.registerProvider(new SpatialOperatorProviderImpl());
+        SpatialOperatorFactory.registerProvider(new ConcreteSpatialOperatorProvider());
     }
 
     /**

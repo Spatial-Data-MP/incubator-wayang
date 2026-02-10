@@ -33,7 +33,7 @@ import org.apache.wayang.spatial.function.SpatialPredicate;
  * Implementation of {@link SpatialOperatorProvider} that provides concrete
  * spatial operator builders using JTS/Sedona-backed implementations.
  */
-public class SpatialOperatorProviderImpl implements SpatialOperatorProvider {
+public class ConcreteSpatialOperatorProvider implements SpatialOperatorProvider {
 
     @Override
     @SuppressWarnings("unchecked")

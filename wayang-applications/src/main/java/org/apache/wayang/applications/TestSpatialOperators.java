@@ -54,7 +54,7 @@ public class TestSpatialOperators {
         Logger logger = Logger.getLogger(QueryExecutorImpl.class.getName());
         ConsoleHandler handler = new ConsoleHandler();
 //        handler.setLevel(Level.FINEST);
-        // handler.setFilter(record -> record.getMessage() != null && record.getMessage().contains("query="));
+//        handler.setFilter(record -> record.getMessage() != null && record.getMessage().contains("query="));
 //        logger.addHandler(handler);
 //        logger.setUseParentHandlers(false);
 //        logger.setLevel(Level.FINEST);
