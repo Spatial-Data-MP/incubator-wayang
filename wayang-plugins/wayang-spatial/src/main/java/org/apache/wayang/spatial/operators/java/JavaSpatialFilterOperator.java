@@ -18,22 +18,24 @@
 
 package org.apache.wayang.spatial.operators.java;
 
-import org.apache.wayang.spatial.data.WGeometry;
-import org.apache.wayang.spatial.operators.SpatialFilterOperator;
+import org.apache.wayang.basic.operators.SpatialFilterOperator;
+import org.apache.wayang.core.api.spatial.SpatialGeometry;
+import org.apache.wayang.core.api.spatial.SpatialPredicateType;
 import org.apache.wayang.core.function.FunctionDescriptor;
-import org.apache.wayang.spatial.function.SpatialPredicate;
 import org.apache.wayang.core.optimizer.OptimizationContext;
+import org.apache.wayang.core.types.DataSetType;
 import org.apache.wayang.core.plan.wayangplan.ExecutionOperator;
 import org.apache.wayang.core.platform.ChannelDescriptor;
 import org.apache.wayang.core.platform.ChannelInstance;
 import org.apache.wayang.core.platform.lineage.ExecutionLineageNode;
-import org.apache.wayang.core.types.DataSetType;
 import org.apache.wayang.core.util.Tuple;
 import org.apache.wayang.java.channels.CollectionChannel;
 import org.apache.wayang.java.channels.JavaChannelInstance;
 import org.apache.wayang.java.channels.StreamChannel;
 import org.apache.wayang.java.execution.JavaExecutor;
 import org.apache.wayang.java.operators.JavaExecutionOperator;
+import org.apache.wayang.spatial.data.WGeometry;
+import org.apache.wayang.spatial.function.SpatialPredicate;
 import org.locationtech.jts.geom.Geometry;
 
 import java.util.Arrays;
@@ -55,10 +57,10 @@ public class JavaSpatialFilterOperator<Type>
      *
      * @param relation the type of spatial filter (e.g., "INTERSECTS", "CONTAINS", "WITHIN")
      */
-    public JavaSpatialFilterOperator(SpatialPredicate relation,
-                                     FunctionDescriptor.SerializableFunction<Type, WGeometry> keyExtractor,
+    public JavaSpatialFilterOperator(SpatialPredicateType relation,
+                                     FunctionDescriptor.SerializableFunction<Type, ? extends SpatialGeometry> keyExtractor,
                                      DataSetType<Type> inputClassDatasetType,
-                                     WGeometry geometry) {
+                                     SpatialGeometry geometry) {
         super(relation, keyExtractor, inputClassDatasetType, geometry);
     }
 
@@ -74,9 +76,6 @@ public class JavaSpatialFilterOperator<Type>
             JavaExecutor javaExecutor,
             OptimizationContext.OperatorContext operatorContext) {
 
-
-
-
         final Predicate<Type> filterPredicate = this.buildSpatialPredicate(javaExecutor);
         ((StreamChannel.Instance) outputs[0]).accept(
                 ((JavaChannelInstance) inputs[0]).<Type>provideStream().filter(filterPredicate)
@@ -86,10 +85,12 @@ public class JavaSpatialFilterOperator<Type>
     }
 
     private Predicate<Type> buildSpatialPredicate(JavaExecutor javaExecutor) {
-        final Geometry reference = this.referenceGeometry.getGeometry();
-        final Function<Type, WGeometry> keyExtractor = javaExecutor.getCompiler().compile(this.keyDescriptor);
+        WGeometry wRef = (WGeometry) this.referenceGeometry;
+        final Geometry reference = wRef.getGeometry();
+        final Function<Type, ? extends SpatialGeometry> keyExtractor = javaExecutor.getCompiler().compile(this.keyDescriptor);
+        SpatialPredicate predicate = SpatialPredicate.fromType(this.predicateType);
 
-        return input -> this.relation.test(keyExtractor.apply(input).getGeometry(), reference);
+        return input -> predicate.test(((WGeometry) keyExtractor.apply(input)).getGeometry(), reference);
     }
 
     @Override

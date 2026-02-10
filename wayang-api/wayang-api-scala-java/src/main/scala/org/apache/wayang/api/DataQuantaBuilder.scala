@@ -30,7 +30,7 @@ import org.apache.wayang.basic.data.{Record, Tuple2 => RT2}
 import org.apache.wayang.basic.model.{DLModel, DecisionTreeRegressionModel, LogisticRegressionModel, Model}
 import org.apache.wayang.basic.operators.{DLTrainingOperator, DecisionTreeRegressionOperator, GlobalReduceOperator, LinearSVCOperator, LocalCallbackSink, LogisticRegressionOperator, MapOperator, SampleOperator}
 import org.apache.wayang.commons.util.profiledb.model.Experiment
-import org.apache.wayang.core.api.spatial.{Geometry, SpatialOperatorFactory, SpatialPredicateType}
+import org.apache.wayang.core.api.spatial.{SpatialGeometry, SpatialPredicateType}
 import org.apache.wayang.core.function.FunctionDescriptor.{SerializableBiFunction, SerializableBinaryOperator, SerializableFunction, SerializableIntUnaryOperator, SerializablePredicate}
 import org.apache.wayang.core.optimizer.ProbabilisticDoubleInterval
 import org.apache.wayang.core.optimizer.cardinality.CardinalityEstimator
@@ -285,57 +285,47 @@ trait DataQuantaBuilder[+This <: DataQuantaBuilder[_, Out], Out] extends Logging
     * @param filterGeometry  the geometry to filter against
     * @return a [[DataQuantaBuilder]] representing the filtered output
     */
-  def spatialFilter[G <: Geometry](
-      keyUdf: SerializableFunction[Out, G],
+  def spatialFilter(
+      keyUdf: SerializableFunction[Out, _ <: SpatialGeometry],
       predicate: SpatialPredicateType,
-      filterGeometry: G
-  ): DataQuantaBuilder[_, Out] = {
-    SpatialOperatorFactory.getProvider
-      .createSpatialFilterBuilder(this, keyUdf, predicate, filterGeometry, javaPlanBuilder)
-      .asInstanceOf[DataQuantaBuilder[_, Out]]
-  }
+      filterGeometry: SpatialGeometry
+  ): SpatialFilterDataQuantaBuilder[Out] =
+    new SpatialFilterDataQuantaBuilder(this, keyUdf, predicate, filterGeometry)
 
   /**
     * Feed the built [[DataQuanta]] into a spatial filter operator with SQL pushdown support.
-    * Requires the wayang-spatial plugin to be loaded.
     *
     * @param keyUdf              function to extract geometry from elements
     * @param predicate           the spatial predicate type
     * @param filterGeometry      the geometry to filter against
     * @param sqlGeometryColumn   the name of the geometry column in the database for SQL pushdown
-    * @return a [[DataQuantaBuilder]] representing the filtered output
+    * @return a [[SpatialFilterDataQuantaBuilder]] representing the filtered output
     */
-  def spatialFilter[G <: Geometry](
-      keyUdf: SerializableFunction[Out, G],
+  def spatialFilter(
+      keyUdf: SerializableFunction[Out, _ <: SpatialGeometry],
       predicate: SpatialPredicateType,
-      filterGeometry: G,
+      filterGeometry: SpatialGeometry,
       sqlGeometryColumn: String
-  ): DataQuantaBuilder[_, Out] = {
-    SpatialOperatorFactory.getProvider
-      .createSpatialFilterBuilder(this, keyUdf, predicate, filterGeometry, sqlGeometryColumn, javaPlanBuilder)
-      .asInstanceOf[DataQuantaBuilder[_, Out]]
-  }
+  ): SpatialFilterDataQuantaBuilder[Out] =
+    new SpatialFilterDataQuantaBuilder(this, keyUdf, predicate, filterGeometry)
+      .withSqlGeometryColumnName(sqlGeometryColumn)
 
   /**
     * Feed the built [[DataQuanta]] of this and the given instance into a spatial join operator.
-    * Requires the wayang-spatial plugin to be loaded.
     *
     * @param thisKeyUdf  function to extract geometry from this instance's elements
     * @param that        the other [[DataQuantaBuilder]] to join with
     * @param thatKeyUdf  function to extract geometry from `that` instance's elements
     * @param predicate   the spatial predicate type
-    * @return a [[DataQuantaBuilder]] representing the joined output as Tuple2
+    * @return a [[SpatialJoinDataQuantaBuilder]] representing the joined output as Tuple2
     */
-  def spatialJoin[ThatOut, G <: Geometry](
-      thisKeyUdf: SerializableFunction[Out, G],
+  def spatialJoin[ThatOut](
+      thisKeyUdf: SerializableFunction[Out, _ <: SpatialGeometry],
       that: DataQuantaBuilder[_, ThatOut],
-      thatKeyUdf: SerializableFunction[ThatOut, G],
+      thatKeyUdf: SerializableFunction[ThatOut, _ <: SpatialGeometry],
       predicate: SpatialPredicateType
-  ): DataQuantaBuilder[_, RT2[Out, ThatOut]] = {
-    SpatialOperatorFactory.getProvider
-      .createSpatialJoinBuilder(this, that, thisKeyUdf, thatKeyUdf, predicate, javaPlanBuilder)
-      .asInstanceOf[DataQuantaBuilder[_, RT2[Out, ThatOut]]]
-  }
+  ): SpatialJoinDataQuantaBuilder[Out, ThatOut] =
+    new SpatialJoinDataQuantaBuilder(this, that, thisKeyUdf, thatKeyUdf, predicate)
 
   /**
    * Feed the built [[DataQuanta]] of this and the given instance into a
@@ -1962,4 +1952,42 @@ class KeyedDataQuantaBuilder[Out, Key](private val dataQuantaBuilder: DataQuanta
   def coGroup[ThatOut](that: KeyedDataQuantaBuilder[ThatOut, Key]) =
     dataQuantaBuilder.coGroup(this.keyExtractor, that.dataQuantaBuilder, that.keyExtractor)
 
+}
+
+class SpatialFilterDataQuantaBuilder[T](inputDataQuanta: DataQuantaBuilder[_, T],
+                                        keySelector: SerializableFunction[T, _ <: SpatialGeometry],
+                                        predicateType: SpatialPredicateType,
+                                        filterGeometry: SpatialGeometry)
+                                       (implicit javaPlanBuilder: JavaPlanBuilder)
+  extends BasicDataQuantaBuilder[SpatialFilterDataQuantaBuilder[T], T] {
+
+  private var columnName: String = _
+
+  def withSqlGeometryColumnName(columnName: String): SpatialFilterDataQuantaBuilder[T] = {
+    this.columnName = columnName
+    this
+  }
+
+  override protected def build: DataQuanta[T] = {
+    val dq = inputDataQuanta.dataQuanta()
+    dq.spatialFilter(keySelector, predicateType, filterGeometry, this.columnName)
+  }
+}
+
+class SpatialJoinDataQuantaBuilder[In0, In1](inputDataQuanta0: DataQuantaBuilder[_, In0],
+                                             inputDataQuanta1: DataQuantaBuilder[_, In1],
+                                             keyUdf0: SerializableFunction[In0, _ <: SpatialGeometry],
+                                             keyUdf1: SerializableFunction[In1, _ <: SpatialGeometry],
+                                             predicateType: SpatialPredicateType)
+                                            (implicit javaPlanBuilder: JavaPlanBuilder)
+  extends BasicDataQuantaBuilder[SpatialJoinDataQuantaBuilder[In0, In1], RT2[In0, In1]] {
+
+  override protected def build: DataQuanta[RT2[In0, In1]] = {
+    val dq0 = inputDataQuanta0.dataQuanta()
+    val dq1 = inputDataQuanta1.dataQuanta()
+    applyTargetPlatforms(
+      dq0.spatialJoinJava(keyUdf0, dq1, keyUdf1, predicateType)(inputDataQuanta1.classTag),
+      this.getTargetPlatforms()
+    )
+  }
 }

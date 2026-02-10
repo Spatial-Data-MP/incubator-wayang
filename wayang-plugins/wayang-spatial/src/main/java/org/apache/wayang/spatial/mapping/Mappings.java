@@ -18,10 +18,10 @@
 
 package org.apache.wayang.spatial.mapping;
 
+import org.apache.wayang.basic.operators.GeoJsonFileSource;
+import org.apache.wayang.basic.operators.SpatialFilterOperator;
+import org.apache.wayang.basic.operators.SpatialJoinOperator;
 import org.apache.wayang.core.mapping.Mapping;
-import org.apache.wayang.spatial.operators.SpatialFilterOperator;
-import org.apache.wayang.spatial.operators.SpatialJoinOperator;
-import org.apache.wayang.spatial.operators.GeoJsonFileSource;
 import org.apache.wayang.java.platform.JavaPlatform;
 import org.apache.wayang.spark.platform.SparkPlatform;
 import org.apache.wayang.postgres.platform.PostgresPlatform;

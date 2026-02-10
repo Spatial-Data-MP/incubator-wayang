@@ -15,12 +15,12 @@
  * limitations under the License.
  */
 
-package org.apache.wayang.spatial.operators;
+package org.apache.wayang.basic.operators;
 
 import org.apache.wayang.basic.data.Tuple2;
-import org.apache.wayang.spatial.data.WGeometry;
+import org.apache.wayang.core.api.spatial.SpatialGeometry;
+import org.apache.wayang.core.api.spatial.SpatialPredicateType;
 import org.apache.wayang.core.function.FunctionDescriptor;
-import org.apache.wayang.spatial.function.SpatialPredicate;
 import org.apache.wayang.core.function.TransformationDescriptor;
 import org.apache.wayang.core.optimizer.OptimizationContext;
 import org.apache.wayang.core.optimizer.cardinality.CardinalityEstimate;
@@ -33,66 +33,70 @@ public class SpatialJoinOperator<InputType0, InputType1> extends BinaryToUnaryOp
         return DataSetType.createDefaultUnchecked(Tuple2.class);
     }
 
-    protected final TransformationDescriptor<InputType0, WGeometry> keyDescriptor0;
+    protected final TransformationDescriptor<InputType0, ? extends SpatialGeometry> keyDescriptor0;
 
-    protected final TransformationDescriptor<InputType1, WGeometry> keyDescriptor1;
+    protected final TransformationDescriptor<InputType1, ? extends SpatialGeometry> keyDescriptor1;
 
-    protected final SpatialPredicate predicate;
+    protected final SpatialPredicateType predicateType;
 
-    public SpatialJoinOperator(FunctionDescriptor.SerializableFunction<InputType0, WGeometry> keyExtractor0,
-                               FunctionDescriptor.SerializableFunction<InputType1, WGeometry> keyExtractor1,
-                               Class<InputType0> input0Class,
-                               Class<InputType1> input1Class,
-                               SpatialPredicate predicate) {
-        this(
-                new TransformationDescriptor<>(keyExtractor0, input0Class, WGeometry.class),
-                new TransformationDescriptor<>(keyExtractor1, input1Class, WGeometry.class),
-                predicate
-        );
-    }
-
-
-    public SpatialJoinOperator(TransformationDescriptor<InputType0, WGeometry> keyDescriptor0,
-                               TransformationDescriptor<InputType1, WGeometry> keyDescriptor1,
-                               SpatialPredicate predicate
-                               ) {
+    public SpatialJoinOperator(TransformationDescriptor<InputType0, ? extends SpatialGeometry> keyDescriptor0,
+                               TransformationDescriptor<InputType1, ? extends SpatialGeometry> keyDescriptor1,
+                               SpatialPredicateType predicateType) {
         super(DataSetType.createDefault(keyDescriptor0.getInputType()),
                 DataSetType.createDefault(keyDescriptor1.getInputType()),
                 SpatialJoinOperator.createOutputDataSetType(),
                 true);
         this.keyDescriptor0 = keyDescriptor0;
         this.keyDescriptor1 = keyDescriptor1;
-        this.predicate = predicate;
+        this.predicateType = predicateType;
     }
 
-    public SpatialJoinOperator(TransformationDescriptor<InputType0, WGeometry> keyDescriptor0,
-                        TransformationDescriptor<InputType1, WGeometry> keyDescriptor1,
-                        DataSetType<InputType0> inputType0,
-                        DataSetType<InputType1> inputType1,
-                        SpatialPredicate predicate) {
+    public SpatialJoinOperator(TransformationDescriptor<InputType0, ? extends SpatialGeometry> keyDescriptor0,
+                               TransformationDescriptor<InputType1, ? extends SpatialGeometry> keyDescriptor1,
+                               DataSetType<InputType0> inputType0,
+                               DataSetType<InputType1> inputType1,
+                               SpatialPredicateType predicateType) {
         super(inputType0, inputType1, SpatialJoinOperator.createOutputDataSetType(), true);
         this.keyDescriptor0 = keyDescriptor0;
         this.keyDescriptor1 = keyDescriptor1;
-        this.predicate = predicate;
+        this.predicateType = predicateType;
     }
 
     public SpatialJoinOperator(SpatialJoinOperator<InputType0, InputType1> that) {
         super(that);
         this.keyDescriptor0 = that.keyDescriptor0;
         this.keyDescriptor1 = that.keyDescriptor1;
-        this.predicate = that.predicate;
+        this.predicateType = that.predicateType;
     }
 
-    public TransformationDescriptor<InputType0, WGeometry> getKeyDescriptor0() {
+    @SuppressWarnings("unchecked")
+    public SpatialJoinOperator(
+            FunctionDescriptor.SerializableFunction<InputType0, ? extends SpatialGeometry> keyExtractor0,
+            FunctionDescriptor.SerializableFunction<InputType1, ? extends SpatialGeometry> keyExtractor1,
+            Class<InputType0> input0Class,
+            Class<InputType1> input1Class,
+            SpatialPredicateType predicateType) {
+        this(
+                new TransformationDescriptor<>(
+                        (FunctionDescriptor.SerializableFunction<InputType0, SpatialGeometry>) (FunctionDescriptor.SerializableFunction) keyExtractor0,
+                        input0Class, SpatialGeometry.class),
+                new TransformationDescriptor<>(
+                        (FunctionDescriptor.SerializableFunction<InputType1, SpatialGeometry>) (FunctionDescriptor.SerializableFunction) keyExtractor1,
+                        input1Class, SpatialGeometry.class),
+                predicateType
+        );
+    }
+
+    public TransformationDescriptor<InputType0, ? extends SpatialGeometry> getKeyDescriptor0() {
         return this.keyDescriptor0;
     }
 
-    public TransformationDescriptor<InputType1, WGeometry> getKeyDescriptor1() {
+    public TransformationDescriptor<InputType1, ? extends SpatialGeometry> getKeyDescriptor1() {
         return this.keyDescriptor1;
     }
 
-    public SpatialPredicate getPredicate() {
-        return this.predicate;
+    public SpatialPredicateType getPredicateType() {
+        return this.predicateType;
     }
 
     private class CardinalityEstimator implements org.apache.wayang.core.optimizer.cardinality.CardinalityEstimator {

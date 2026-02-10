@@ -18,14 +18,11 @@
 
 package org.apache.wayang.spatial.mapping.postgres;
 
-import org.apache.wayang.spatial.data.WGeometry;
-import org.apache.wayang.core.function.FunctionDescriptor;
-import org.apache.wayang.spatial.function.SpatialPredicate;
+import org.apache.wayang.basic.operators.SpatialFilterOperator;
 import org.apache.wayang.core.mapping.*;
 import org.apache.wayang.core.types.DataSetType;
 import org.apache.wayang.spatial.operators.postgres.PostgresSpatialFilterOperator;
 import org.apache.wayang.postgres.platform.PostgresPlatform;
-import org.apache.wayang.spatial.operators.SpatialFilterOperator;
 
 import java.util.Collection;
 import java.util.Collections;
@@ -48,8 +45,8 @@ public class SpatialFilterMapping implements Mapping {
 
     private SubplanPattern createSubplanPattern() {
         final OperatorPattern<SpatialFilterOperator> operatorPattern = new OperatorPattern<>(
-                "spatialFilter", new SpatialFilterOperator((SpatialPredicate) null, (FunctionDescriptor.SerializableFunction) null, DataSetType.none(), (WGeometry) null), false
-        )/*.withAdditionalTest(op -> op.getPredicateDescriptor().getSqlImplementation() != null)*/; // TODO: do we need this?
+                "spatialFilter", new SpatialFilterOperator(null, null, DataSetType.none(), null), false
+        ).withAdditionalTest(op -> op.getKeyDescriptor().getSqlImplementation() != null); // TODO: test
         return SubplanPattern.createSingleton(operatorPattern);
     }
 

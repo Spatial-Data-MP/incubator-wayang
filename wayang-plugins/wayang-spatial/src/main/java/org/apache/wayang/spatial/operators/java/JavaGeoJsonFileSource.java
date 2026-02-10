@@ -23,7 +23,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.wayang.basic.data.Record;
 import org.apache.wayang.spatial.data.WGeometry;
-import org.apache.wayang.spatial.operators.GeoJsonFileSource;
+import org.apache.wayang.basic.operators.GeoJsonFileSource;
 import org.apache.wayang.core.api.exception.WayangException;
 import org.apache.wayang.core.optimizer.OptimizationContext;
 import org.apache.wayang.core.plan.wayangplan.ExecutionOperator;

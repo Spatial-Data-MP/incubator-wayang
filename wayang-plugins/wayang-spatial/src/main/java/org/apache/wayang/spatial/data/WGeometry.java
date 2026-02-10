@@ -18,6 +18,7 @@
 
 package org.apache.wayang.spatial.data;
 
+import org.apache.wayang.core.api.spatial.SpatialGeometry;
 import org.locationtech.jts.geom.Geometry;
 import org.locationtech.jts.geom.GeometryFactory;
 import org.locationtech.jts.io.*;
@@ -28,7 +29,7 @@ import java.io.Serializable;
 import java.util.HashMap;
 import java.util.Map;
 
-public class WGeometry implements org.apache.wayang.core.api.spatial.Geometry {
+public class WGeometry implements SpatialGeometry {
 
     private final HashMap<String, Object> data;
 

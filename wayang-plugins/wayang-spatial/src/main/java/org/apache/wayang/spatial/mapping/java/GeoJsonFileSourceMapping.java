@@ -18,7 +18,7 @@
 
 package org.apache.wayang.spatial.mapping.java;
 
-import org.apache.wayang.spatial.operators.GeoJsonFileSource;
+import org.apache.wayang.basic.operators.GeoJsonFileSource;
 import org.apache.wayang.core.mapping.Mapping;
 import org.apache.wayang.core.mapping.OperatorPattern;
 import org.apache.wayang.core.mapping.SubplanPattern;

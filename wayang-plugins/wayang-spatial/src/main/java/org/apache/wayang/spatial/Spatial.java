@@ -18,16 +18,15 @@
 
 package org.apache.wayang.spatial;
 
+import org.apache.wayang.basic.operators.GeoJsonFileSource;
+import org.apache.wayang.basic.operators.SpatialFilterOperator;
+import org.apache.wayang.basic.operators.SpatialJoinOperator;
 import org.apache.wayang.core.api.Configuration;
-import org.apache.wayang.core.api.spatial.SpatialOperatorFactory;
 import org.apache.wayang.core.mapping.Mapping;
 import org.apache.wayang.core.optimizer.channels.ChannelConversion;
 import org.apache.wayang.core.platform.Platform;
 import org.apache.wayang.core.plugin.Plugin;
 import org.apache.wayang.spatial.mapping.Mappings;
-import org.apache.wayang.spatial.operators.SpatialFilterOperator;
-import org.apache.wayang.spatial.operators.SpatialJoinOperator;
-import org.apache.wayang.spatial.operators.GeoJsonFileSource;
 import org.apache.wayang.java.Java;
 import org.apache.wayang.java.platform.JavaPlatform;
 import org.apache.wayang.spark.Spark;
@@ -45,11 +44,6 @@ import java.util.Collections;
  * and {@link GeoJsonFileSource}.
  */
 public class Spatial {
-
-    // Register the spatial operator provider when this class is loaded
-    static {
-        SpatialOperatorFactory.registerProvider(new ConcreteSpatialOperatorProvider());
-    }
 
     /**
      * Enables use with the {@link JavaPlatform}, {@link SparkPlatform}, and {@link PostgresPlatform}.

@@ -18,10 +18,10 @@
 
 package org.apache.wayang.spatial.operators.postgres;
 
-import org.apache.wayang.spatial.data.WGeometry;
-import org.apache.wayang.spatial.operators.SpatialFilterOperator;
+import org.apache.wayang.basic.operators.SpatialFilterOperator;
+import org.apache.wayang.core.api.spatial.SpatialGeometry;
+import org.apache.wayang.core.api.spatial.SpatialPredicateType;
 import org.apache.wayang.core.function.FunctionDescriptor;
-import org.apache.wayang.spatial.function.SpatialPredicate;
 import org.apache.wayang.core.types.DataSetType;
 import org.apache.wayang.spatial.operators.jdbc.JdbcSpatialFilterOperator;
 import org.apache.wayang.postgres.operators.PostgresExecutionOperator;
@@ -37,10 +37,10 @@ public class PostgresSpatialFilterOperator<Type> extends JdbcSpatialFilterOperat
      *
      * @param relation the type of spatial filter (e.g., "INTERSECTS", "CONTAINS", "WITHIN")
      */
-    public PostgresSpatialFilterOperator(SpatialPredicate relation,
-                                         FunctionDescriptor.SerializableFunction<Type, WGeometry> keyExtractor,
+    public PostgresSpatialFilterOperator(SpatialPredicateType relation,
+                                         FunctionDescriptor.SerializableFunction<Type, ? extends SpatialGeometry> keyExtractor,
                                          DataSetType<Type> inputClassDatasetType,
-                                         WGeometry geometry) {
+                                         SpatialGeometry geometry) {
         super(relation, keyExtractor, inputClassDatasetType, geometry);
     }
 

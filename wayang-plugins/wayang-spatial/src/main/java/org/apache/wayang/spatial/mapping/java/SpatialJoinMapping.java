@@ -18,13 +18,8 @@
 
 package org.apache.wayang.spatial.mapping.java;
 
-import org.apache.wayang.spatial.data.WGeometry;
-import org.apache.wayang.spatial.operators.SpatialJoinOperator;
-import org.apache.wayang.core.mapping.Mapping;
-import org.apache.wayang.core.mapping.OperatorPattern;
-import org.apache.wayang.core.mapping.PlanTransformation;
-import org.apache.wayang.core.mapping.ReplacementSubplanFactory;
-import org.apache.wayang.core.mapping.SubplanPattern;
+import org.apache.wayang.basic.operators.SpatialJoinOperator;
+import org.apache.wayang.core.mapping.*;
 import org.apache.wayang.core.types.DataSetType;
 import org.apache.wayang.spatial.operators.java.JavaSpatialJoinOperator;
 import org.apache.wayang.java.platform.JavaPlatform;

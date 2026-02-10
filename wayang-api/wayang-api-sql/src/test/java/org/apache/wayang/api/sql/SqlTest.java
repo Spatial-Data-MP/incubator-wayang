@@ -21,11 +21,9 @@ import org.apache.wayang.basic.data.Record;
 import org.apache.wayang.basic.data.Tuple2;
 import org.apache.wayang.spatial.data.WGeometry;
 import org.apache.wayang.basic.operators.*;
-import org.apache.wayang.spatial.operators.SpatialFilterOperator;
-import org.apache.wayang.spatial.operators.SpatialJoinOperator;
 import org.apache.wayang.core.api.Configuration;
 import org.apache.wayang.core.api.WayangContext;
-import org.apache.wayang.spatial.function.SpatialPredicate;
+import org.apache.wayang.core.api.spatial.SpatialPredicateType;
 import org.apache.wayang.core.plan.wayangplan.WayangPlan;
 import org.apache.wayang.core.types.DataSetType;
 import org.apache.wayang.core.util.ReflectionUtils;
@@ -145,7 +143,7 @@ public class SqlTest {
                 new PostgresTableSource("spider_boxes", "id", "geom");
 
         SpatialFilterOperator<Record> spatialFilterOperator = new SpatialFilterOperator<Record>(
-                SpatialPredicate.INTERSECTS,
+                SpatialPredicateType.INTERSECTS,
                 (record -> (WGeometry.fromStringInput(record.getString(1)))),
                 DataSetType.createDefaultUnchecked(Record.class),
                 WGeometry.fromStringInput("POLYGON((0.00 0.00,0.4 0.00,0.4 0.4,0.00 0.4,0.00 0.00))"));
@@ -193,7 +191,7 @@ public class SqlTest {
         );
 
         SpatialFilterOperator<Tuple2<Integer, WGeometry>> spatialFilterOperator = new SpatialFilterOperator<Tuple2<Integer, WGeometry>>(
-                SpatialPredicate.INTERSECTS,
+                SpatialPredicateType.INTERSECTS,
                 Tuple2::getField1,
                 DataSetType.createDefaultUnchecked(Tuple2.class),
                 WGeometry.fromStringInput("POLYGON((0.00 0.00,0.4 0.00,0.4 0.4,0.00 0.4,0.00 0.00))"));
@@ -233,12 +231,11 @@ public class SqlTest {
         CollectionSource<WGeometry> inputCollection = new CollectionSource<>(inputValues, WGeometry.class);
 
 
-        SpatialJoinOperator<Record, WGeometry> spatialJoinOperator = new SpatialJoinOperator<Record, WGeometry>(
-                (record -> (WGeometry.fromStringInput(record.getString(4)))),
-                (wgeometry -> wgeometry),
-                Record.class,
-                WGeometry.class,
-                SpatialPredicate.INTERSECTS
+        SpatialJoinOperator<Record, WGeometry> spatialJoinOperator = new SpatialJoinOperator<>(
+                record -> WGeometry.fromStringInput(record.getString(4)),
+                wgeometry -> wgeometry,
+                Record.class, WGeometry.class,
+                SpatialPredicateType.INTERSECTS
                 );
         table1.connectTo(0, spatialJoinOperator, 0);
         inputCollection.connectTo(0, spatialJoinOperator, 1);
@@ -271,9 +268,8 @@ public class SqlTest {
                 new SpatialJoinOperator<>(
                         record -> WGeometry.fromStringInput(record.getString(5)),
                         record -> WGeometry.fromStringInput(record.getString(5)),
-                        Record.class,
-                        Record.class,
-                        SpatialPredicate.INTERSECTS
+                        Record.class, Record.class,
+                        SpatialPredicateType.INTERSECTS
                 );
 
         // Register SQL implementations for both inputs

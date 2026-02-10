@@ -16,27 +16,30 @@
  * limitations under the License.
  */
 
-package org.apache.wayang.core.api.spatial;
+package org.apache.wayang.basic.operators;
 
-import java.io.Serializable;
+import org.apache.wayang.basic.data.Record;
+import org.apache.wayang.core.plan.wayangplan.UnarySource;
+import org.apache.wayang.core.types.DataSetType;
 
 /**
- * Abstract geometry interface for spatial operations.
- * Implementations (e.g., WGeometry) provide JTS-backed functionality.
+ * Logical operator representing a GeoJSON file source producing {@link Record} elements.
  */
-public interface Geometry extends Serializable {
+public class GeoJsonFileSource extends UnarySource<Record> {
 
-    /**
-     * Returns Well-Known Text (WKT) representation of this geometry.
-     *
-     * @return WKT string
-     */
-    String toWKT();
+    private final String inputUrl;
 
-    /**
-     * Returns Well-Known Binary (WKB) representation of this geometry as hex string.
-     *
-     * @return WKB hex string
-     */
-    String toWKB();
+    public GeoJsonFileSource(String inputUrl) {
+        super(DataSetType.createDefault(Record.class));
+        this.inputUrl = inputUrl;
+    }
+
+    public GeoJsonFileSource(GeoJsonFileSource that) {
+        super(that);
+        this.inputUrl = that.getInputUrl();
+    }
+
+    public String getInputUrl() {
+        return inputUrl;
+    }
 }

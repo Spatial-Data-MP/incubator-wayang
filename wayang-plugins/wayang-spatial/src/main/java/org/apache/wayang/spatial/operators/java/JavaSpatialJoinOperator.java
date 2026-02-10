@@ -18,21 +18,23 @@
 package org.apache.wayang.spatial.operators.java;
 
 import org.apache.wayang.basic.data.Tuple2;
-import org.apache.wayang.spatial.data.WGeometry;
-import org.apache.wayang.spatial.operators.SpatialJoinOperator;
+import org.apache.wayang.basic.operators.SpatialJoinOperator;
+import org.apache.wayang.core.api.spatial.SpatialGeometry;
+import org.apache.wayang.core.api.spatial.SpatialPredicateType;
 import org.apache.wayang.core.function.FunctionDescriptor;
-import org.apache.wayang.spatial.function.SpatialPredicate;
 import org.apache.wayang.core.function.TransformationDescriptor;
 import org.apache.wayang.core.optimizer.OptimizationContext;
+import org.apache.wayang.core.types.DataSetType;
 import org.apache.wayang.core.platform.ChannelDescriptor;
 import org.apache.wayang.core.platform.ChannelInstance;
 import org.apache.wayang.core.platform.lineage.ExecutionLineageNode;
-import org.apache.wayang.core.types.DataSetType;
 import org.apache.wayang.core.util.Tuple;
 import org.apache.wayang.java.channels.CollectionChannel;
 import org.apache.wayang.java.channels.StreamChannel;
 import org.apache.wayang.java.execution.JavaExecutor;
 import org.apache.wayang.java.operators.JavaExecutionOperator;
+import org.apache.wayang.spatial.data.WGeometry;
+import org.apache.wayang.spatial.function.SpatialPredicate;
 import org.locationtech.jts.geom.Geometry;
 import org.locationtech.jts.index.strtree.STRtree;
 
@@ -44,19 +46,19 @@ public class JavaSpatialJoinOperator<InputType0, InputType1>
         extends SpatialJoinOperator<InputType0, InputType1>
         implements JavaExecutionOperator {
 
-    public JavaSpatialJoinOperator(TransformationDescriptor<InputType0, WGeometry> keyDescriptor0,
-                                   TransformationDescriptor<InputType1, WGeometry> keyDescriptor1,
+    public JavaSpatialJoinOperator(TransformationDescriptor<InputType0, ? extends SpatialGeometry> keyDescriptor0,
+                                   TransformationDescriptor<InputType1, ? extends SpatialGeometry> keyDescriptor1,
                                    DataSetType<InputType0> inputType0,
                                    DataSetType<InputType1> inputType1,
-                                   SpatialPredicate predicate) {
+                                   SpatialPredicateType predicate) {
         super(keyDescriptor0, keyDescriptor1, inputType0, inputType1, predicate);
     }
 
-    public JavaSpatialJoinOperator(FunctionDescriptor.SerializableFunction<InputType0, WGeometry> keyExtractor0,
-                               FunctionDescriptor.SerializableFunction<InputType1, WGeometry> keyExtractor1,
+    public JavaSpatialJoinOperator(FunctionDescriptor.SerializableFunction<InputType0, ? extends SpatialGeometry> keyExtractor0,
+                               FunctionDescriptor.SerializableFunction<InputType1, ? extends SpatialGeometry> keyExtractor1,
                                Class<InputType0> input0Class,
                                Class<InputType1> input1Class,
-                               SpatialPredicate predicate) {
+                               SpatialPredicateType predicate) {
         super(keyExtractor0, keyExtractor1, input0Class, input1Class, predicate);
     }
 
@@ -75,15 +77,11 @@ public class JavaSpatialJoinOperator<InputType0, InputType1>
         assert inputs.length == this.getNumInputs();
         assert outputs.length == this.getNumOutputs();
 
-        // TODO: enhance by materializing the smaller input
-
-        // Compile the key extractors (Input -> WGeometry).
-        final Function<InputType0, WGeometry> keyExtractor0 =
+        final Function<InputType0, ? extends SpatialGeometry> keyExtractor0 =
                 javaExecutor.getCompiler().compile(this.keyDescriptor0);
-        final Function<InputType1, WGeometry> keyExtractor1 =
+        final Function<InputType1, ? extends SpatialGeometry> keyExtractor1 =
                 javaExecutor.getCompiler().compile(this.keyDescriptor1);
 
-//        // Get Java streams for both inputs.
         final Stream<InputType0> leftStream =
                 ((org.apache.wayang.java.channels.JavaChannelInstance) inputs[0])
                         .<InputType0>provideStream();
@@ -91,10 +89,12 @@ public class JavaSpatialJoinOperator<InputType0, InputType1>
                 ((org.apache.wayang.java.channels.JavaChannelInstance) inputs[1])
                         .<InputType1>provideStream();
 
+        SpatialPredicate predicate = SpatialPredicate.fromType(this.predicateType);
+
         STRtree index = new STRtree();
 
         rightStream.forEach(v1 -> {
-            WGeometry wGeom = keyExtractor1.apply(v1);
+            WGeometry wGeom = (WGeometry) keyExtractor1.apply(v1);
             Geometry geom = (wGeom == null) ? null : wGeom.getGeometry();
             if (geom != null) {
                 index.insert(geom.getEnvelopeInternal(), new AbstractMap.SimpleEntry<>(v1, geom));
@@ -104,7 +104,7 @@ public class JavaSpatialJoinOperator<InputType0, InputType1>
         index.build();
 
         final Stream<Tuple2<InputType0, InputType1>> joinStream = leftStream.flatMap(v0 -> {
-            Geometry geom0 = Optional.ofNullable(keyExtractor0.apply(v0))
+            Geometry geom0 = Optional.ofNullable((WGeometry) keyExtractor0.apply(v0))
                     .map(WGeometry::getGeometry).orElse(null);
             if (geom0 == null) return Stream.empty();
 

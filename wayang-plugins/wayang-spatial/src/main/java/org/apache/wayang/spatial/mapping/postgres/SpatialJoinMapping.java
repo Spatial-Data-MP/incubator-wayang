@@ -18,14 +18,11 @@
 
 package org.apache.wayang.spatial.mapping.postgres;
 
-import org.apache.wayang.basic.data.Record;
-import org.apache.wayang.spatial.data.WGeometry;
-import org.apache.wayang.spatial.function.SpatialPredicate;
+import org.apache.wayang.basic.operators.SpatialJoinOperator;
 import org.apache.wayang.core.mapping.*;
 import org.apache.wayang.core.types.DataSetType;
 import org.apache.wayang.spatial.operators.postgres.PostgresSpatialJoinOperator;
 import org.apache.wayang.postgres.platform.PostgresPlatform;
-import org.apache.wayang.spatial.operators.SpatialJoinOperator;
 
 import java.util.Collection;
 import java.util.Collections;
@@ -48,7 +45,7 @@ public class SpatialJoinMapping implements Mapping {
 
     private SubplanPattern createSubplanPattern() {
         final OperatorPattern<SpatialJoinOperator> operatorPattern = new OperatorPattern<>(
-                "spatialFilter", new SpatialJoinOperator(null, null, Object.class, Object.class, (SpatialPredicate) null), false
+                "spatialFilter", new SpatialJoinOperator(null, null, DataSetType.none(), DataSetType.none(), null), false
         );
         return SubplanPattern.createSingleton(operatorPattern);
     }

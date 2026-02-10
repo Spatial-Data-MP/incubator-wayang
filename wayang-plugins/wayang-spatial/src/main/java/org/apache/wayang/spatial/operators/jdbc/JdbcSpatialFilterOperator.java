@@ -18,11 +18,13 @@
 
 package org.apache.wayang.spatial.operators.jdbc;
 
-import org.apache.wayang.spatial.data.WGeometry;
-import org.apache.wayang.spatial.operators.SpatialFilterOperator;
+import org.apache.wayang.basic.operators.SpatialFilterOperator;
+import org.apache.wayang.core.api.spatial.SpatialGeometry;
+import org.apache.wayang.core.api.spatial.SpatialPredicateType;
 import org.apache.wayang.core.function.FunctionDescriptor;
-import org.apache.wayang.spatial.function.SpatialPredicate;
 import org.apache.wayang.core.types.DataSetType;
+import org.apache.wayang.spatial.data.WGeometry;
+import org.apache.wayang.spatial.function.SpatialPredicate;
 import org.apache.wayang.jdbc.compiler.FunctionCompiler;
 import org.apache.wayang.jdbc.operators.JdbcExecutionOperator;
 
@@ -39,10 +41,10 @@ public abstract class JdbcSpatialFilterOperator<Type> extends SpatialFilterOpera
      *
      * @param relation the type of spatial filter (e.g., "INTERSECTS", "CONTAINS", "WITHIN")
      */
-    public JdbcSpatialFilterOperator(SpatialPredicate relation,
-                                     FunctionDescriptor.SerializableFunction<Type, WGeometry> keyExtractor,
+    public JdbcSpatialFilterOperator(SpatialPredicateType relation,
+                                     FunctionDescriptor.SerializableFunction<Type, ? extends SpatialGeometry> keyExtractor,
                                      DataSetType<Type> inputClassDatasetType,
-                                     WGeometry geometry) {
+                                     SpatialGeometry geometry) {
         super(relation, keyExtractor, inputClassDatasetType, geometry);
     }
 
@@ -50,22 +52,17 @@ public abstract class JdbcSpatialFilterOperator<Type> extends SpatialFilterOpera
         super(that);
     }
 
-
     @Override
     public String createSqlClause(Connection connection, FunctionCompiler compiler) {
         if (this.referenceGeometry == null) {
             throw new IllegalStateException("Geometry for spatial filter must not be null.");
         }
-//        if (this.geometryColumnSqlName == null || this.geometryColumnSqlName.isEmpty()) {
-//            throw new IllegalStateException("geometryColumnSqlName must be set in SpatialFilterOperator.");
-//        }
 
         // Column expression (e.g. "geom" or "t.geom")
-//        final String columnExpr = this.geometryColumnSqlName;
         final String columnExpr = this.keyDescriptor.getSqlImplementation().getField1();
 
         // Geometry literal as ST_GeomFromText('WKT', srid)
-        final String wkt = this.referenceGeometry.getWKT();
+        final String wkt = this.referenceGeometry.toWKT();
         // TODO: Check which SRID to use.
         final int srid = 4326;
 
@@ -76,17 +73,9 @@ public abstract class JdbcSpatialFilterOperator<Type> extends SpatialFilterOpera
             geomLiteral = String.format("ST_GeomFromText('%s')", wkt);
         }
 
-        // Use the SpatialRelation to generate the SQL instead of a switch.
-        // If you allow null filterType → default to INTERSECTS, that should be
-        // handled when initializing `relation` in SpatialFilterOperator.
-        if (this.relation == null) {
-            throw new IllegalStateException("Spatial relation must not be null.");
-        }
-
-        return this.relation.toSql(columnExpr, geomLiteral);
+        SpatialPredicate relation = SpatialPredicate.fromType(this.predicateType);
+        return relation.toSql(columnExpr, geomLiteral);
     }
-
-
 
     @Override
     public String getLoadProfileEstimatorConfigurationKey() {

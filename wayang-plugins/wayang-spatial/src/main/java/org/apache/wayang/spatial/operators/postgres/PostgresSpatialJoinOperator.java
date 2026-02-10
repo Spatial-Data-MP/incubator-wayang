@@ -18,11 +18,11 @@
 
 package org.apache.wayang.spatial.operators.postgres;
 
-import org.apache.wayang.spatial.data.WGeometry;
-import org.apache.wayang.basic.data.Record;
-import org.apache.wayang.spatial.operators.SpatialJoinOperator;
-import org.apache.wayang.spatial.function.SpatialPredicate;
+import org.apache.wayang.basic.operators.SpatialJoinOperator;
+import org.apache.wayang.core.api.spatial.SpatialGeometry;
+import org.apache.wayang.core.api.spatial.SpatialPredicateType;
 import org.apache.wayang.core.function.TransformationDescriptor;
+import org.apache.wayang.basic.data.Record;
 import org.apache.wayang.spatial.operators.jdbc.JdbcSpatialJoinOperator;
 import org.apache.wayang.postgres.operators.PostgresExecutionOperator;
 
@@ -32,9 +32,9 @@ public class PostgresSpatialJoinOperator extends JdbcSpatialJoinOperator impleme
      *
      * @param predicate the type of spatial join (e.g., "INTERSECTS", "CONTAINS", "WITHIN")
      */
-    public PostgresSpatialJoinOperator(TransformationDescriptor<Record, WGeometry> keyDescriptor0,
-                                       TransformationDescriptor<Record, WGeometry> keyDescriptor1,
-                                       SpatialPredicate predicate) {
+    public PostgresSpatialJoinOperator(TransformationDescriptor<Record, ? extends SpatialGeometry> keyDescriptor0,
+                                       TransformationDescriptor<Record, ? extends SpatialGeometry> keyDescriptor1,
+                                       SpatialPredicateType predicate) {
         super(keyDescriptor0, keyDescriptor1, predicate);
     }
 

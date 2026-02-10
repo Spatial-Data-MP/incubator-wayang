@@ -18,9 +18,7 @@
 
 package org.apache.wayang.spatial.mapping.spark;
 
-import org.apache.wayang.spatial.data.WGeometry;
-import org.apache.wayang.spatial.operators.SpatialJoinOperator;
-import org.apache.wayang.spatial.function.SpatialPredicate;
+import org.apache.wayang.basic.operators.SpatialJoinOperator;
 import org.apache.wayang.core.mapping.*;
 import org.apache.wayang.core.types.DataSetType;
 import org.apache.wayang.spatial.operators.spark.SparkSpatialJoinOperator;
@@ -51,8 +49,8 @@ public class SpatialJoinMapping implements Mapping {
                          null,
                         DataSetType.none(),
                         DataSetType.none(),
-                        (SpatialPredicate) null), false
-        )/*.withAdditionalTest(op -> op.getPredicateDescriptor().getSqlImplementation() != null)*/; // TODO: do we need this?
+                        null), false
+        );
         return SubplanPattern.createSingleton(operatorPattern);
     }
 

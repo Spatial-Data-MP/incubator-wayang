@@ -21,22 +21,23 @@ package org.apache.wayang.spatial.operators.spark;
 import org.apache.sedona.core.spatialOperator.RangeQuery;
 import org.apache.sedona.core.spatialRDD.SpatialRDD;
 import org.apache.spark.api.java.JavaRDD;
-import org.apache.wayang.spatial.data.WGeometry;
-import org.apache.wayang.spatial.operators.SpatialFilterOperator;
+import org.apache.wayang.basic.operators.SpatialFilterOperator;
+import org.apache.wayang.core.api.spatial.SpatialGeometry;
+import org.apache.wayang.core.api.spatial.SpatialPredicateType;
 import org.apache.wayang.core.function.FunctionDescriptor;
-import org.apache.wayang.spatial.function.SpatialPredicate;
 import org.apache.wayang.core.optimizer.OptimizationContext;
+import org.apache.wayang.core.types.DataSetType;
 import org.apache.wayang.core.plan.wayangplan.ExecutionOperator;
 import org.apache.wayang.core.platform.ChannelDescriptor;
 import org.apache.wayang.core.platform.ChannelInstance;
 import org.apache.wayang.core.platform.lineage.ExecutionLineageNode;
-import org.apache.wayang.core.types.DataSetType;
 import org.apache.wayang.core.util.ReflectionUtils;
 import org.apache.wayang.core.util.Tuple;
 import org.apache.wayang.spark.channels.BroadcastChannel;
 import org.apache.wayang.spark.channels.RddChannel;
 import org.apache.wayang.spark.execution.SparkExecutor;
 import org.apache.wayang.spark.operators.SparkExecutionOperator;
+import org.apache.wayang.spatial.data.WGeometry;
 import org.locationtech.jts.geom.Geometry;
 
 import java.util.Arrays;
@@ -58,14 +59,11 @@ public class SparkSpatialFilterOperator<Type>
      * @param relation the type of spatial filter (e.g., "INTERSECTS", "CONTAINS", "WITHIN")
      *
      */
-    public SparkSpatialFilterOperator(SpatialPredicate relation,
-                                      FunctionDescriptor.SerializableFunction<Type, WGeometry> keyExtractor,
+    public SparkSpatialFilterOperator(SpatialPredicateType relation,
+                                      FunctionDescriptor.SerializableFunction<Type, ? extends SpatialGeometry> keyExtractor,
                                       DataSetType<Type> inputClassDatasetType,
-                                      WGeometry geometry) {
+                                      SpatialGeometry geometry) {
         super(relation, keyExtractor, inputClassDatasetType, geometry);
-//        if (this.geometryColumnIndex < 0) {
-//            throw new IllegalArgumentException("Column index must be >= 0.");
-//        }
     }
 
     /**
@@ -95,7 +93,8 @@ public class SparkSpatialFilterOperator<Type>
             }
         }
 
-        final Geometry reference = this.referenceGeometry == null ? null : this.referenceGeometry.getGeometry();
+        WGeometry wRef = (WGeometry) this.referenceGeometry;
+        final Geometry reference = wRef == null ? null : wRef.getGeometry();
         if (reference == null) {
             throw new IllegalStateException("Reference geometry must not be null for spatial filtering.");
         }
@@ -108,13 +107,13 @@ public class SparkSpatialFilterOperator<Type>
         // getJavaImplementation() returns Function<Input,Output>, but the underlying
         // object is a SerializableFunction, so we can safely cast (unchecked).
         @SuppressWarnings("unchecked")
-        final FunctionDescriptor.SerializableFunction<Type, WGeometry> keyExtractor =
-                (FunctionDescriptor.SerializableFunction<Type, WGeometry>) this.keyDescriptor.getJavaImplementation();
+        final FunctionDescriptor.SerializableFunction<Type, ? extends SpatialGeometry> keyExtractor =
+                (FunctionDescriptor.SerializableFunction<Type, ? extends SpatialGeometry>) this.keyDescriptor.getJavaImplementation();
 
         // Build an RDD of Geometries where userData = original element (Type)
         final JavaRDD<Geometry> geometryRdd = inputRdd
                 .map((Type value) -> {
-                    final WGeometry wGeom = keyExtractor.apply(value);
+                    final WGeometry wGeom = (WGeometry) keyExtractor.apply(value);
                     if (wGeom == null) {
                         return null;
                     }
@@ -139,7 +138,7 @@ public class SparkSpatialFilterOperator<Type>
 
 
     private JavaRDD<Type> applySedonaSpatialFilter(SpatialRDD<Geometry> spatialRDD, Geometry reference) {
-        final org.apache.sedona.core.spatialOperator.SpatialPredicate predicate = this.toSedonaPredicate(this.relation);
+        final org.apache.sedona.core.spatialOperator.SpatialPredicate predicate = toSedonaPredicate(this.predicateType);
 
         try {
             final JavaRDD<Geometry> matched =
@@ -152,9 +151,8 @@ public class SparkSpatialFilterOperator<Type>
         }
     }
 
-    // TODO: fix code duplication with join
-    private org.apache.sedona.core.spatialOperator.SpatialPredicate toSedonaPredicate(SpatialPredicate predicate) {
-        return switch (predicate) {
+    private org.apache.sedona.core.spatialOperator.SpatialPredicate toSedonaPredicate(SpatialPredicateType predicateType) {
+        return switch (predicateType) {
             case INTERSECTS -> org.apache.sedona.core.spatialOperator.SpatialPredicate.INTERSECTS;
             case CONTAINS -> org.apache.sedona.core.spatialOperator.SpatialPredicate.CONTAINS;
             case WITHIN -> org.apache.sedona.core.spatialOperator.SpatialPredicate.WITHIN;
@@ -162,7 +160,7 @@ public class SparkSpatialFilterOperator<Type>
             case OVERLAPS -> org.apache.sedona.core.spatialOperator.SpatialPredicate.OVERLAPS;
             case CROSSES -> org.apache.sedona.core.spatialOperator.SpatialPredicate.CROSSES;
             case EQUALS -> org.apache.sedona.core.spatialOperator.SpatialPredicate.EQUALS;
-            default -> throw new IllegalStateException("Unsupported spatial filter predicate: " + predicate);
+            default -> throw new IllegalStateException("Unsupported spatial filter predicate: " + predicateType);
         };
     }
 

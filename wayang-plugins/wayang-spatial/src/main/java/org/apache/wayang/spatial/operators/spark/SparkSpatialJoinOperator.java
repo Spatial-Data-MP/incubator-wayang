@@ -23,22 +23,23 @@ import org.apache.sedona.core.spatialRDD.SpatialRDD;
 import org.apache.spark.api.java.JavaPairRDD;
 import org.apache.spark.api.java.JavaRDD;
 import org.apache.wayang.basic.data.Tuple2;
-import org.apache.wayang.spatial.data.WGeometry;
-import org.apache.wayang.spatial.operators.SpatialJoinOperator;
+import org.apache.wayang.basic.operators.SpatialJoinOperator;
+import org.apache.wayang.core.api.spatial.SpatialGeometry;
+import org.apache.wayang.core.api.spatial.SpatialPredicateType;
 import org.apache.wayang.core.function.FunctionDescriptor;
-import org.apache.wayang.spatial.function.SpatialPredicate;
 import org.apache.wayang.core.function.TransformationDescriptor;
 import org.apache.wayang.core.optimizer.OptimizationContext;
+import org.apache.wayang.core.types.DataSetType;
 import org.apache.wayang.core.plan.wayangplan.ExecutionOperator;
 import org.apache.wayang.core.platform.ChannelDescriptor;
 import org.apache.wayang.core.platform.ChannelInstance;
 import org.apache.wayang.core.platform.lineage.ExecutionLineageNode;
-import org.apache.wayang.core.types.DataSetType;
+import org.apache.wayang.core.util.ReflectionUtils;
 import org.apache.wayang.core.util.Tuple;
 import org.apache.wayang.spark.channels.RddChannel;
 import org.apache.wayang.spark.execution.SparkExecutor;
 import org.apache.wayang.spark.operators.SparkExecutionOperator;
-import org.apache.wayang.core.util.ReflectionUtils;
+import org.apache.wayang.spatial.data.WGeometry;
 import org.locationtech.jts.geom.Geometry;
 
 import java.util.Arrays;
@@ -50,23 +51,6 @@ public class SparkSpatialJoinOperator<InputType0, InputType1>
         extends SpatialJoinOperator<InputType0, InputType1>
         implements SparkExecutionOperator {
 
-    public SparkSpatialJoinOperator(
-            TransformationDescriptor<InputType0, WGeometry> keyDescriptor0,
-            TransformationDescriptor<InputType1, WGeometry> keyDescriptor1,
-            DataSetType<InputType0> inputType0,
-            DataSetType<InputType1> inputType1,
-            SpatialPredicate predicate) {
-        super(keyDescriptor0, keyDescriptor1, inputType0, inputType1, predicate);
-    }
-
-    public SparkSpatialJoinOperator(FunctionDescriptor.SerializableFunction<InputType0, WGeometry> keyExtractor0,
-                               FunctionDescriptor.SerializableFunction<InputType1, WGeometry> keyExtractor1,
-                               Class<InputType0> input0Class,
-                               Class<InputType1> input1Class,
-                               SpatialPredicate predicate) {
-        super(keyExtractor0, keyExtractor1, input0Class, input1Class, predicate);
-    }
-
     public SparkSpatialJoinOperator(SparkSpatialJoinOperator<InputType0, InputType1> that) {
         super(that);
     }
@@ -75,8 +59,26 @@ public class SparkSpatialJoinOperator<InputType0, InputType1>
         super(that);
     }
 
+    public SparkSpatialJoinOperator(
+            TransformationDescriptor<InputType0, ? extends SpatialGeometry> keyDescriptor0,
+            TransformationDescriptor<InputType1, ? extends SpatialGeometry> keyDescriptor1,
+            DataSetType<InputType0> inputType0,
+            DataSetType<InputType1> inputType1,
+            SpatialPredicateType predicateType) {
+        super(keyDescriptor0, keyDescriptor1, inputType0, inputType1, predicateType);
+    }
+
+    public SparkSpatialJoinOperator(
+            FunctionDescriptor.SerializableFunction<InputType0, ? extends SpatialGeometry> keyExtractor0,
+            FunctionDescriptor.SerializableFunction<InputType1, ? extends SpatialGeometry> keyExtractor1,
+            Class<InputType0> input0Class,
+            Class<InputType1> input1Class,
+            SpatialPredicateType predicateType) {
+        super(keyExtractor0, keyExtractor1, input0Class, input1Class, predicateType);
+    }
 
     @Override
+    @SuppressWarnings("unchecked")
     public Tuple<Collection<ExecutionLineageNode>, Collection<ChannelInstance>> evaluate(ChannelInstance[] inputs, ChannelInstance[] outputs, SparkExecutor sparkExecutor, OptimizationContext.OperatorContext operatorContext) {
         // Register Sedona JAR with Spark executors if running in cluster mode.
         if (!sparkExecutor.sc.isLocal()) {
@@ -89,21 +91,21 @@ public class SparkSpatialJoinOperator<InputType0, InputType1>
         final JavaRDD<InputType0> leftIn = ((RddChannel.Instance) inputs[0]).provideRdd();
         final JavaRDD<InputType1> rightIn = ((RddChannel.Instance) inputs[1]).provideRdd();
 
-        final FunctionDescriptor.SerializableFunction<InputType0, WGeometry> keyExtractor0 =
-                (FunctionDescriptor.SerializableFunction<InputType0, WGeometry>) this.keyDescriptor0.getJavaImplementation();
-        final FunctionDescriptor.SerializableFunction<InputType1, WGeometry> keyExtractor1 =
-                (FunctionDescriptor.SerializableFunction<InputType1, WGeometry>) this.keyDescriptor1.getJavaImplementation();
+        final FunctionDescriptor.SerializableFunction<InputType0, ? extends SpatialGeometry> keyExtractor0 =
+                (FunctionDescriptor.SerializableFunction<InputType0, ? extends SpatialGeometry>) this.keyDescriptor0.getJavaImplementation();
+        final FunctionDescriptor.SerializableFunction<InputType1, ? extends SpatialGeometry> keyExtractor1 =
+                (FunctionDescriptor.SerializableFunction<InputType1, ? extends SpatialGeometry>) this.keyDescriptor1.getJavaImplementation();
 
 
         final JavaRDD<Geometry> leftInGeometry = leftIn.map((InputType0 in1) -> {
-            final WGeometry wGeom = keyExtractor0.apply(in1);
+            final WGeometry wGeom = (WGeometry) keyExtractor0.apply(in1);
             Geometry geom = wGeom.getGeometry();
             geom.setUserData(in1);
             return geom;
         });
 
         final JavaRDD<Geometry> rightInGeometry = rightIn.map((InputType1 in2) -> {
-            final WGeometry wGeom = keyExtractor1.apply(in2);
+            final WGeometry wGeom = (WGeometry) keyExtractor1.apply(in2);
             Geometry geom = wGeom.getGeometry();
             geom.setUserData(in2);
             return geom;
@@ -130,7 +132,7 @@ public class SparkSpatialJoinOperator<InputType0, InputType1>
             JavaPairRDD<Geometry, Geometry> sedonaJoin = JoinQuery.spatialJoin(
                     spatialRDDLeft,
                     spatialRDDRight,
-                    new JoinQuery.JoinParams(false, toSedonaPredicate(this.predicate))
+                    new JoinQuery.JoinParams(false, toSedonaPredicate(this.predicateType))
             );
             final JavaRDD<Tuple2<InputType0, InputType1>> outputRdd =
                     sedonaJoin.map(geoTuple ->
@@ -148,9 +150,8 @@ public class SparkSpatialJoinOperator<InputType0, InputType1>
         }
     }
 
-    // TODO: fix code duplication with filter
-    private org.apache.sedona.core.spatialOperator.SpatialPredicate toSedonaPredicate(SpatialPredicate predicate) {
-        return switch (predicate) {
+    private org.apache.sedona.core.spatialOperator.SpatialPredicate toSedonaPredicate(SpatialPredicateType predicateType) {
+        return switch (predicateType) {
             case INTERSECTS -> org.apache.sedona.core.spatialOperator.SpatialPredicate.INTERSECTS;
             case CONTAINS -> org.apache.sedona.core.spatialOperator.SpatialPredicate.CONTAINS;
             case WITHIN -> org.apache.sedona.core.spatialOperator.SpatialPredicate.WITHIN;
@@ -158,7 +159,7 @@ public class SparkSpatialJoinOperator<InputType0, InputType1>
             case OVERLAPS -> org.apache.sedona.core.spatialOperator.SpatialPredicate.OVERLAPS;
             case CROSSES -> org.apache.sedona.core.spatialOperator.SpatialPredicate.CROSSES;
             case EQUALS -> org.apache.sedona.core.spatialOperator.SpatialPredicate.EQUALS;
-            default -> throw new IllegalStateException("Unsupported spatial filter predicate: " + predicate);
+            default -> throw new IllegalStateException("Unsupported spatial filter predicate: " + predicateType);
         };
     }
 

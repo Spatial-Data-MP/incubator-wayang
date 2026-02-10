@@ -117,18 +117,18 @@ public class SpatialJoin {
 //        LoadCollectionDataQuantaBuilder<String> table1quanta = planBuilder.loadCollection(filteredTable1);
 //        LoadCollectionDataQuantaBuilder<String> table2quanta = planBuilder.loadCollection(filteredTable2);
 
-        Collection<Long> outputcount = table1
-                .spatialJoin(
+        DataQuantaBuilder<?, ?> joinResult = table1
+                .<String>spatialJoin(
                         (line -> WGeometry.fromStringInput(line.split("\",")[0].replace("\"", ""))),
-//                        line -> WGeometry.fromStringInput(line),
                         table2,
-//                        line -> WGeometry.fromStringInput(line),
                         (line -> WGeometry.fromStringInput(line.split("\",")[0].replace("\"", ""))),
                         SpatialPredicateType.INTERSECTS
-                )
-                .withTargetPlatform(Spark.platform())
+                );
+        joinResult.withTargetPlatform(Spark.platform());
+
+        Collection<Long> outputcount = joinResult
                 .count()
-		.withTargetPlatform(Spark.platform())
+                .withTargetPlatform(Spark.platform())
                 .collect();
 //                .collect();
 //                .map(pair -> pair.field0 + "\n" + pair.field1)//left.getWKT() + "\n" + right.getWKT();
