@@ -40,7 +40,7 @@ import static org.junit.jupiter.api.Assertions.*;
 /**
  * Tests for the fluent spatial API on DataQuantaBuilder.
  */
-public class SpatialOpsJavaTest {
+public class SpatialApiJavaTest {
 
     // ==================== Java Platform Tests ====================
 
