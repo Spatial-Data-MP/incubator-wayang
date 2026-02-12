@@ -22,7 +22,7 @@ import com.fasterxml.jackson.core.JsonToken;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.wayang.basic.data.Record;
-import org.apache.wayang.spatial.data.WGeometry;
+import org.apache.wayang.spatial.data.WayangGeometry;
 import org.apache.wayang.basic.operators.GeoJsonFileSource;
 import org.apache.wayang.core.api.exception.WayangException;
 import org.apache.wayang.core.optimizer.OptimizationContext;
@@ -45,7 +45,7 @@ import java.util.stream.Stream;
  * Java execution operator that parses a GeoJSON document and emits each feature as a {@link Record}.
  * Each emitted Record is created from the feature JSON text. The Record consists of the geometry and properties
  * of the feature (i.e., the Record's schema has two fields: "geometry" and "properties", where "geometry"
- * is of type {@link WGeometry} and "properties" is of type {@linkplain Map<String, Object>}).
+ * is of type {@link WayangGeometry} and "properties" is of type {@linkplain Map<String, Object>}).
  */
 public class JavaGeoJsonFileSource extends GeoJsonFileSource implements JavaExecutionOperator {
 
@@ -89,7 +89,7 @@ public class JavaGeoJsonFileSource extends GeoJsonFileSource implements JavaExec
                             JsonNode propertiesNode = featureNode.path("properties");
 
                             String geometryJsonString = objectMapper.writeValueAsString(geometryNode);
-                            WGeometry wGeometry = WGeometry.fromGeoJson(geometryJsonString);
+                            WayangGeometry wGeometry = WayangGeometry.fromGeoJson(geometryJsonString);
 
                             Map<String, Object> propertiesMap = objectMapper.convertValue(propertiesNode, Map.class);
 

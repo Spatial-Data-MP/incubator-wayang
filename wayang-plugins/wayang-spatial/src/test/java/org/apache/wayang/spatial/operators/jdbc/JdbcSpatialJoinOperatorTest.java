@@ -35,7 +35,7 @@ import org.apache.wayang.jdbc.execution.JdbcExecutor;
 import org.apache.wayang.jdbc.operators.JdbcTableSource;
 import org.apache.wayang.jdbc.operators.SqlToStreamOperator;
 import org.apache.wayang.jdbc.platform.JdbcPlatformTemplate;
-import org.apache.wayang.spatial.data.WGeometry;
+import org.apache.wayang.spatial.data.WayangGeometry;
 import org.apache.wayang.spatial.test.HsqldbPlatform;
 import org.apache.wayang.spatial.test.HsqldbTableSource;
 import org.junit.jupiter.api.Test;
@@ -147,18 +147,18 @@ class JdbcSpatialJoinOperatorTest {
         tableSourceBTask.setStage(sqlStage);
 
         // Key descriptors with SQL implementation.
-        TransformationDescriptor<Record, WGeometry> leftKey =
+        TransformationDescriptor<Record, WayangGeometry> leftKey =
                 new TransformationDescriptor<>(
-                        record -> WGeometry.fromStringInput((String) record.getField(1)),
+                        record -> WayangGeometry.fromStringInput((String) record.getField(1)),
                         Record.class,
-                        WGeometry.class
+                        WayangGeometry.class
                 ).withSqlImplementation("testA", "geom");
 
-        TransformationDescriptor<Record, WGeometry> rightKey =
+        TransformationDescriptor<Record, WayangGeometry> rightKey =
                 new TransformationDescriptor<>(
-                        record -> WGeometry.fromStringInput((String) record.getField(1)),
+                        record -> WayangGeometry.fromStringInput((String) record.getField(1)),
                         Record.class,
-                        WGeometry.class
+                        WayangGeometry.class
                 ).withSqlImplementation("testB", "geom");
 
         final ExecutionOperator joinOp = new TestJdbcSpatialJoinOperator(

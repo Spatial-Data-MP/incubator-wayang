@@ -35,7 +35,7 @@ import org.apache.wayang.jdbc.execution.JdbcExecutor;
 import org.apache.wayang.jdbc.operators.JdbcTableSource;
 import org.apache.wayang.jdbc.operators.SqlToStreamOperator;
 import org.apache.wayang.jdbc.platform.JdbcPlatformTemplate;
-import org.apache.wayang.spatial.data.WGeometry;
+import org.apache.wayang.spatial.data.WayangGeometry;
 import org.apache.wayang.spatial.test.HsqldbPlatform;
 import org.apache.wayang.spatial.test.HsqldbTableSource;
 import org.junit.jupiter.api.Test;
@@ -77,7 +77,7 @@ class JdbcSpatialFilterOperatorTest {
     void testSpatialFilterIntersectsGeneratesCorrectSql() throws SQLException {
         String sql = buildSpatialFilterSql(
                 SpatialPredicateType.INTERSECTS,
-                new WGeometry("POINT (0 0)")
+                new WayangGeometry("POINT (0 0)")
         );
 
         assertTrue(sql.startsWith("SELECT"),
@@ -90,7 +90,7 @@ class JdbcSpatialFilterOperatorTest {
 
     @Test
     void testSpatialFilterWithinGeneratesCorrectSql() throws SQLException {
-        WGeometry polygon = new WGeometry("POLYGON ((0 0, 1 0, 1 1, 0 1, 0 0))");
+        WayangGeometry polygon = new WayangGeometry("POLYGON ((0 0, 1 0, 1 1, 0 1, 0 0))");
         String sql = buildSpatialFilterSql(SpatialPredicateType.WITHIN, polygon);
 
         assertTrue(sql.contains("ST_Within(geom, ST_GeomFromText('" + polygon.getWKT() + "', 4326))"),
@@ -99,7 +99,7 @@ class JdbcSpatialFilterOperatorTest {
 
     @Test
     void testSpatialFilterContainsGeneratesCorrectSql() throws SQLException {
-        WGeometry polygon = new WGeometry("POLYGON ((0 0, 1 0, 1 1, 0 1, 0 0))");
+        WayangGeometry polygon = new WayangGeometry("POLYGON ((0 0, 1 0, 1 1, 0 1, 0 0))");
         String sql = buildSpatialFilterSql(SpatialPredicateType.CONTAINS, polygon);
 
         assertTrue(sql.contains("ST_Contains(geom, ST_GeomFromText('" + polygon.getWKT() + "', 4326))"),
@@ -111,7 +111,7 @@ class JdbcSpatialFilterOperatorTest {
      * and returns the generated SQL query string.
      */
     private String buildSpatialFilterSql(SpatialPredicateType predicateType,
-                                         WGeometry referenceGeometry) throws SQLException {
+                                         WayangGeometry referenceGeometry) throws SQLException {
         Configuration configuration = new Configuration();
 
         Job job = mock(Job.class);
@@ -142,7 +142,7 @@ class JdbcSpatialFilterOperatorTest {
         // Spatial filter operator with SQL implementation on the key descriptor.
         TestJdbcSpatialFilterOperator<Record> filterOp = new TestJdbcSpatialFilterOperator<>(
                 predicateType,
-                record -> WGeometry.fromStringInput((String) record.getField(1)),
+                record -> WayangGeometry.fromStringInput((String) record.getField(1)),
                 DataSetType.createDefault(Record.class),
                 referenceGeometry
         );

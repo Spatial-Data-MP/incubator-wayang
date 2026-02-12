@@ -33,7 +33,7 @@ import org.apache.wayang.java.channels.CollectionChannel;
 import org.apache.wayang.java.channels.StreamChannel;
 import org.apache.wayang.java.execution.JavaExecutor;
 import org.apache.wayang.java.operators.JavaExecutionOperator;
-import org.apache.wayang.spatial.data.WGeometry;
+import org.apache.wayang.spatial.data.WayangGeometry;
 import org.apache.wayang.spatial.function.SpatialPredicate;
 import org.locationtech.jts.geom.Geometry;
 import org.locationtech.jts.index.strtree.STRtree;
@@ -94,7 +94,7 @@ public class JavaSpatialJoinOperator<InputType0, InputType1>
         STRtree index = new STRtree();
 
         rightStream.forEach(v1 -> {
-            WGeometry wGeom = (WGeometry) keyExtractor1.apply(v1);
+            WayangGeometry wGeom = (WayangGeometry) keyExtractor1.apply(v1);
             Geometry geom = (wGeom == null) ? null : wGeom.getGeometry();
             if (geom != null) {
                 index.insert(geom.getEnvelopeInternal(), new AbstractMap.SimpleEntry<>(v1, geom));
@@ -104,8 +104,8 @@ public class JavaSpatialJoinOperator<InputType0, InputType1>
         index.build();
 
         final Stream<Tuple2<InputType0, InputType1>> joinStream = leftStream.flatMap(v0 -> {
-            Geometry geom0 = Optional.ofNullable((WGeometry) keyExtractor0.apply(v0))
-                    .map(WGeometry::getGeometry).orElse(null);
+            Geometry geom0 = Optional.ofNullable((WayangGeometry) keyExtractor0.apply(v0))
+                    .map(WayangGeometry::getGeometry).orElse(null);
             if (geom0 == null) return Stream.empty();
 
             List<Map.Entry<InputType1, Geometry>> candidates = index.query(geom0.getEnvelopeInternal());

@@ -19,7 +19,7 @@
 package org.apache.wayang.apps.spatial;
 
 import org.apache.wayang.api.JavaPlanBuilder;
-import org.apache.wayang.spatial.data.WGeometry;
+import org.apache.wayang.spatial.data.WayangGeometry;
 import org.apache.wayang.core.api.Configuration;
 import org.apache.wayang.core.api.WayangContext;
 import org.apache.wayang.spatial.function.SpatialPredicate;
@@ -83,23 +83,23 @@ public class SpatialFilterPostgis {
         JavaPlanBuilder builder = new JavaPlanBuilder(wayangContext);
 
         // Input polygons: nested axis-aligned squares.
-        final List<WGeometry> inputValues = Arrays.asList(
-                WGeometry.fromStringInput("POLYGON((0.00 0.00,0.40 0.00,0.40 0.40,0.00 0.40,0.00 0.00))"),
-                WGeometry.fromStringInput("POLYGON((0.00 0.00,0.30 0.00,0.30 0.30,0.00 0.30,0.00 0.00))"),
-                WGeometry.fromStringInput("POLYGON((0.00 0.00,0.20 0.00,0.20 0.20,0.00 0.20,0.00 0.00))"),
-                WGeometry.fromStringInput("POLYGON((0.00 0.00,0.10 0.00,0.10 0.10,0.00 0.10,0.00 0.00))")
+        final List<WayangGeometry> inputValues = Arrays.asList(
+                WayangGeometry.fromStringInput("POLYGON((0.00 0.00,0.40 0.00,0.40 0.40,0.00 0.40,0.00 0.00))"),
+                WayangGeometry.fromStringInput("POLYGON((0.00 0.00,0.30 0.00,0.30 0.30,0.00 0.30,0.00 0.00))"),
+                WayangGeometry.fromStringInput("POLYGON((0.00 0.00,0.20 0.00,0.20 0.20,0.00 0.20,0.00 0.00))"),
+                WayangGeometry.fromStringInput("POLYGON((0.00 0.00,0.10 0.00,0.10 0.10,0.00 0.10,0.00 0.00))")
         );
 
         // Query geometry: a square entirely inside the 0.4 and 0.3 squares,
         // but outside the 0.2 and 0.1 squares.
-        WGeometry queryGeometry = WGeometry.fromStringInput(
+        WayangGeometry queryGeometry = WayangGeometry.fromStringInput(
                 "POLYGON((0.25 0.25,0.35 0.25,0.35 0.35,0.25 0.35,0.25 0.25))"
         );
 
-        final Collection<WGeometry> outputValues = builder
+        final Collection<WayangGeometry> outputValues = builder
                 .loadCollection(inputValues).withName("Load input values")
                 .spatialFilter(
-                        (input -> (WGeometry) input),
+                        (input -> (WayangGeometry) input),
                         SpatialPredicate.INTERSECTS,
                         queryGeometry
                 ).withName("Spatial filter (INTERSECTS)")
@@ -107,12 +107,12 @@ public class SpatialFilterPostgis {
                 .collect();
 
         // We expect only the first two polygons to intersect the query geometry.
-        Set<WGeometry> expectedOutput = WayangCollections.asSet(
-                WGeometry.fromStringInput("POLYGON((0.00 0.00,0.40 0.00,0.40 0.40,0.00 0.40,0.00 0.00))"),
-                WGeometry.fromStringInput("POLYGON((0.00 0.00,0.30 0.00,0.30 0.30,0.00 0.30,0.00 0.00))")
+        Set<WayangGeometry> expectedOutput = WayangCollections.asSet(
+                WayangGeometry.fromStringInput("POLYGON((0.00 0.00,0.40 0.00,0.40 0.40,0.00 0.40,0.00 0.00))"),
+                WayangGeometry.fromStringInput("POLYGON((0.00 0.00,0.30 0.00,0.30 0.30,0.00 0.30,0.00 0.00))")
         );
         // Print output
-        for (WGeometry t : outputValues) {
+        for (WayangGeometry t : outputValues) {
             System.out.println(t.toString());
         }
         */

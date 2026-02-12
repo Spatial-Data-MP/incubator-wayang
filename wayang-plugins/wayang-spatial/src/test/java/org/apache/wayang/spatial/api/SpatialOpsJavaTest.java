@@ -28,7 +28,7 @@ import org.apache.wayang.postgres.Postgres;
 import org.apache.wayang.postgres.operators.PostgresTableSource;
 import org.apache.wayang.spark.Spark;
 import org.apache.wayang.spatial.Spatial;
-import org.apache.wayang.spatial.data.WGeometry;
+import org.apache.wayang.spatial.data.WayangGeometry;
 import org.junit.jupiter.api.Test;
 
 import java.util.Arrays;
@@ -60,7 +60,7 @@ public class SpatialOpsJavaTest {
                 "0.25,0.25,0.75,0.75"   // Box inside first
         );
 
-        WGeometry queryGeometry = WGeometry.fromStringInput(
+        WayangGeometry queryGeometry = WayangGeometry.fromStringInput(
                 "POLYGON((0 0, 1 0, 1 1, 0 1, 0 0))"
         );
 
@@ -76,7 +76,7 @@ public class SpatialOpsJavaTest {
                                     "POLYGON((%f %f, %f %f, %f %f, %f %f, %f %f))",
                                     xmin, ymin, xmax, ymin, xmax, ymax, xmin, ymax, xmin, ymin
                             );
-                            return WGeometry.fromStringInput(wkt);
+                            return WayangGeometry.fromStringInput(wkt);
                         }),
                         SpatialPredicateType.INTERSECTS,
                         queryGeometry
@@ -112,9 +112,9 @@ public class SpatialOpsJavaTest {
 
         Collection<Long> result = planBuilder.loadCollection(leftData)
                 .spatialJoin(
-                        (input -> WGeometry.fromStringInput(input)),
+                        (input -> WayangGeometry.fromStringInput(input)),
                         planBuilder.loadCollection(rightData),
-                        (input -> WGeometry.fromStringInput(input)),
+                        (input -> WayangGeometry.fromStringInput(input)),
                         SpatialPredicateType.INTERSECTS
                 )
                 .count()
@@ -146,7 +146,7 @@ public class SpatialOpsJavaTest {
                 "4,0.25,0.25,0.75,0.75"
         );
 
-        WGeometry queryGeometry = WGeometry.fromStringInput(
+        WayangGeometry queryGeometry = WayangGeometry.fromStringInput(
                 "POLYGON((0 0, 1 0, 1 1, 0 1, 0 0))"
         );
 
@@ -163,7 +163,7 @@ public class SpatialOpsJavaTest {
                                     "POLYGON((%f %f, %f %f, %f %f, %f %f, %f %f))",
                                     xmin, ymin, xmax, ymin, xmax, ymax, xmin, ymax, xmin, ymin
                             );
-                            return WGeometry.fromStringInput(wkt);
+                            return WayangGeometry.fromStringInput(wkt);
                         }),
                         SpatialPredicateType.INTERSECTS,
                         queryGeometry
@@ -203,9 +203,9 @@ public class SpatialOpsJavaTest {
         // Chain: spatialJoin -> map (multiply values) -> reduce (sum)
         Collection<Integer> result = planBuilder.loadCollection(leftData)
                 .spatialJoin(
-                        (input -> WGeometry.fromStringInput(input.split(";")[0])),
+                        (input -> WayangGeometry.fromStringInput(input.split(";")[0])),
                         planBuilder.loadCollection(rightData),
-                        (input -> WGeometry.fromStringInput(input.split(";")[0])),
+                        (input -> WayangGeometry.fromStringInput(input.split(";")[0])),
                         SpatialPredicateType.INTERSECTS
                 )
                 .map(tuple -> {
@@ -240,23 +240,23 @@ public class SpatialOpsJavaTest {
                 "POLYGON((2 2, 3 2, 3 3, 2 3, 2 2))"                        // Outside both
         );
 
-        WGeometry queryGeometry1 = WGeometry.fromStringInput(
+        WayangGeometry queryGeometry1 = WayangGeometry.fromStringInput(
                 "POLYGON((0 0, 1 0, 1 1, 0 1, 0 0))"  // Unit square
         );
-        WGeometry queryGeometry2 = WGeometry.fromStringInput(
+        WayangGeometry queryGeometry2 = WayangGeometry.fromStringInput(
                 "POLYGON((0 0, 0.5 0, 0.5 0.5, 0 0.5, 0 0))"  // Smaller square (0-0.5 range)
         );
 
         // Chain two spatial filters
         Collection<Long> result = planBuilder.loadCollection(testData)
                 .spatialFilter(
-                        (input -> WGeometry.fromStringInput(input)),
+                        (input -> WayangGeometry.fromStringInput(input)),
                         SpatialPredicateType.INTERSECTS,
                         queryGeometry1
                 )
                 .map(x -> x).withOutputClass(String.class)  // Preserve type for chaining
                 .spatialFilter(
-                        (input -> WGeometry.fromStringInput(input)),
+                        (input -> WayangGeometry.fromStringInput(input)),
                         SpatialPredicateType.INTERSECTS,
                         queryGeometry2
                 )
@@ -288,14 +288,14 @@ public class SpatialOpsJavaTest {
                 "POLYGON((1 1, 2 1, 2 2, 1 2, 1 1))"
         );
 
-        WGeometry preFilterGeometry = WGeometry.fromStringInput(
+        WayangGeometry preFilterGeometry = WayangGeometry.fromStringInput(
                 "POLYGON((0 0, 1 0, 1 1, 0 1, 0 0))"
         );
 
         // Filter left data, then join with right
         var filteredLeft = planBuilder.loadCollection(leftData)
                 .spatialFilter(
-                        (input -> WGeometry.fromStringInput(input)),
+                        (input -> WayangGeometry.fromStringInput(input)),
                         SpatialPredicateType.INTERSECTS,
                         preFilterGeometry
                 )
@@ -303,9 +303,9 @@ public class SpatialOpsJavaTest {
 
         Collection<Long> result = filteredLeft
                 .spatialJoin(
-                        (input -> WGeometry.fromStringInput(input)),
+                        (input -> WayangGeometry.fromStringInput(input)),
                         planBuilder.loadCollection(rightData),
-                        (input -> WGeometry.fromStringInput(input)),
+                        (input -> WayangGeometry.fromStringInput(input)),
                         SpatialPredicateType.INTERSECTS
                 )
                 .count()
@@ -335,7 +335,7 @@ public class SpatialOpsJavaTest {
                 "0.25,0.25,0.75,0.75"
         );
 
-        WGeometry queryGeometry = WGeometry.fromStringInput(
+        WayangGeometry queryGeometry = WayangGeometry.fromStringInput(
                 "POLYGON((0 0, 1 0, 1 1, 0 1, 0 0))"
         );
 
@@ -351,7 +351,7 @@ public class SpatialOpsJavaTest {
                                     "POLYGON((%f %f, %f %f, %f %f, %f %f, %f %f))",
                                     xmin, ymin, xmax, ymin, xmax, ymax, xmin, ymax, xmin, ymin
                             );
-                            return WGeometry.fromStringInput(wkt);
+                            return WayangGeometry.fromStringInput(wkt);
                         }),
                         SpatialPredicateType.INTERSECTS,
                         queryGeometry
@@ -386,9 +386,9 @@ public class SpatialOpsJavaTest {
 
         Collection<Long> result = planBuilder.loadCollection(leftData)
                 .spatialJoin(
-                        (input -> WGeometry.fromStringInput(input)),
+                        (input -> WayangGeometry.fromStringInput(input)),
                         planBuilder.loadCollection(rightData),
-                        (input -> WGeometry.fromStringInput(input)),
+                        (input -> WayangGeometry.fromStringInput(input)),
                         SpatialPredicateType.INTERSECTS
                 )
                 .withTargetPlatform(Spark.platform())
@@ -416,7 +416,7 @@ public class SpatialOpsJavaTest {
                 "0.25,0.25,0.75,0.75"
         );
 
-        WGeometry queryGeometry = WGeometry.fromStringInput(
+        WayangGeometry queryGeometry = WayangGeometry.fromStringInput(
                 "POLYGON((0 0, 1 0, 1 1, 0 1, 0 0))"
         );
 
@@ -433,7 +433,7 @@ public class SpatialOpsJavaTest {
                                     "POLYGON((%f %f, %f %f, %f %f, %f %f, %f %f))",
                                     xmin, ymin, xmax, ymin, xmax, ymax, xmin, ymax, xmin, ymin
                             );
-                            return WGeometry.fromStringInput(wkt);
+                            return WayangGeometry.fromStringInput(wkt);
                         }),
                         SpatialPredicateType.INTERSECTS,
                         queryGeometry
@@ -473,7 +473,7 @@ public class SpatialOpsJavaTest {
                 .withJobName("Spatial Filter with Postgres Test");
 
         // Query geometry: a box in the lower-left quadrant (0,0) to (0.4, 0.4)
-        WGeometry queryGeometry = WGeometry.fromStringInput(
+        WayangGeometry queryGeometry = WayangGeometry.fromStringInput(
                 "POLYGON((0.0 0.0, 0.4 0.0, 0.4 0.4, 0.0 0.4, 0.0 0.0))"
         );
 
@@ -481,7 +481,7 @@ public class SpatialOpsJavaTest {
         Collection<Long> result = planBuilder
                 .readTable(new PostgresTableSource("spider_boxes", "x_min", "y_min", "x_max", "y_max", "geom"))
                 .spatialFilter(
-                        (Record record) -> WGeometry.fromStringInput(record.getString(4)),
+                        (Record record) -> WayangGeometry.fromStringInput(record.getString(4)),
                         SpatialPredicateType.INTERSECTS,
                         queryGeometry,
                         "geom"  // SQL geometry column name for PostgreSQL pushdown
@@ -510,7 +510,7 @@ public class SpatialOpsJavaTest {
                 .withJobName("Spatial Filter with Postgres and Mapping Test");
 
         // Query geometry covering center area
-        WGeometry queryGeometry = WGeometry.fromStringInput(
+        WayangGeometry queryGeometry = WayangGeometry.fromStringInput(
                 "POLYGON((0.3 0.3, 0.7 0.3, 0.7 0.7, 0.3 0.7, 0.3 0.3))"
         );
 
@@ -518,7 +518,7 @@ public class SpatialOpsJavaTest {
         Collection<String> result = planBuilder
                 .readTable(new PostgresTableSource("spider_boxes", "x_min", "y_min", "x_max", "y_max", "geom"))
                 .spatialFilter(
-                        (Record record) -> WGeometry.fromStringInput(record.getString(4)),
+                        (Record record) -> WayangGeometry.fromStringInput(record.getString(4)),
                         SpatialPredicateType.INTERSECTS,
                         queryGeometry,
                         "geom"  // SQL geometry column name for PostgreSQL pushdown
@@ -547,7 +547,7 @@ public class SpatialOpsJavaTest {
                 .withJobName("Spatial Filter with Postgres Contains Test");
 
         // Query geometry: full unit square - should contain all boxes that are fully inside
-        WGeometry queryGeometry = WGeometry.fromStringInput(
+        WayangGeometry queryGeometry = WayangGeometry.fromStringInput(
                 "POLYGON((0.0 0.0, 1.0 0.0, 1.0 1.0, 0.0 1.0, 0.0 0.0))"
         );
 
@@ -555,7 +555,7 @@ public class SpatialOpsJavaTest {
         Collection<Long> result = planBuilder
                 .readTable(new PostgresTableSource("spider_boxes", "x_min", "y_min", "x_max", "y_max", "geom"))
                 .spatialFilter(
-                        (Record record) -> WGeometry.fromStringInput(record.getString(4)),
+                        (Record record) -> WayangGeometry.fromStringInput(record.getString(4)),
                         SpatialPredicateType.WITHIN,
                         queryGeometry,
                         "geom"  // SQL geometry column name for PostgreSQL pushdown

@@ -32,7 +32,7 @@ import org.apache.wayang.java.channels.JavaChannelInstance;
 import org.apache.wayang.java.channels.StreamChannel;
 import org.apache.wayang.java.execution.JavaExecutor;
 import org.apache.wayang.java.platform.JavaPlatform;
-import org.apache.wayang.spatial.data.WGeometry;
+import org.apache.wayang.spatial.data.WayangGeometry;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
@@ -94,23 +94,23 @@ class JavaSpatialJoinOperatorTest {
     @Test
     void testIntersectsJoin() {
         // Left: 3 points — two in box1, one in box2
-        List<WGeometry> left = Arrays.asList(
-                new WGeometry("POINT (0.5 0.5)"),
-                new WGeometry("POINT (0.5 0.8)"),
-                new WGeometry("POINT (5.5 5.5)")
+        List<WayangGeometry> left = Arrays.asList(
+                new WayangGeometry("POINT (0.5 0.5)"),
+                new WayangGeometry("POINT (0.5 0.8)"),
+                new WayangGeometry("POINT (5.5 5.5)")
         );
 
         // Right: 2 non-overlapping boxes
-        List<WGeometry> right = Arrays.asList(
-                new WGeometry("POLYGON ((0 0, 1 0, 1 1, 0 1, 0 0))"),
-                new WGeometry("POLYGON ((5 5, 6 5, 6 6, 5 6, 5 5))")
+        List<WayangGeometry> right = Arrays.asList(
+                new WayangGeometry("POLYGON ((0 0, 1 0, 1 1, 0 1, 0 0))"),
+                new WayangGeometry("POLYGON ((5 5, 6 5, 6 6, 5 6, 5 5))")
         );
 
-        JavaSpatialJoinOperator<WGeometry, WGeometry> joinOp = new JavaSpatialJoinOperator<>(
+        JavaSpatialJoinOperator<WayangGeometry, WayangGeometry> joinOp = new JavaSpatialJoinOperator<>(
                 w -> w,
                 w -> w,
-                WGeometry.class,
-                WGeometry.class,
+                WayangGeometry.class,
+                WayangGeometry.class,
                 SpatialPredicateType.INTERSECTS
         );
 
@@ -121,29 +121,29 @@ class JavaSpatialJoinOperatorTest {
         JavaChannelInstance[] outputs = new JavaChannelInstance[]{createStreamChannelInstance()};
         joinOp.evaluate(inputs, outputs, createExecutor(), createOperatorContext(joinOp));
 
-        List<Tuple2<WGeometry, WGeometry>> result =
-                outputs[0].<Tuple2<WGeometry, WGeometry>>provideStream().collect(Collectors.toList());
+        List<Tuple2<WayangGeometry, WayangGeometry>> result =
+                outputs[0].<Tuple2<WayangGeometry, WayangGeometry>>provideStream().collect(Collectors.toList());
         assertEquals(3, result.size());
     }
 
     @Test
     void testJoinNoMatches() {
         // Left: points far from right boxes
-        List<WGeometry> left = Arrays.asList(
-                new WGeometry("POINT (100 100)"),
-                new WGeometry("POINT (200 200)")
+        List<WayangGeometry> left = Arrays.asList(
+                new WayangGeometry("POINT (100 100)"),
+                new WayangGeometry("POINT (200 200)")
         );
 
-        List<WGeometry> right = Arrays.asList(
-                new WGeometry("POLYGON ((0 0, 1 0, 1 1, 0 1, 0 0))"),
-                new WGeometry("POLYGON ((5 5, 6 5, 6 6, 5 6, 5 5))")
+        List<WayangGeometry> right = Arrays.asList(
+                new WayangGeometry("POLYGON ((0 0, 1 0, 1 1, 0 1, 0 0))"),
+                new WayangGeometry("POLYGON ((5 5, 6 5, 6 6, 5 6, 5 5))")
         );
 
-        JavaSpatialJoinOperator<WGeometry, WGeometry> joinOp = new JavaSpatialJoinOperator<>(
+        JavaSpatialJoinOperator<WayangGeometry, WayangGeometry> joinOp = new JavaSpatialJoinOperator<>(
                 w -> w,
                 w -> w,
-                WGeometry.class,
-                WGeometry.class,
+                WayangGeometry.class,
+                WayangGeometry.class,
                 SpatialPredicateType.INTERSECTS
         );
 
@@ -154,14 +154,14 @@ class JavaSpatialJoinOperatorTest {
         JavaChannelInstance[] outputs = new JavaChannelInstance[]{createStreamChannelInstance()};
         joinOp.evaluate(inputs, outputs, createExecutor(), createOperatorContext(joinOp));
 
-        List<Tuple2<WGeometry, WGeometry>> result =
-                outputs[0].<Tuple2<WGeometry, WGeometry>>provideStream().collect(Collectors.toList());
+        List<Tuple2<WayangGeometry, WayangGeometry>> result =
+                outputs[0].<Tuple2<WayangGeometry, WayangGeometry>>provideStream().collect(Collectors.toList());
         assertEquals(0, result.size());
     }
 
     @Test
     void testJoinWithStringKeyExtractor() {
-        // Input type is String (WKT), key extractors parse via WGeometry.fromStringInput
+        // Input type is String (WKT), key extractors parse via WayangGeometry.fromStringInput
         List<String> left = Arrays.asList(
                 "POINT (0.5 0.5)",
                 "POINT (5.5 5.5)"
@@ -173,8 +173,8 @@ class JavaSpatialJoinOperatorTest {
         );
 
         JavaSpatialJoinOperator<String, String> joinOp = new JavaSpatialJoinOperator<>(
-                WGeometry::fromStringInput,
-                WGeometry::fromStringInput,
+                WayangGeometry::fromStringInput,
+                WayangGeometry::fromStringInput,
                 String.class,
                 String.class,
                 SpatialPredicateType.INTERSECTS

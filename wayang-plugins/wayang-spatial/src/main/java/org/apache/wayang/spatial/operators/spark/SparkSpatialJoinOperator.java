@@ -39,7 +39,7 @@ import org.apache.wayang.core.util.Tuple;
 import org.apache.wayang.spark.channels.RddChannel;
 import org.apache.wayang.spark.execution.SparkExecutor;
 import org.apache.wayang.spark.operators.SparkExecutionOperator;
-import org.apache.wayang.spatial.data.WGeometry;
+import org.apache.wayang.spatial.data.WayangGeometry;
 import org.locationtech.jts.geom.Geometry;
 
 import java.util.Arrays;
@@ -98,14 +98,14 @@ public class SparkSpatialJoinOperator<InputType0, InputType1>
 
 
         final JavaRDD<Geometry> leftInGeometry = leftIn.map((InputType0 in1) -> {
-            final WGeometry wGeom = (WGeometry) keyExtractor0.apply(in1);
+            final WayangGeometry wGeom = (WayangGeometry) keyExtractor0.apply(in1);
             Geometry geom = wGeom.getGeometry();
             geom.setUserData(in1);
             return geom;
         });
 
         final JavaRDD<Geometry> rightInGeometry = rightIn.map((InputType1 in2) -> {
-            final WGeometry wGeom = (WGeometry) keyExtractor1.apply(in2);
+            final WayangGeometry wGeom = (WayangGeometry) keyExtractor1.apply(in2);
             Geometry geom = wGeom.getGeometry();
             geom.setUserData(in2);
             return geom;

@@ -32,7 +32,7 @@ import org.apache.wayang.java.channels.JavaChannelInstance;
 import org.apache.wayang.java.channels.StreamChannel;
 import org.apache.wayang.java.execution.JavaExecutor;
 import org.apache.wayang.java.platform.JavaPlatform;
-import org.apache.wayang.spatial.data.WGeometry;
+import org.apache.wayang.spatial.data.WayangGeometry;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
@@ -94,19 +94,19 @@ class JavaSpatialFilterOperatorTest {
     @Test
     void testIntersectsFilter() {
         // 4 polygons: larger than reference, overlapping, fully inside, fully outside
-        List<WGeometry> input = Arrays.asList(
-                new WGeometry("POLYGON ((0 0, 2 0, 2 2, 0 2, 0 0))"),
-                new WGeometry("POLYGON ((0.5 0.5, 1.5 0.5, 1.5 1.5, 0.5 1.5, 0.5 0.5))"),
-                new WGeometry("POLYGON ((0.2 0.2, 0.8 0.2, 0.8 0.8, 0.2 0.8, 0.2 0.2))"),
-                new WGeometry("POLYGON ((5 5, 6 5, 6 6, 5 6, 5 5))")
+        List<WayangGeometry> input = Arrays.asList(
+                new WayangGeometry("POLYGON ((0 0, 2 0, 2 2, 0 2, 0 0))"),
+                new WayangGeometry("POLYGON ((0.5 0.5, 1.5 0.5, 1.5 1.5, 0.5 1.5, 0.5 0.5))"),
+                new WayangGeometry("POLYGON ((0.2 0.2, 0.8 0.2, 0.8 0.8, 0.2 0.8, 0.2 0.2))"),
+                new WayangGeometry("POLYGON ((5 5, 6 5, 6 6, 5 6, 5 5))")
         );
 
-        WGeometry reference = new WGeometry("POLYGON ((0 0, 1 0, 1 1, 0 1, 0 0))");
+        WayangGeometry reference = new WayangGeometry("POLYGON ((0 0, 1 0, 1 1, 0 1, 0 0))");
 
-        JavaSpatialFilterOperator<WGeometry> filterOp = new JavaSpatialFilterOperator<>(
+        JavaSpatialFilterOperator<WayangGeometry> filterOp = new JavaSpatialFilterOperator<>(
                 SpatialPredicateType.INTERSECTS,
                 w -> w,
-                DataSetType.createDefault(WGeometry.class),
+                DataSetType.createDefault(WayangGeometry.class),
                 reference
         );
 
@@ -114,26 +114,26 @@ class JavaSpatialFilterOperatorTest {
         JavaChannelInstance[] outputs = new JavaChannelInstance[]{createStreamChannelInstance()};
         filterOp.evaluate(inputs, outputs, createExecutor(), createOperatorContext(filterOp));
 
-        List<WGeometry> result = outputs[0].<WGeometry>provideStream().collect(Collectors.toList());
+        List<WayangGeometry> result = outputs[0].<WayangGeometry>provideStream().collect(Collectors.toList());
         assertEquals(3, result.size());
     }
 
     @Test
     void testWithinFilter() {
         // Same 4 polygons; only the fully-inside one is WITHIN the unit square
-        List<WGeometry> input = Arrays.asList(
-                new WGeometry("POLYGON ((0 0, 2 0, 2 2, 0 2, 0 0))"),
-                new WGeometry("POLYGON ((0.5 0.5, 1.5 0.5, 1.5 1.5, 0.5 1.5, 0.5 0.5))"),
-                new WGeometry("POLYGON ((0.2 0.2, 0.8 0.2, 0.8 0.8, 0.2 0.8, 0.2 0.2))"),
-                new WGeometry("POLYGON ((5 5, 6 5, 6 6, 5 6, 5 5))")
+        List<WayangGeometry> input = Arrays.asList(
+                new WayangGeometry("POLYGON ((0 0, 2 0, 2 2, 0 2, 0 0))"),
+                new WayangGeometry("POLYGON ((0.5 0.5, 1.5 0.5, 1.5 1.5, 0.5 1.5, 0.5 0.5))"),
+                new WayangGeometry("POLYGON ((0.2 0.2, 0.8 0.2, 0.8 0.8, 0.2 0.8, 0.2 0.2))"),
+                new WayangGeometry("POLYGON ((5 5, 6 5, 6 6, 5 6, 5 5))")
         );
 
-        WGeometry reference = new WGeometry("POLYGON ((0 0, 1 0, 1 1, 0 1, 0 0))");
+        WayangGeometry reference = new WayangGeometry("POLYGON ((0 0, 1 0, 1 1, 0 1, 0 0))");
 
-        JavaSpatialFilterOperator<WGeometry> filterOp = new JavaSpatialFilterOperator<>(
+        JavaSpatialFilterOperator<WayangGeometry> filterOp = new JavaSpatialFilterOperator<>(
                 SpatialPredicateType.WITHIN,
                 w -> w,
-                DataSetType.createDefault(WGeometry.class),
+                DataSetType.createDefault(WayangGeometry.class),
                 reference
         );
 
@@ -141,26 +141,26 @@ class JavaSpatialFilterOperatorTest {
         JavaChannelInstance[] outputs = new JavaChannelInstance[]{createStreamChannelInstance()};
         filterOp.evaluate(inputs, outputs, createExecutor(), createOperatorContext(filterOp));
 
-        List<WGeometry> result = outputs[0].<WGeometry>provideStream().collect(Collectors.toList());
+        List<WayangGeometry> result = outputs[0].<WayangGeometry>provideStream().collect(Collectors.toList());
         assertEquals(1, result.size());
     }
 
     @Test
     void testFilterNoMatches() {
-        List<WGeometry> input = Arrays.asList(
-                new WGeometry("POLYGON ((0 0, 2 0, 2 2, 0 2, 0 0))"),
-                new WGeometry("POLYGON ((0.5 0.5, 1.5 0.5, 1.5 1.5, 0.5 1.5, 0.5 0.5))"),
-                new WGeometry("POLYGON ((0.2 0.2, 0.8 0.2, 0.8 0.8, 0.2 0.8, 0.2 0.2))"),
-                new WGeometry("POLYGON ((5 5, 6 5, 6 6, 5 6, 5 5))")
+        List<WayangGeometry> input = Arrays.asList(
+                new WayangGeometry("POLYGON ((0 0, 2 0, 2 2, 0 2, 0 0))"),
+                new WayangGeometry("POLYGON ((0.5 0.5, 1.5 0.5, 1.5 1.5, 0.5 1.5, 0.5 0.5))"),
+                new WayangGeometry("POLYGON ((0.2 0.2, 0.8 0.2, 0.8 0.8, 0.2 0.8, 0.2 0.2))"),
+                new WayangGeometry("POLYGON ((5 5, 6 5, 6 6, 5 6, 5 5))")
         );
 
         // Distant geometry — no intersections
-        WGeometry reference = new WGeometry("POLYGON ((100 100, 101 100, 101 101, 100 101, 100 100))");
+        WayangGeometry reference = new WayangGeometry("POLYGON ((100 100, 101 100, 101 101, 100 101, 100 100))");
 
-        JavaSpatialFilterOperator<WGeometry> filterOp = new JavaSpatialFilterOperator<>(
+        JavaSpatialFilterOperator<WayangGeometry> filterOp = new JavaSpatialFilterOperator<>(
                 SpatialPredicateType.INTERSECTS,
                 w -> w,
-                DataSetType.createDefault(WGeometry.class),
+                DataSetType.createDefault(WayangGeometry.class),
                 reference
         );
 
@@ -168,7 +168,7 @@ class JavaSpatialFilterOperatorTest {
         JavaChannelInstance[] outputs = new JavaChannelInstance[]{createStreamChannelInstance()};
         filterOp.evaluate(inputs, outputs, createExecutor(), createOperatorContext(filterOp));
 
-        List<WGeometry> result = outputs[0].<WGeometry>provideStream().collect(Collectors.toList());
+        List<WayangGeometry> result = outputs[0].<WayangGeometry>provideStream().collect(Collectors.toList());
         assertEquals(0, result.size());
     }
 }

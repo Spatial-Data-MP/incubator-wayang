@@ -18,7 +18,7 @@
 
 package org.apache.wayang.spatial.data;
 
-import org.apache.wayang.spatial.data.WGeometry;
+import org.apache.wayang.spatial.data.WayangGeometry;
 import org.junit.Test;
 import org.locationtech.jts.geom.Coordinate;
 import org.locationtech.jts.geom.Geometry;
@@ -31,7 +31,7 @@ import javax.xml.bind.DatatypeConverter;
 
 import static org.junit.Assert.*;
 
-public class WGeometryTest {
+public class WayangGeometryTest {
 
     private final GeometryFactory gf = new GeometryFactory();
 
@@ -39,7 +39,7 @@ public class WGeometryTest {
     public void testFromGeometryStoresAndCachesGeometry() {
         Point point = gf.createPoint(new Coordinate(1.0, 2.0));
 
-        WGeometry wGeometry = WGeometry.fromGeometry(point);
+        WayangGeometry wGeometry = WayangGeometry.fromGeometry(point);
 
         // First call should give us exactly the same instance
         Geometry first = wGeometry.getGeometry();
@@ -67,7 +67,7 @@ public class WGeometryTest {
     public void testFromStringInputWKTAndSRIDCleaning() {
         // WKT with SRID prefix
         String wktWithSrid = "SRID=4326;POINT (1 2)";
-        WGeometry wGeometry = WGeometry.fromStringInput(wktWithSrid);
+        WayangGeometry wGeometry = WayangGeometry.fromStringInput(wktWithSrid);
 
         Geometry geom = wGeometry.getGeometry();
         assertTrue("Geometry should be a Point.", geom instanceof Point);
@@ -82,7 +82,7 @@ public class WGeometryTest {
         // Verify that parsing the same WKT without SRID gives an equal geometry,
         // which indirectly asserts that cleanSRID() worked as expected.
         String wktWithoutSrid = "POINT (1 2)";
-        WGeometry wGeometryNoSrid = WGeometry.fromStringInput(wktWithoutSrid);
+        WayangGeometry wGeometryNoSrid = WayangGeometry.fromStringInput(wktWithoutSrid);
         Geometry geomNoSrid = wGeometryNoSrid.getGeometry();
 
         assertTrue("Geometry from SRID-prefixed WKT should equal geometry from plain WKT.",
@@ -96,7 +96,7 @@ public class WGeometryTest {
         Point point = gf.createPoint(new Coordinate(3.0, 4.0));
         String canonicalWkt = new WKTWriter().write(point);
 
-        WGeometry wGeometry = WGeometry.fromStringInput(canonicalWkt);
+        WayangGeometry wGeometry = WayangGeometry.fromStringInput(canonicalWkt);
 
         Geometry geom = wGeometry.getGeometry();
         assertTrue(geom instanceof Point);
@@ -112,12 +112,12 @@ public class WGeometryTest {
     public void testFromStringInputWKBHexRoundTrip() {
         Point original = gf.createPoint(new Coordinate(5.0, 6.0));
 
-        // Encode to WKB hex using same mechanism as WGeometry
+        // Encode to WKB hex using same mechanism as WayangGeometry
         WKBWriter wkbWriter = new WKBWriter();
         byte[] wkbBytes = wkbWriter.write(original);
         String wkbHex = DatatypeConverter.printHexBinary(wkbBytes);
 
-        WGeometry wGeometry = WGeometry.fromStringInput(wkbHex);
+        WayangGeometry wGeometry = WayangGeometry.fromStringInput(wkbHex);
         Geometry parsed = wGeometry.getGeometry();
 
         assertTrue("Parsed geometry should be a Point.", parsed instanceof Point);
@@ -136,7 +136,7 @@ public class WGeometryTest {
         // Simple GeoJSON Point
         String geoJson = "{\"type\":\"Point\",\"coordinates\":[7.0,8.0]}";
 
-        WGeometry wGeometry = WGeometry.fromStringInput(geoJson);
+        WayangGeometry wGeometry = WayangGeometry.fromStringInput(geoJson);
         Geometry geom = wGeometry.getGeometry();
 
         assertTrue("Geometry should be a Point.", geom instanceof Point);
@@ -145,12 +145,12 @@ public class WGeometryTest {
         assertEquals(8.0, p.getY(), 1e-9);
 
         // Now go back through fromGeometry + GeoJSON
-        WGeometry fromGeom = WGeometry.fromGeometry(geom);
+        WayangGeometry fromGeom = WayangGeometry.fromGeometry(geom);
         String generatedGeoJson = fromGeom.getGeoJSON();
 
         // We don't depend on exact string equality/ordering of JSON,
         // but we do expect that parsing generated GeoJSON yields an equal geometry.
-        WGeometry reParsed = WGeometry.fromStringInput(generatedGeoJson);
+        WayangGeometry reParsed = WayangGeometry.fromStringInput(generatedGeoJson);
         Geometry geom2 = reParsed.getGeometry();
 
         assertTrue("Geometry from re-parsed GeoJSON should be exactly equal.",
@@ -162,7 +162,7 @@ public class WGeometryTest {
         // Start with WKT-only instance
         Point point = gf.createPoint(new Coordinate(10.0, 20.0));
         String wkt = new WKTWriter().write(point);
-        WGeometry wFromWkt = WGeometry.fromStringInput(wkt);
+        WayangGeometry wFromWkt = WayangGeometry.fromStringInput(wkt);
 
         Geometry g1 = wFromWkt.getGeometry();
         assertTrue(g1 instanceof Point);
@@ -173,16 +173,16 @@ public class WGeometryTest {
         WKBWriter wkbWriter = new WKBWriter();
         byte[] wkbBytes = wkbWriter.write(point);
         String wkbHex = DatatypeConverter.printHexBinary(wkbBytes);
-        WGeometry wFromWkb = WGeometry.fromStringInput(wkbHex);
+        WayangGeometry wFromWkb = WayangGeometry.fromStringInput(wkbHex);
 
         Geometry g2 = wFromWkb.getGeometry();
         assertTrue(g2 instanceof Point);
         assertTrue(point.equalsExact(g2));
 
         // And GeoJSON-only instance
-        WGeometry wFromGeo = WGeometry.fromGeometry(point);
+        WayangGeometry wFromGeo = WayangGeometry.fromGeometry(point);
         String geoJson = wFromGeo.getGeoJSON();
-        WGeometry wFromGeoOnly = WGeometry.fromStringInput(geoJson);
+        WayangGeometry wFromGeoOnly = WayangGeometry.fromStringInput(geoJson);
 
         Geometry g3 = wFromGeoOnly.getGeometry();
         assertTrue(g3 instanceof Point);
@@ -192,9 +192,9 @@ public class WGeometryTest {
     @Test(expected = RuntimeException.class)
     public void testInvalidWKTThrowsRuntimeException() {
         // This should cause JTS WKTReader to throw ParseException,
-        // which WGeometry wraps in a RuntimeException.
+        // which WayangGeometry wraps in a RuntimeException.
         String invalidWkt = "POINT (1)";
-        WGeometry wGeometry = WGeometry.fromStringInput(invalidWkt);
+        WayangGeometry wGeometry = WayangGeometry.fromStringInput(invalidWkt);
 
         // Should throw
         wGeometry.getGeometry();
@@ -203,7 +203,7 @@ public class WGeometryTest {
     @Test(expected = IllegalStateException.class)
     public void testNoRepresentationAvailableThrowsIllegalStateException() {
         // Default constructor, no wkt/wkb/geojson/geometry set
-        WGeometry wGeometry = new WGeometry();
+        WayangGeometry wGeometry = new WayangGeometry();
 
         // Should hit the "No geometry representation available" branch
         wGeometry.getGeometry();
@@ -212,7 +212,7 @@ public class WGeometryTest {
     @Test
     public void testGetGeometryIsCached() {
         Point point = gf.createPoint(new Coordinate(11.0, 22.0));
-        WGeometry wGeometry = WGeometry.fromGeometry(point);
+        WayangGeometry wGeometry = WayangGeometry.fromGeometry(point);
 
         Geometry g1 = wGeometry.getGeometry();
         Geometry g2 = wGeometry.getGeometry();

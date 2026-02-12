@@ -29,32 +29,32 @@ import java.io.Serializable;
 import java.util.HashMap;
 import java.util.Map;
 
-public class WGeometry implements SpatialGeometry {
+public class WayangGeometry implements SpatialGeometry {
 
     private final HashMap<String, Object> data;
 
-    public WGeometry() {
+    public WayangGeometry() {
         this.data = new HashMap<>();
     }
 
     /**
      * Backwards-compatible constructor, treats input as WKT.
      */
-    public WGeometry(String wkt) {
+    public WayangGeometry(String wkt) {
         this();
         this.data.put("wkt", wkt);
     }
     /**
-     * Create WGeometry from string input.
+     * Create WayangGeometry from string input.
      * Detects WKT, WKB-hex, or GeoJSON and stores only that
      * representation initially. Other conversions are done lazily.
      *
      * @param input geometry string (WKT / WKB-hex / GeoJSON)
-     * @return WGeometry instance
+     * @return WayangGeometry instance
      */
-    public static WGeometry fromStringInput(String input) {
+    public static WayangGeometry fromStringInput(String input) {
         String trimmed = input.trim();
-        WGeometry wg = new WGeometry();
+        WayangGeometry wg = new WayangGeometry();
 
         if (wg.looksLikeWKT(trimmed)) {
             wg.data.put("wkt", trimmed);
@@ -69,26 +69,26 @@ public class WGeometry implements SpatialGeometry {
     }
 
     /**
-     * Create WGeometry from an existing JTS Geometry object.
+     * Create WayangGeometry from an existing JTS Geometry object.
      * The geometry is stored, and all other formats (WKT/WKB/GeoJSON)
      * are generated lazily when their getters are called.
      *
      * @param geometry JTS Geometry instance
-     * @return WGeometry wrapper
+     * @return WayangGeometry wrapper
      */
-    public static WGeometry fromGeometry(Geometry geometry) {
+    public static WayangGeometry fromGeometry(Geometry geometry) {
         if (geometry == null) {
             throw new IllegalArgumentException("Geometry must not be null.");
         }
-        WGeometry wg = new WGeometry();
+        WayangGeometry wg = new WayangGeometry();
         wg.data.put("geometry", geometry);
         return wg;
     }
 
-    public static WGeometry fromGeoJson(String geoJson) {
-        WGeometry wg = new WGeometry();
+    public static WayangGeometry fromGeoJson(String geoJson) {
+        WayangGeometry wg = new WayangGeometry();
         wg.data.put("geojson", geoJson);
-        // could directely create the rescpective geometry with jts
+        // could directly create the respective geometry with jts
         return wg;
     }
 
@@ -211,7 +211,7 @@ public class WGeometry implements SpatialGeometry {
                 geometry = reader.read(geoJson);
 
             } else {
-                throw new IllegalStateException("No geometry representation available in WGeometry.");
+                throw new IllegalStateException("No geometry representation available in WayangGeometry.");
             }
         } catch (ParseException e) {
             throw new RuntimeException("Failed to parse geometry from stored representations.", e);
@@ -249,9 +249,9 @@ public class WGeometry implements SpatialGeometry {
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
-        if (!(o instanceof WGeometry)) return false;
+        if (!(o instanceof WayangGeometry)) return false;
 
-        WGeometry that = (WGeometry) o;
+        WayangGeometry that = (WayangGeometry) o;
 
         Geometry g1 = this.getGeometry();
         Geometry g2 = that.getGeometry();

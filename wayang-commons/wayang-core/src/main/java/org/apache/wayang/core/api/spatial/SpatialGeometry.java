@@ -22,7 +22,7 @@ import java.io.Serializable;
 
 /**
  * Abstract geometry interface for spatial operations.
- * Implementations (e.g., WGeometry) provide JTS-backed functionality.
+ * Implementations (e.g., WayangGeometry) provide JTS-backed functionality.
  */
 public interface SpatialGeometry extends Serializable {
 

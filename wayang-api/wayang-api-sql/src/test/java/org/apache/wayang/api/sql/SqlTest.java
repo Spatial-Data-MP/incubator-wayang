@@ -19,7 +19,7 @@ package org.apache.wayang.api.sql;
 
 import org.apache.wayang.basic.data.Record;
 import org.apache.wayang.basic.data.Tuple2;
-import org.apache.wayang.spatial.data.WGeometry;
+import org.apache.wayang.spatial.data.WayangGeometry;
 import org.apache.wayang.basic.operators.*;
 import org.apache.wayang.core.api.Configuration;
 import org.apache.wayang.core.api.WayangContext;
@@ -144,16 +144,16 @@ public class SqlTest {
 
         SpatialFilterOperator<Record> spatialFilterOperator = new SpatialFilterOperator<Record>(
                 SpatialPredicateType.INTERSECTS,
-                (record -> (WGeometry.fromStringInput(record.getString(1)))),
+                (record -> (WayangGeometry.fromStringInput(record.getString(1)))),
                 DataSetType.createDefaultUnchecked(Record.class),
-                WGeometry.fromStringInput("POLYGON((0.00 0.00,0.4 0.00,0.4 0.4,0.00 0.4,0.00 0.00))"));
+                WayangGeometry.fromStringInput("POLYGON((0.00 0.00,0.4 0.00,0.4 0.4,0.00 0.4,0.00 0.00))"));
 
         spatialFilterOperator.getKeyDescriptor().withSqlImplementation("spatialdb", "geom");
         spatialFilterOperator.addTargetPlatform(Spark.platform());
         spider.connectTo(0,spatialFilterOperator,0);
 
-        Collection<Tuple2<Integer, WGeometry>> collector = new ArrayList<>();
-        LocalCallbackSink<Tuple2<Integer, WGeometry>> sink
+        Collection<Tuple2<Integer, WayangGeometry>> collector = new ArrayList<>();
+        LocalCallbackSink<Tuple2<Integer, WayangGeometry>> sink
                 = LocalCallbackSink.createCollectingSink(collector, DataSetType.createDefaultUnchecked(Record.class));
         spatialFilterOperator.connectTo(0, sink, 0);
 
@@ -179,29 +179,29 @@ public class SqlTest {
         TableSource spider =
                 new PostgresTableSource("spider", "id", "geom");
 
-        MapOperator<Record, Tuple2<Integer, WGeometry>> mapToTuple = new MapOperator<Record, Tuple2<Integer, WGeometry>>(
+        MapOperator<Record, Tuple2<Integer, WayangGeometry>> mapToTuple = new MapOperator<Record, Tuple2<Integer, WayangGeometry>>(
                 record -> {
-                    Tuple2<Integer, WGeometry> tuple = new Tuple2<>();
+                    Tuple2<Integer, WayangGeometry> tuple = new Tuple2<>();
                     tuple.field0 = record.getInt(0);
-                    tuple.field1 = WGeometry.fromStringInput(record.getField(1).toString());
+                    tuple.field1 = WayangGeometry.fromStringInput(record.getField(1).toString());
                     return tuple;
                 },
                 Record.class,
                 ReflectionUtils.specify(Tuple2.class)
         );
 
-        SpatialFilterOperator<Tuple2<Integer, WGeometry>> spatialFilterOperator = new SpatialFilterOperator<Tuple2<Integer, WGeometry>>(
+        SpatialFilterOperator<Tuple2<Integer, WayangGeometry>> spatialFilterOperator = new SpatialFilterOperator<Tuple2<Integer, WayangGeometry>>(
                 SpatialPredicateType.INTERSECTS,
                 Tuple2::getField1,
                 DataSetType.createDefaultUnchecked(Tuple2.class),
-                WGeometry.fromStringInput("POLYGON((0.00 0.00,0.4 0.00,0.4 0.4,0.00 0.4,0.00 0.00))"));
+                WayangGeometry.fromStringInput("POLYGON((0.00 0.00,0.4 0.00,0.4 0.4,0.00 0.4,0.00 0.00))"));
 
         spatialFilterOperator.addTargetPlatform(Java.platform());
         spider.connectTo(0,mapToTuple,0);
         mapToTuple.connectTo(0,spatialFilterOperator,0);
 
-        Collection<Tuple2<Integer, WGeometry>> collector = new ArrayList<>();
-        LocalCallbackSink<Tuple2<Integer, WGeometry>> sink
+        Collection<Tuple2<Integer, WayangGeometry>> collector = new ArrayList<>();
+        LocalCallbackSink<Tuple2<Integer, WayangGeometry>> sink
                 = LocalCallbackSink.createCollectingSink(collector, DataSetType.createDefaultUnchecked(Tuple2.class));
         spatialFilterOperator.connectTo(0, sink, 0);
 
@@ -222,19 +222,19 @@ public class SqlTest {
 //        TableSource table2 = new PostgresTableSource("spider", "id", "geom");
 
         // Input polygons: nested axis-aligned squares.
-        final List<WGeometry> inputValues = Arrays.asList(
-                WGeometry.fromStringInput("POLYGON((0.00 0.00,0.40 0.00,0.40 0.40,0.00 0.40,0.00 0.00))"),
-                WGeometry.fromStringInput("POLYGON((0.00 0.00,0.30 0.00,0.30 0.30,0.00 0.30,0.00 0.00))"),
-                WGeometry.fromStringInput("POLYGON((0.00 0.00,0.20 0.00,0.20 0.20,0.00 0.20,0.00 0.00))"),
-                WGeometry.fromStringInput("POLYGON((0.00 0.00,0.10 0.00,0.10 0.10,0.00 0.10,0.00 0.00))")
+        final List<WayangGeometry> inputValues = Arrays.asList(
+                WayangGeometry.fromStringInput("POLYGON((0.00 0.00,0.40 0.00,0.40 0.40,0.00 0.40,0.00 0.00))"),
+                WayangGeometry.fromStringInput("POLYGON((0.00 0.00,0.30 0.00,0.30 0.30,0.00 0.30,0.00 0.00))"),
+                WayangGeometry.fromStringInput("POLYGON((0.00 0.00,0.20 0.00,0.20 0.20,0.00 0.20,0.00 0.00))"),
+                WayangGeometry.fromStringInput("POLYGON((0.00 0.00,0.10 0.00,0.10 0.10,0.00 0.10,0.00 0.00))")
         );
-        CollectionSource<WGeometry> inputCollection = new CollectionSource<>(inputValues, WGeometry.class);
+        CollectionSource<WayangGeometry> inputCollection = new CollectionSource<>(inputValues, WayangGeometry.class);
 
 
-        SpatialJoinOperator<Record, WGeometry> spatialJoinOperator = new SpatialJoinOperator<>(
-                record -> WGeometry.fromStringInput(record.getString(4)),
+        SpatialJoinOperator<Record, WayangGeometry> spatialJoinOperator = new SpatialJoinOperator<>(
+                record -> WayangGeometry.fromStringInput(record.getString(4)),
                 wgeometry -> wgeometry,
-                Record.class, WGeometry.class,
+                Record.class, WayangGeometry.class,
                 SpatialPredicateType.INTERSECTS
                 );
         table1.connectTo(0, spatialJoinOperator, 0);
@@ -266,8 +266,8 @@ public class SqlTest {
         // Spatial join on INTERSECTS; both sides use the geom column (index 5).
         SpatialJoinOperator<Record, Record> spatialJoinOperator =
                 new SpatialJoinOperator<>(
-                        record -> WGeometry.fromStringInput(record.getString(5)),
-                        record -> WGeometry.fromStringInput(record.getString(5)),
+                        record -> WayangGeometry.fromStringInput(record.getString(5)),
+                        record -> WayangGeometry.fromStringInput(record.getString(5)),
                         Record.class, Record.class,
                         SpatialPredicateType.INTERSECTS
                 );
@@ -301,8 +301,8 @@ public class SqlTest {
 
         // Semantic check: every returned pair must actually intersect according to JTS.
         for (Tuple2<Record, Record> pair : collector) {
-            Geometry g1 = WGeometry.fromStringInput(pair.field0.getString(1)).getGeometry();
-            Geometry g2 = WGeometry.fromStringInput(pair.field1.getString(1)).getGeometry();
+            Geometry g1 = WayangGeometry.fromStringInput(pair.field0.getString(1)).getGeometry();
+            Geometry g2 = WayangGeometry.fromStringInput(pair.field1.getString(1)).getGeometry();
             assertTrue(
                     g1.intersects(g2),
                     "Found non-intersecting pair in spatial join result."
@@ -378,8 +378,8 @@ public class SqlTest {
 //
 //        // Semantic check: every returned pair must actually intersect according to JTS.
 //        for (Tuple2<Record, Record> pair : collector) {
-//            Geometry g1 = WGeometry.fromStringInput(pair.field0.getString(1)).getGeometry();
-//            Geometry g2 = WGeometry.fromStringInput(pair.field1.getString(1)).getGeometry();
+//            Geometry g1 = WayangGeometry.fromStringInput(pair.field0.getString(1)).getGeometry();
+//            Geometry g2 = WayangGeometry.fromStringInput(pair.field1.getString(1)).getGeometry();
 //            assertTrue(
 //                    g1.intersects(g2),
 //                    "Found non-intersecting pair in spatial join result."

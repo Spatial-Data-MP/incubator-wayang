@@ -23,7 +23,7 @@ import org.apache.wayang.core.api.spatial.SpatialGeometry;
 import org.apache.wayang.core.api.spatial.SpatialPredicateType;
 import org.apache.wayang.core.function.FunctionDescriptor;
 import org.apache.wayang.core.types.DataSetType;
-import org.apache.wayang.spatial.data.WGeometry;
+import org.apache.wayang.spatial.data.WayangGeometry;
 import org.apache.wayang.spatial.function.SpatialPredicate;
 import org.apache.wayang.jdbc.compiler.FunctionCompiler;
 import org.apache.wayang.jdbc.operators.JdbcExecutionOperator;

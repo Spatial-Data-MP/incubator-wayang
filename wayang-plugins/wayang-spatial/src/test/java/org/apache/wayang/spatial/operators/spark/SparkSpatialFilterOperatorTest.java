@@ -35,7 +35,7 @@ import org.apache.wayang.spark.channels.RddChannel;
 import org.apache.wayang.spark.execution.SparkExecutor;
 import org.apache.wayang.spark.operators.SparkExecutionOperator;
 import org.apache.wayang.spark.platform.SparkPlatform;
-import org.apache.wayang.spatial.data.WGeometry;
+import org.apache.wayang.spatial.data.WayangGeometry;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -103,19 +103,19 @@ class SparkSpatialFilterOperatorTest {
 
     @Test
     void testIntersectsFilter() {
-        List<WGeometry> input = Arrays.asList(
-                new WGeometry("POLYGON ((0 0, 2 0, 2 2, 0 2, 0 0))"),
-                new WGeometry("POLYGON ((0.5 0.5, 1.5 0.5, 1.5 1.5, 0.5 1.5, 0.5 0.5))"),
-                new WGeometry("POLYGON ((0.2 0.2, 0.8 0.2, 0.8 0.8, 0.2 0.8, 0.2 0.2))"),
-                new WGeometry("POLYGON ((5 5, 6 5, 6 6, 5 6, 5 5))")
+        List<WayangGeometry> input = Arrays.asList(
+                new WayangGeometry("POLYGON ((0 0, 2 0, 2 2, 0 2, 0 0))"),
+                new WayangGeometry("POLYGON ((0.5 0.5, 1.5 0.5, 1.5 1.5, 0.5 1.5, 0.5 0.5))"),
+                new WayangGeometry("POLYGON ((0.2 0.2, 0.8 0.2, 0.8 0.8, 0.2 0.8, 0.2 0.2))"),
+                new WayangGeometry("POLYGON ((5 5, 6 5, 6 6, 5 6, 5 5))")
         );
 
-        WGeometry reference = new WGeometry("POLYGON ((0 0, 1 0, 1 1, 0 1, 0 0))");
+        WayangGeometry reference = new WayangGeometry("POLYGON ((0 0, 1 0, 1 1, 0 1, 0 0))");
 
-        SparkSpatialFilterOperator<WGeometry> filterOp = new SparkSpatialFilterOperator<>(
+        SparkSpatialFilterOperator<WayangGeometry> filterOp = new SparkSpatialFilterOperator<>(
                 SpatialPredicateType.INTERSECTS,
                 w -> w,
-                DataSetType.createDefault(WGeometry.class),
+                DataSetType.createDefault(WayangGeometry.class),
                 reference
         );
 
@@ -126,25 +126,25 @@ class SparkSpatialFilterOperatorTest {
                 new ChannelInstance[]{inputChannel},
                 new ChannelInstance[]{outputChannel});
 
-        List<WGeometry> result = outputChannel.<WGeometry>provideRdd().collect();
+        List<WayangGeometry> result = outputChannel.<WayangGeometry>provideRdd().collect();
         assertEquals(3, result.size());
     }
 
     @Test
     void testWithinFilter() {
-        List<WGeometry> input = Arrays.asList(
-                new WGeometry("POLYGON ((0 0, 2 0, 2 2, 0 2, 0 0))"),
-                new WGeometry("POLYGON ((0.5 0.5, 1.5 0.5, 1.5 1.5, 0.5 1.5, 0.5 0.5))"),
-                new WGeometry("POLYGON ((0.2 0.2, 0.8 0.2, 0.8 0.8, 0.2 0.8, 0.2 0.2))"),
-                new WGeometry("POLYGON ((5 5, 6 5, 6 6, 5 6, 5 5))")
+        List<WayangGeometry> input = Arrays.asList(
+                new WayangGeometry("POLYGON ((0 0, 2 0, 2 2, 0 2, 0 0))"),
+                new WayangGeometry("POLYGON ((0.5 0.5, 1.5 0.5, 1.5 1.5, 0.5 1.5, 0.5 0.5))"),
+                new WayangGeometry("POLYGON ((0.2 0.2, 0.8 0.2, 0.8 0.8, 0.2 0.8, 0.2 0.2))"),
+                new WayangGeometry("POLYGON ((5 5, 6 5, 6 6, 5 6, 5 5))")
         );
 
-        WGeometry reference = new WGeometry("POLYGON ((0 0, 1 0, 1 1, 0 1, 0 0))");
+        WayangGeometry reference = new WayangGeometry("POLYGON ((0 0, 1 0, 1 1, 0 1, 0 0))");
 
-        SparkSpatialFilterOperator<WGeometry> filterOp = new SparkSpatialFilterOperator<>(
+        SparkSpatialFilterOperator<WayangGeometry> filterOp = new SparkSpatialFilterOperator<>(
                 SpatialPredicateType.WITHIN,
                 w -> w,
-                DataSetType.createDefault(WGeometry.class),
+                DataSetType.createDefault(WayangGeometry.class),
                 reference
         );
 
@@ -155,25 +155,25 @@ class SparkSpatialFilterOperatorTest {
                 new ChannelInstance[]{inputChannel},
                 new ChannelInstance[]{outputChannel});
 
-        List<WGeometry> result = outputChannel.<WGeometry>provideRdd().collect();
+        List<WayangGeometry> result = outputChannel.<WayangGeometry>provideRdd().collect();
         assertEquals(1, result.size());
     }
 
     @Test
     void testFilterNoMatches() {
-        List<WGeometry> input = Arrays.asList(
-                new WGeometry("POLYGON ((0 0, 2 0, 2 2, 0 2, 0 0))"),
-                new WGeometry("POLYGON ((0.5 0.5, 1.5 0.5, 1.5 1.5, 0.5 1.5, 0.5 0.5))"),
-                new WGeometry("POLYGON ((0.2 0.2, 0.8 0.2, 0.8 0.8, 0.2 0.8, 0.2 0.2))"),
-                new WGeometry("POLYGON ((5 5, 6 5, 6 6, 5 6, 5 5))")
+        List<WayangGeometry> input = Arrays.asList(
+                new WayangGeometry("POLYGON ((0 0, 2 0, 2 2, 0 2, 0 0))"),
+                new WayangGeometry("POLYGON ((0.5 0.5, 1.5 0.5, 1.5 1.5, 0.5 1.5, 0.5 0.5))"),
+                new WayangGeometry("POLYGON ((0.2 0.2, 0.8 0.2, 0.8 0.8, 0.2 0.8, 0.2 0.2))"),
+                new WayangGeometry("POLYGON ((5 5, 6 5, 6 6, 5 6, 5 5))")
         );
 
-        WGeometry reference = new WGeometry("POLYGON ((100 100, 101 100, 101 101, 100 101, 100 100))");
+        WayangGeometry reference = new WayangGeometry("POLYGON ((100 100, 101 100, 101 101, 100 101, 100 100))");
 
-        SparkSpatialFilterOperator<WGeometry> filterOp = new SparkSpatialFilterOperator<>(
+        SparkSpatialFilterOperator<WayangGeometry> filterOp = new SparkSpatialFilterOperator<>(
                 SpatialPredicateType.INTERSECTS,
                 w -> w,
-                DataSetType.createDefault(WGeometry.class),
+                DataSetType.createDefault(WayangGeometry.class),
                 reference
         );
 
@@ -184,7 +184,7 @@ class SparkSpatialFilterOperatorTest {
                 new ChannelInstance[]{inputChannel},
                 new ChannelInstance[]{outputChannel});
 
-        List<WGeometry> result = outputChannel.<WGeometry>provideRdd().collect();
+        List<WayangGeometry> result = outputChannel.<WayangGeometry>provideRdd().collect();
         assertEquals(0, result.size());
     }
 }

@@ -34,7 +34,7 @@ import org.apache.wayang.java.channels.JavaChannelInstance;
 import org.apache.wayang.java.channels.StreamChannel;
 import org.apache.wayang.java.execution.JavaExecutor;
 import org.apache.wayang.java.operators.JavaExecutionOperator;
-import org.apache.wayang.spatial.data.WGeometry;
+import org.apache.wayang.spatial.data.WayangGeometry;
 import org.apache.wayang.spatial.function.SpatialPredicate;
 import org.locationtech.jts.geom.Geometry;
 
@@ -85,12 +85,12 @@ public class JavaSpatialFilterOperator<Type>
     }
 
     private Predicate<Type> buildSpatialPredicate(JavaExecutor javaExecutor) {
-        WGeometry wRef = (WGeometry) this.referenceGeometry;
+        WayangGeometry wRef = (WayangGeometry) this.referenceGeometry;
         final Geometry reference = wRef.getGeometry();
         final Function<Type, ? extends SpatialGeometry> keyExtractor = javaExecutor.getCompiler().compile(this.keyDescriptor);
         SpatialPredicate predicate = SpatialPredicate.fromType(this.predicateType);
 
-        return input -> predicate.test(((WGeometry) keyExtractor.apply(input)).getGeometry(), reference);
+        return input -> predicate.test(((WayangGeometry) keyExtractor.apply(input)).getGeometry(), reference);
     }
 
     @Override

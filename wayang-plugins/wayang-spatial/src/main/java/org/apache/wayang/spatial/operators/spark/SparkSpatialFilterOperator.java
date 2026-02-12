@@ -37,7 +37,7 @@ import org.apache.wayang.spark.channels.BroadcastChannel;
 import org.apache.wayang.spark.channels.RddChannel;
 import org.apache.wayang.spark.execution.SparkExecutor;
 import org.apache.wayang.spark.operators.SparkExecutionOperator;
-import org.apache.wayang.spatial.data.WGeometry;
+import org.apache.wayang.spatial.data.WayangGeometry;
 import org.locationtech.jts.geom.Geometry;
 
 import java.util.Arrays;
@@ -93,7 +93,7 @@ public class SparkSpatialFilterOperator<Type>
             }
         }
 
-        WGeometry wRef = (WGeometry) this.referenceGeometry;
+        WayangGeometry wRef = (WayangGeometry) this.referenceGeometry;
         final Geometry reference = wRef == null ? null : wRef.getGeometry();
         if (reference == null) {
             throw new IllegalStateException("Reference geometry must not be null for spatial filtering.");
@@ -113,7 +113,7 @@ public class SparkSpatialFilterOperator<Type>
         // Build an RDD of Geometries where userData = original element (Type)
         final JavaRDD<Geometry> geometryRdd = inputRdd
                 .map((Type value) -> {
-                    final WGeometry wGeom = (WGeometry) keyExtractor.apply(value);
+                    final WayangGeometry wGeom = (WayangGeometry) keyExtractor.apply(value);
                     if (wGeom == null) {
                         return null;
                     }

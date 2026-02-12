@@ -35,7 +35,7 @@ import org.apache.wayang.spark.channels.RddChannel;
 import org.apache.wayang.spark.execution.SparkExecutor;
 import org.apache.wayang.spark.operators.SparkExecutionOperator;
 import org.apache.wayang.spark.platform.SparkPlatform;
-import org.apache.wayang.spatial.data.WGeometry;
+import org.apache.wayang.spatial.data.WayangGeometry;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -104,23 +104,23 @@ class SparkSpatialJoinOperatorTest {
     @Test
     void testIntersectsJoin() {
         // Left: 3 polygons, two overlap with the right polygon, one doesn't
-        List<WGeometry> left = Arrays.asList(
-                WGeometry.fromStringInput("POLYGON ((0 0, 0 0.1, 0.1 0.1, 0.1 0, 0 0))"),
-                WGeometry.fromStringInput("POLYGON ((0.2 0.2, 0.2 0.3, 0.3 0.3, 0.3 0.2, 0.2 0.2))"),
-                WGeometry.fromStringInput("POLYGON ((0.4 0, 0.4 0.5, 0.5 0.5, 0.5 0.4, 0.4 0))")
+        List<WayangGeometry> left = Arrays.asList(
+                WayangGeometry.fromStringInput("POLYGON ((0 0, 0 0.1, 0.1 0.1, 0.1 0, 0 0))"),
+                WayangGeometry.fromStringInput("POLYGON ((0.2 0.2, 0.2 0.3, 0.3 0.3, 0.3 0.2, 0.2 0.2))"),
+                WayangGeometry.fromStringInput("POLYGON ((0.4 0, 0.4 0.5, 0.5 0.5, 0.5 0.4, 0.4 0))")
         );
 
         // Right: 1 polygon that overlaps with polygon #2 from left
-        List<WGeometry> right = Arrays.asList(
-                WGeometry.fromStringInput("POLYGON ((0.9 0.9, 0.9 1, 1 1, 1 0.9, 0.9 0.9))"),
-                WGeometry.fromStringInput("POLYGON ((0.2 0.2, 0.2 0.3, 0.3 0.3, 0.3 0.2, 0.2 0.2))")
+        List<WayangGeometry> right = Arrays.asList(
+                WayangGeometry.fromStringInput("POLYGON ((0.9 0.9, 0.9 1, 1 1, 1 0.9, 0.9 0.9))"),
+                WayangGeometry.fromStringInput("POLYGON ((0.2 0.2, 0.2 0.3, 0.3 0.3, 0.3 0.2, 0.2 0.2))")
         );
 
-        SparkSpatialJoinOperator<WGeometry, WGeometry> joinOp = new SparkSpatialJoinOperator<>(
+        SparkSpatialJoinOperator<WayangGeometry, WayangGeometry> joinOp = new SparkSpatialJoinOperator<>(
                 w -> w,
                 w -> w,
-                WGeometry.class,
-                WGeometry.class,
+                WayangGeometry.class,
+                WayangGeometry.class,
                 SpatialPredicateType.INTERSECTS
         );
 
@@ -132,28 +132,28 @@ class SparkSpatialJoinOperatorTest {
                 new ChannelInstance[]{leftChannel, rightChannel},
                 new ChannelInstance[]{outputChannel});
 
-        List<Tuple2<WGeometry, WGeometry>> result =
-                outputChannel.<Tuple2<WGeometry, WGeometry>>provideRdd().collect();
+        List<Tuple2<WayangGeometry, WayangGeometry>> result =
+                outputChannel.<Tuple2<WayangGeometry, WayangGeometry>>provideRdd().collect();
         assertEquals(1, result.size());
     }
 
     @Test
     void testJoinNoMatches() {
-        List<WGeometry> left = Arrays.asList(
-                WGeometry.fromStringInput("POLYGON ((0 0, 0 1, 1 1, 1 0, 0 0))"),
-                WGeometry.fromStringInput("POLYGON ((2 2, 2 3, 3 3, 3 2, 2 2))")
+        List<WayangGeometry> left = Arrays.asList(
+                WayangGeometry.fromStringInput("POLYGON ((0 0, 0 1, 1 1, 1 0, 0 0))"),
+                WayangGeometry.fromStringInput("POLYGON ((2 2, 2 3, 3 3, 3 2, 2 2))")
         );
 
-        List<WGeometry> right = Arrays.asList(
-                WGeometry.fromStringInput("POLYGON ((10 10, 10 11, 11 11, 11 10, 10 10))"),
-                WGeometry.fromStringInput("POLYGON ((20 20, 20 21, 21 21, 21 20, 20 20))")
+        List<WayangGeometry> right = Arrays.asList(
+                WayangGeometry.fromStringInput("POLYGON ((10 10, 10 11, 11 11, 11 10, 10 10))"),
+                WayangGeometry.fromStringInput("POLYGON ((20 20, 20 21, 21 21, 21 20, 20 20))")
         );
 
-        SparkSpatialJoinOperator<WGeometry, WGeometry> joinOp = new SparkSpatialJoinOperator<>(
+        SparkSpatialJoinOperator<WayangGeometry, WayangGeometry> joinOp = new SparkSpatialJoinOperator<>(
                 w -> w,
                 w -> w,
-                WGeometry.class,
-                WGeometry.class,
+                WayangGeometry.class,
+                WayangGeometry.class,
                 SpatialPredicateType.INTERSECTS
         );
 
@@ -165,8 +165,8 @@ class SparkSpatialJoinOperatorTest {
                 new ChannelInstance[]{leftChannel, rightChannel},
                 new ChannelInstance[]{outputChannel});
 
-        List<Tuple2<WGeometry, WGeometry>> result =
-                outputChannel.<Tuple2<WGeometry, WGeometry>>provideRdd().collect();
+        List<Tuple2<WayangGeometry, WayangGeometry>> result =
+                outputChannel.<Tuple2<WayangGeometry, WayangGeometry>>provideRdd().collect();
         assertEquals(0, result.size());
     }
 }
