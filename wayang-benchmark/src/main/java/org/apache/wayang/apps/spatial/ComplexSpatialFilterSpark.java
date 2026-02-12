@@ -23,7 +23,7 @@ import org.apache.wayang.api.JavaPlanBuilder;
 import org.apache.wayang.spatial.data.WayangGeometry;
 import org.apache.wayang.core.api.Configuration;
 import org.apache.wayang.core.api.WayangContext;
-import org.apache.wayang.core.api.spatial.SpatialPredicateType;
+import org.apache.wayang.core.api.spatial.SpatialPredicate;
 import org.apache.wayang.java.Java;
 import org.apache.wayang.postgres.Postgres;
 import org.apache.wayang.spatial.Spatial;
@@ -89,7 +89,7 @@ public class ComplexSpatialFilterSpark {
                             return geom;
                         }),
 //                        (input -> (WayangGeometry) input.getField(0)),
-                        SpatialPredicateType.INTERSECTS,
+                        SpatialPredicate.INTERSECTS,
                         queryGeometry
                 ).withTargetPlatform(Java.platform())
                 .withName("Spatial Filter (intersects)")

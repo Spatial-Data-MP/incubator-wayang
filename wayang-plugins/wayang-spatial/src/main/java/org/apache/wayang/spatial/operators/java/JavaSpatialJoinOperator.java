@@ -20,7 +20,7 @@ package org.apache.wayang.spatial.operators.java;
 import org.apache.wayang.basic.data.Tuple2;
 import org.apache.wayang.basic.operators.SpatialJoinOperator;
 import org.apache.wayang.core.api.spatial.SpatialGeometry;
-import org.apache.wayang.core.api.spatial.SpatialPredicateType;
+import org.apache.wayang.core.api.spatial.SpatialPredicate;
 import org.apache.wayang.core.function.FunctionDescriptor;
 import org.apache.wayang.core.function.TransformationDescriptor;
 import org.apache.wayang.core.optimizer.OptimizationContext;
@@ -34,7 +34,7 @@ import org.apache.wayang.java.channels.StreamChannel;
 import org.apache.wayang.java.execution.JavaExecutor;
 import org.apache.wayang.java.operators.JavaExecutionOperator;
 import org.apache.wayang.spatial.data.WayangGeometry;
-import org.apache.wayang.spatial.function.SpatialPredicate;
+import org.apache.wayang.spatial.function.JtsSpatialPredicate;
 import org.locationtech.jts.geom.Geometry;
 import org.locationtech.jts.index.strtree.STRtree;
 
@@ -50,7 +50,7 @@ public class JavaSpatialJoinOperator<InputType0, InputType1>
                                    TransformationDescriptor<InputType1, ? extends SpatialGeometry> keyDescriptor1,
                                    DataSetType<InputType0> inputType0,
                                    DataSetType<InputType1> inputType1,
-                                   SpatialPredicateType predicate) {
+                                   SpatialPredicate predicate) {
         super(keyDescriptor0, keyDescriptor1, inputType0, inputType1, predicate);
     }
 
@@ -58,7 +58,7 @@ public class JavaSpatialJoinOperator<InputType0, InputType1>
                                FunctionDescriptor.SerializableFunction<InputType1, ? extends SpatialGeometry> keyExtractor1,
                                Class<InputType0> input0Class,
                                Class<InputType1> input1Class,
-                               SpatialPredicateType predicate) {
+                               SpatialPredicate predicate) {
         super(keyExtractor0, keyExtractor1, input0Class, input1Class, predicate);
     }
 
@@ -89,7 +89,7 @@ public class JavaSpatialJoinOperator<InputType0, InputType1>
                 ((org.apache.wayang.java.channels.JavaChannelInstance) inputs[1])
                         .<InputType1>provideStream();
 
-        SpatialPredicate predicate = SpatialPredicate.fromType(this.predicateType);
+        JtsSpatialPredicate predicate = JtsSpatialPredicate.of(this.predicateType);
 
         STRtree index = new STRtree();
 

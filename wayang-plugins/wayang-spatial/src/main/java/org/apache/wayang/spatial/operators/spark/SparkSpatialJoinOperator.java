@@ -25,7 +25,7 @@ import org.apache.spark.api.java.JavaRDD;
 import org.apache.wayang.basic.data.Tuple2;
 import org.apache.wayang.basic.operators.SpatialJoinOperator;
 import org.apache.wayang.core.api.spatial.SpatialGeometry;
-import org.apache.wayang.core.api.spatial.SpatialPredicateType;
+import org.apache.wayang.core.api.spatial.SpatialPredicate;
 import org.apache.wayang.core.function.FunctionDescriptor;
 import org.apache.wayang.core.function.TransformationDescriptor;
 import org.apache.wayang.core.optimizer.OptimizationContext;
@@ -64,7 +64,7 @@ public class SparkSpatialJoinOperator<InputType0, InputType1>
             TransformationDescriptor<InputType1, ? extends SpatialGeometry> keyDescriptor1,
             DataSetType<InputType0> inputType0,
             DataSetType<InputType1> inputType1,
-            SpatialPredicateType predicateType) {
+            SpatialPredicate predicateType) {
         super(keyDescriptor0, keyDescriptor1, inputType0, inputType1, predicateType);
     }
 
@@ -73,7 +73,7 @@ public class SparkSpatialJoinOperator<InputType0, InputType1>
             FunctionDescriptor.SerializableFunction<InputType1, ? extends SpatialGeometry> keyExtractor1,
             Class<InputType0> input0Class,
             Class<InputType1> input1Class,
-            SpatialPredicateType predicateType) {
+            SpatialPredicate predicateType) {
         super(keyExtractor0, keyExtractor1, input0Class, input1Class, predicateType);
     }
 
@@ -150,7 +150,7 @@ public class SparkSpatialJoinOperator<InputType0, InputType1>
         }
     }
 
-    private org.apache.sedona.core.spatialOperator.SpatialPredicate toSedonaPredicate(SpatialPredicateType predicateType) {
+    private org.apache.sedona.core.spatialOperator.SpatialPredicate toSedonaPredicate(SpatialPredicate predicateType) {
         return switch (predicateType) {
             case INTERSECTS -> org.apache.sedona.core.spatialOperator.SpatialPredicate.INTERSECTS;
             case CONTAINS -> org.apache.sedona.core.spatialOperator.SpatialPredicate.CONTAINS;

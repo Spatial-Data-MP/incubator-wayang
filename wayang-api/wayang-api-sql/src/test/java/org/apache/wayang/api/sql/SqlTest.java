@@ -23,7 +23,7 @@ import org.apache.wayang.spatial.data.WayangGeometry;
 import org.apache.wayang.basic.operators.*;
 import org.apache.wayang.core.api.Configuration;
 import org.apache.wayang.core.api.WayangContext;
-import org.apache.wayang.core.api.spatial.SpatialPredicateType;
+import org.apache.wayang.core.api.spatial.SpatialPredicate;
 import org.apache.wayang.core.plan.wayangplan.WayangPlan;
 import org.apache.wayang.core.types.DataSetType;
 import org.apache.wayang.core.util.ReflectionUtils;
@@ -143,7 +143,7 @@ public class SqlTest {
                 new PostgresTableSource("spider_boxes", "id", "geom");
 
         SpatialFilterOperator<Record> spatialFilterOperator = new SpatialFilterOperator<Record>(
-                SpatialPredicateType.INTERSECTS,
+                SpatialPredicate.INTERSECTS,
                 (record -> (WayangGeometry.fromStringInput(record.getString(1)))),
                 DataSetType.createDefaultUnchecked(Record.class),
                 WayangGeometry.fromStringInput("POLYGON((0.00 0.00,0.4 0.00,0.4 0.4,0.00 0.4,0.00 0.00))"));
@@ -191,7 +191,7 @@ public class SqlTest {
         );
 
         SpatialFilterOperator<Tuple2<Integer, WayangGeometry>> spatialFilterOperator = new SpatialFilterOperator<Tuple2<Integer, WayangGeometry>>(
-                SpatialPredicateType.INTERSECTS,
+                SpatialPredicate.INTERSECTS,
                 Tuple2::getField1,
                 DataSetType.createDefaultUnchecked(Tuple2.class),
                 WayangGeometry.fromStringInput("POLYGON((0.00 0.00,0.4 0.00,0.4 0.4,0.00 0.4,0.00 0.00))"));
@@ -235,7 +235,7 @@ public class SqlTest {
                 record -> WayangGeometry.fromStringInput(record.getString(4)),
                 wgeometry -> wgeometry,
                 Record.class, WayangGeometry.class,
-                SpatialPredicateType.INTERSECTS
+                SpatialPredicate.INTERSECTS
                 );
         table1.connectTo(0, spatialJoinOperator, 0);
         inputCollection.connectTo(0, spatialJoinOperator, 1);
@@ -269,7 +269,7 @@ public class SqlTest {
                         record -> WayangGeometry.fromStringInput(record.getString(5)),
                         record -> WayangGeometry.fromStringInput(record.getString(5)),
                         Record.class, Record.class,
-                        SpatialPredicateType.INTERSECTS
+                        SpatialPredicate.INTERSECTS
                 );
 
         // Register SQL implementations for both inputs

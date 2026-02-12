@@ -22,7 +22,7 @@ import org.apache.wayang.basic.data.Tuple2;
 import org.apache.wayang.core.api.Configuration;
 import org.apache.wayang.core.api.Job;
 import org.apache.wayang.core.api.WayangContext;
-import org.apache.wayang.core.api.spatial.SpatialPredicateType;
+import org.apache.wayang.core.api.spatial.SpatialPredicate;
 import org.apache.wayang.core.optimizer.DefaultOptimizationContext;
 import org.apache.wayang.core.optimizer.OptimizationContext;
 import org.apache.wayang.core.plan.wayangplan.Operator;
@@ -121,7 +121,7 @@ class SparkSpatialJoinOperatorTest {
                 w -> w,
                 WayangGeometry.class,
                 WayangGeometry.class,
-                SpatialPredicateType.INTERSECTS
+                SpatialPredicate.INTERSECTS
         );
 
         RddChannel.Instance leftChannel = this.createRddChannelInstance(left);
@@ -154,7 +154,7 @@ class SparkSpatialJoinOperatorTest {
                 w -> w,
                 WayangGeometry.class,
                 WayangGeometry.class,
-                SpatialPredicateType.INTERSECTS
+                SpatialPredicate.INTERSECTS
         );
 
         RddChannel.Instance leftChannel = this.createRddChannelInstance(left);

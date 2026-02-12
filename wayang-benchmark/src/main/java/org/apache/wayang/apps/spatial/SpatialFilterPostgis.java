@@ -22,7 +22,7 @@ import org.apache.wayang.api.JavaPlanBuilder;
 import org.apache.wayang.spatial.data.WayangGeometry;
 import org.apache.wayang.core.api.Configuration;
 import org.apache.wayang.core.api.WayangContext;
-import org.apache.wayang.spatial.function.SpatialPredicate;
+import org.apache.wayang.spatial.function.JtsSpatialPredicate;
 import org.apache.wayang.java.Java;
 import org.apache.wayang.postgres.Postgres;
 import org.apache.wayang.postgres.operators.PostgresTableSource;
@@ -100,7 +100,7 @@ public class SpatialFilterPostgis {
                 .loadCollection(inputValues).withName("Load input values")
                 .spatialFilter(
                         (input -> (WayangGeometry) input),
-                        SpatialPredicate.INTERSECTS,
+                        JtsSpatialPredicate.INTERSECTS,
                         queryGeometry
                 ).withName("Spatial filter (INTERSECTS)")
                 .withUdfJarOf(CustomerTransactionHybridJoin.class)

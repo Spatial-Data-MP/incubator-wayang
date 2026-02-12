@@ -19,7 +19,7 @@ package org.apache.wayang.basic.operators;
 
 import org.apache.wayang.basic.data.Tuple2;
 import org.apache.wayang.core.api.spatial.SpatialGeometry;
-import org.apache.wayang.core.api.spatial.SpatialPredicateType;
+import org.apache.wayang.core.api.spatial.SpatialPredicate;
 import org.apache.wayang.core.function.FunctionDescriptor;
 import org.apache.wayang.core.function.TransformationDescriptor;
 import org.apache.wayang.core.optimizer.OptimizationContext;
@@ -37,11 +37,11 @@ public class SpatialJoinOperator<InputType0, InputType1> extends BinaryToUnaryOp
 
     protected final TransformationDescriptor<InputType1, ? extends SpatialGeometry> keyDescriptor1;
 
-    protected final SpatialPredicateType predicateType;
+    protected final SpatialPredicate predicateType;
 
     public SpatialJoinOperator(TransformationDescriptor<InputType0, ? extends SpatialGeometry> keyDescriptor0,
                                TransformationDescriptor<InputType1, ? extends SpatialGeometry> keyDescriptor1,
-                               SpatialPredicateType predicateType) {
+                               SpatialPredicate predicateType) {
         super(DataSetType.createDefault(keyDescriptor0.getInputType()),
                 DataSetType.createDefault(keyDescriptor1.getInputType()),
                 SpatialJoinOperator.createOutputDataSetType(),
@@ -55,7 +55,7 @@ public class SpatialJoinOperator<InputType0, InputType1> extends BinaryToUnaryOp
                                TransformationDescriptor<InputType1, ? extends SpatialGeometry> keyDescriptor1,
                                DataSetType<InputType0> inputType0,
                                DataSetType<InputType1> inputType1,
-                               SpatialPredicateType predicateType) {
+                               SpatialPredicate predicateType) {
         super(inputType0, inputType1, SpatialJoinOperator.createOutputDataSetType(), true);
         this.keyDescriptor0 = keyDescriptor0;
         this.keyDescriptor1 = keyDescriptor1;
@@ -75,7 +75,7 @@ public class SpatialJoinOperator<InputType0, InputType1> extends BinaryToUnaryOp
             FunctionDescriptor.SerializableFunction<InputType1, ? extends SpatialGeometry> keyExtractor1,
             Class<InputType0> input0Class,
             Class<InputType1> input1Class,
-            SpatialPredicateType predicateType) {
+            SpatialPredicate predicateType) {
         this(
                 new TransformationDescriptor<>(
                         (FunctionDescriptor.SerializableFunction<InputType0, SpatialGeometry>) (FunctionDescriptor.SerializableFunction) keyExtractor0,
@@ -95,7 +95,7 @@ public class SpatialJoinOperator<InputType0, InputType1> extends BinaryToUnaryOp
         return this.keyDescriptor1;
     }
 
-    public SpatialPredicateType getPredicateType() {
+    public SpatialPredicate getPredicateType() {
         return this.predicateType;
     }
 

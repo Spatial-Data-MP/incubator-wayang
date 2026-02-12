@@ -22,7 +22,7 @@ import org.apache.wayang.basic.data.Record;
 import org.apache.wayang.core.api.Configuration;
 import org.apache.wayang.core.api.Job;
 import org.apache.wayang.core.api.spatial.SpatialGeometry;
-import org.apache.wayang.core.api.spatial.SpatialPredicateType;
+import org.apache.wayang.core.api.spatial.SpatialPredicate;
 import org.apache.wayang.core.function.FunctionDescriptor;
 import org.apache.wayang.core.optimizer.DefaultOptimizationContext;
 import org.apache.wayang.core.plan.executionplan.ExecutionStage;
@@ -60,7 +60,7 @@ class JdbcSpatialFilterOperatorTest {
      */
     private static class TestJdbcSpatialFilterOperator<Type> extends JdbcSpatialFilterOperator<Type> {
 
-        TestJdbcSpatialFilterOperator(SpatialPredicateType relation,
+        TestJdbcSpatialFilterOperator(SpatialPredicate relation,
                                       FunctionDescriptor.SerializableFunction<Type, ? extends SpatialGeometry> keyExtractor,
                                       DataSetType<Type> inputClassDatasetType,
                                       SpatialGeometry geometry) {
@@ -76,7 +76,7 @@ class JdbcSpatialFilterOperatorTest {
     @Test
     void testSpatialFilterIntersectsGeneratesCorrectSql() throws SQLException {
         String sql = buildSpatialFilterSql(
-                SpatialPredicateType.INTERSECTS,
+                SpatialPredicate.INTERSECTS,
                 new WayangGeometry("POINT (0 0)")
         );
 
@@ -91,7 +91,7 @@ class JdbcSpatialFilterOperatorTest {
     @Test
     void testSpatialFilterWithinGeneratesCorrectSql() throws SQLException {
         WayangGeometry polygon = new WayangGeometry("POLYGON ((0 0, 1 0, 1 1, 0 1, 0 0))");
-        String sql = buildSpatialFilterSql(SpatialPredicateType.WITHIN, polygon);
+        String sql = buildSpatialFilterSql(SpatialPredicate.WITHIN, polygon);
 
         assertTrue(sql.contains("ST_Within(geom, ST_GeomFromText('" + polygon.getWKT() + "', 4326))"),
                 "SQL should contain ST_Within predicate, but was: " + sql);
@@ -100,7 +100,7 @@ class JdbcSpatialFilterOperatorTest {
     @Test
     void testSpatialFilterContainsGeneratesCorrectSql() throws SQLException {
         WayangGeometry polygon = new WayangGeometry("POLYGON ((0 0, 1 0, 1 1, 0 1, 0 0))");
-        String sql = buildSpatialFilterSql(SpatialPredicateType.CONTAINS, polygon);
+        String sql = buildSpatialFilterSql(SpatialPredicate.CONTAINS, polygon);
 
         assertTrue(sql.contains("ST_Contains(geom, ST_GeomFromText('" + polygon.getWKT() + "', 4326))"),
                 "SQL should contain ST_Contains predicate, but was: " + sql);
@@ -110,7 +110,7 @@ class JdbcSpatialFilterOperatorTest {
      * Sets up a JDBC execution pipeline (table source -> spatial filter -> SqlToStream)
      * and returns the generated SQL query string.
      */
-    private String buildSpatialFilterSql(SpatialPredicateType predicateType,
+    private String buildSpatialFilterSql(SpatialPredicate predicateType,
                                          WayangGeometry referenceGeometry) throws SQLException {
         Configuration configuration = new Configuration();
 

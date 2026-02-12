@@ -30,7 +30,7 @@ import org.apache.wayang.basic.data.{Record, Tuple2 => RT2}
 import org.apache.wayang.basic.model.{DLModel, DecisionTreeRegressionModel, LogisticRegressionModel, Model}
 import org.apache.wayang.basic.operators.{DLTrainingOperator, DecisionTreeRegressionOperator, GlobalReduceOperator, LinearSVCOperator, LocalCallbackSink, LogisticRegressionOperator, MapOperator, SampleOperator}
 import org.apache.wayang.commons.util.profiledb.model.Experiment
-import org.apache.wayang.core.api.spatial.{SpatialGeometry, SpatialPredicateType}
+import org.apache.wayang.core.api.spatial.{SpatialGeometry, SpatialPredicate}
 import org.apache.wayang.core.function.FunctionDescriptor.{SerializableBiFunction, SerializableBinaryOperator, SerializableFunction, SerializableIntUnaryOperator, SerializablePredicate}
 import org.apache.wayang.core.optimizer.ProbabilisticDoubleInterval
 import org.apache.wayang.core.optimizer.cardinality.CardinalityEstimator
@@ -287,7 +287,7 @@ trait DataQuantaBuilder[+This <: DataQuantaBuilder[_, Out], Out] extends Logging
     */
   def spatialFilter(
       keyUdf: SerializableFunction[Out, _ <: SpatialGeometry],
-      predicate: SpatialPredicateType,
+      predicate: SpatialPredicate,
       filterGeometry: SpatialGeometry
   ): SpatialFilterDataQuantaBuilder[Out] =
     new SpatialFilterDataQuantaBuilder(this, keyUdf, predicate, filterGeometry)
@@ -303,7 +303,7 @@ trait DataQuantaBuilder[+This <: DataQuantaBuilder[_, Out], Out] extends Logging
     */
   def spatialFilter(
       keyUdf: SerializableFunction[Out, _ <: SpatialGeometry],
-      predicate: SpatialPredicateType,
+      predicate: SpatialPredicate,
       filterGeometry: SpatialGeometry,
       sqlGeometryColumn: String
   ): SpatialFilterDataQuantaBuilder[Out] =
@@ -323,7 +323,7 @@ trait DataQuantaBuilder[+This <: DataQuantaBuilder[_, Out], Out] extends Logging
       thisKeyUdf: SerializableFunction[Out, _ <: SpatialGeometry],
       that: DataQuantaBuilder[_, ThatOut],
       thatKeyUdf: SerializableFunction[ThatOut, _ <: SpatialGeometry],
-      predicate: SpatialPredicateType
+      predicate: SpatialPredicate
   ): SpatialJoinDataQuantaBuilder[Out, ThatOut] =
     new SpatialJoinDataQuantaBuilder(this, that, thisKeyUdf, thatKeyUdf, predicate)
 
@@ -1956,7 +1956,7 @@ class KeyedDataQuantaBuilder[Out, Key](private val dataQuantaBuilder: DataQuanta
 
 class SpatialFilterDataQuantaBuilder[T](inputDataQuanta: DataQuantaBuilder[_, T],
                                         keySelector: SerializableFunction[T, _ <: SpatialGeometry],
-                                        predicateType: SpatialPredicateType,
+                                        predicateType: SpatialPredicate,
                                         filterGeometry: SpatialGeometry)
                                        (implicit javaPlanBuilder: JavaPlanBuilder)
   extends BasicDataQuantaBuilder[SpatialFilterDataQuantaBuilder[T], T] {
@@ -1978,7 +1978,7 @@ class SpatialJoinDataQuantaBuilder[In0, In1](inputDataQuanta0: DataQuantaBuilder
                                              inputDataQuanta1: DataQuantaBuilder[_, In1],
                                              keyUdf0: SerializableFunction[In0, _ <: SpatialGeometry],
                                              keyUdf1: SerializableFunction[In1, _ <: SpatialGeometry],
-                                             predicateType: SpatialPredicateType)
+                                             predicateType: SpatialPredicate)
                                             (implicit javaPlanBuilder: JavaPlanBuilder)
   extends BasicDataQuantaBuilder[SpatialJoinDataQuantaBuilder[In0, In1], RT2[In0, In1]] {
 

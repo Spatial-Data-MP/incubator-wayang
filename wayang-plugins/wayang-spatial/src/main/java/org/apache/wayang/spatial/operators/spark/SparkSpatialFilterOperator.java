@@ -23,7 +23,7 @@ import org.apache.sedona.core.spatialRDD.SpatialRDD;
 import org.apache.spark.api.java.JavaRDD;
 import org.apache.wayang.basic.operators.SpatialFilterOperator;
 import org.apache.wayang.core.api.spatial.SpatialGeometry;
-import org.apache.wayang.core.api.spatial.SpatialPredicateType;
+import org.apache.wayang.core.api.spatial.SpatialPredicate;
 import org.apache.wayang.core.function.FunctionDescriptor;
 import org.apache.wayang.core.optimizer.OptimizationContext;
 import org.apache.wayang.core.types.DataSetType;
@@ -59,7 +59,7 @@ public class SparkSpatialFilterOperator<Type>
      * @param relation the type of spatial filter (e.g., "INTERSECTS", "CONTAINS", "WITHIN")
      *
      */
-    public SparkSpatialFilterOperator(SpatialPredicateType relation,
+    public SparkSpatialFilterOperator(SpatialPredicate relation,
                                       FunctionDescriptor.SerializableFunction<Type, ? extends SpatialGeometry> keyExtractor,
                                       DataSetType<Type> inputClassDatasetType,
                                       SpatialGeometry geometry) {
@@ -151,7 +151,7 @@ public class SparkSpatialFilterOperator<Type>
         }
     }
 
-    private org.apache.sedona.core.spatialOperator.SpatialPredicate toSedonaPredicate(SpatialPredicateType predicateType) {
+    private org.apache.sedona.core.spatialOperator.SpatialPredicate toSedonaPredicate(SpatialPredicate predicateType) {
         return switch (predicateType) {
             case INTERSECTS -> org.apache.sedona.core.spatialOperator.SpatialPredicate.INTERSECTS;
             case CONTAINS -> org.apache.sedona.core.spatialOperator.SpatialPredicate.CONTAINS;

@@ -22,7 +22,7 @@ import org.apache.wayang.api.JavaPlanBuilder;
 import org.apache.wayang.spatial.data.WayangGeometry;
 import org.apache.wayang.core.api.Configuration;
 import org.apache.wayang.core.api.WayangContext;
-import org.apache.wayang.core.api.spatial.SpatialPredicateType;
+import org.apache.wayang.core.api.spatial.SpatialPredicate;
 import org.apache.wayang.java.Java;
 import org.apache.wayang.spatial.Spatial;
 import org.apache.wayang.spark.Spark;
@@ -60,7 +60,7 @@ public class SpatialFilter {
                 planBuilder.readTextFile(fileUrl)
                         .spatialFilter(
                                 (input -> WayangGeometry.fromStringInput((input.split("\",")[0]).replace("\"", ""))),
-                                SpatialPredicateType.INTERSECTS,
+                                SpatialPredicate.INTERSECTS,
                                 queryGeometry
                         ).withTargetPlatform(Java.platform())
                         .count()
@@ -127,7 +127,7 @@ public class SpatialFilter {
                 .loadCollection(inputValues).withName("Load input values")
                 .spatialFilter(
                         (input -> (WayangGeometry) input),
-                        SpatialPredicateType.INTERSECTS,
+                        SpatialPredicate.INTERSECTS,
                         queryGeometry
                 ).withName("Spatial filter (INTERSECTS)")
                 .withUdfJarOf(CustomerTransactionHybridJoin.class)

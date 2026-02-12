@@ -21,7 +21,7 @@ package org.apache.wayang.spatial.operators.spark;
 import org.apache.wayang.core.api.Configuration;
 import org.apache.wayang.core.api.Job;
 import org.apache.wayang.core.api.WayangContext;
-import org.apache.wayang.core.api.spatial.SpatialPredicateType;
+import org.apache.wayang.core.api.spatial.SpatialPredicate;
 import org.apache.wayang.core.optimizer.DefaultOptimizationContext;
 import org.apache.wayang.core.optimizer.OptimizationContext;
 import org.apache.wayang.core.plan.wayangplan.Operator;
@@ -113,7 +113,7 @@ class SparkSpatialFilterOperatorTest {
         WayangGeometry reference = new WayangGeometry("POLYGON ((0 0, 1 0, 1 1, 0 1, 0 0))");
 
         SparkSpatialFilterOperator<WayangGeometry> filterOp = new SparkSpatialFilterOperator<>(
-                SpatialPredicateType.INTERSECTS,
+                SpatialPredicate.INTERSECTS,
                 w -> w,
                 DataSetType.createDefault(WayangGeometry.class),
                 reference
@@ -142,7 +142,7 @@ class SparkSpatialFilterOperatorTest {
         WayangGeometry reference = new WayangGeometry("POLYGON ((0 0, 1 0, 1 1, 0 1, 0 0))");
 
         SparkSpatialFilterOperator<WayangGeometry> filterOp = new SparkSpatialFilterOperator<>(
-                SpatialPredicateType.WITHIN,
+                SpatialPredicate.WITHIN,
                 w -> w,
                 DataSetType.createDefault(WayangGeometry.class),
                 reference
@@ -171,7 +171,7 @@ class SparkSpatialFilterOperatorTest {
         WayangGeometry reference = new WayangGeometry("POLYGON ((100 100, 101 100, 101 101, 100 101, 100 100))");
 
         SparkSpatialFilterOperator<WayangGeometry> filterOp = new SparkSpatialFilterOperator<>(
-                SpatialPredicateType.INTERSECTS,
+                SpatialPredicate.INTERSECTS,
                 w -> w,
                 DataSetType.createDefault(WayangGeometry.class),
                 reference

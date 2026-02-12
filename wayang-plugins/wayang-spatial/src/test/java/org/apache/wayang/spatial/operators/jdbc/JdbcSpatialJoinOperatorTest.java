@@ -22,7 +22,7 @@ import org.apache.wayang.basic.data.Record;
 import org.apache.wayang.core.api.Configuration;
 import org.apache.wayang.core.api.Job;
 import org.apache.wayang.core.api.spatial.SpatialGeometry;
-import org.apache.wayang.core.api.spatial.SpatialPredicateType;
+import org.apache.wayang.core.api.spatial.SpatialPredicate;
 import org.apache.wayang.core.function.TransformationDescriptor;
 import org.apache.wayang.core.optimizer.DefaultOptimizationContext;
 import org.apache.wayang.core.plan.executionplan.ExecutionStage;
@@ -63,7 +63,7 @@ class JdbcSpatialJoinOperatorTest {
         TestJdbcSpatialJoinOperator(
                 TransformationDescriptor<Record, ? extends SpatialGeometry> keyDescriptor0,
                 TransformationDescriptor<Record, ? extends SpatialGeometry> keyDescriptor1,
-                SpatialPredicateType predicateType) {
+                SpatialPredicate predicateType) {
             super(keyDescriptor0, keyDescriptor1, predicateType);
         }
 
@@ -75,7 +75,7 @@ class JdbcSpatialJoinOperatorTest {
 
     @Test
     void testSpatialJoinIntersectsGeneratesCorrectSql() throws SQLException {
-        String sql = buildSpatialJoinSql(SpatialPredicateType.INTERSECTS);
+        String sql = buildSpatialJoinSql(SpatialPredicate.INTERSECTS);
 
         assertEquals(
                 "SELECT * FROM testA JOIN testB ON ST_Intersects(testA.geom, testB.geom);",
@@ -85,7 +85,7 @@ class JdbcSpatialJoinOperatorTest {
 
     @Test
     void testSpatialJoinContainsGeneratesCorrectSql() throws SQLException {
-        String sql = buildSpatialJoinSql(SpatialPredicateType.CONTAINS);
+        String sql = buildSpatialJoinSql(SpatialPredicate.CONTAINS);
 
         assertEquals(
                 "SELECT * FROM testA JOIN testB ON ST_Contains(testA.geom, testB.geom);",
@@ -95,7 +95,7 @@ class JdbcSpatialJoinOperatorTest {
 
     @Test
     void testSpatialJoinWithinGeneratesCorrectSql() throws SQLException {
-        String sql = buildSpatialJoinSql(SpatialPredicateType.WITHIN);
+        String sql = buildSpatialJoinSql(SpatialPredicate.WITHIN);
 
         assertEquals(
                 "SELECT * FROM testA JOIN testB ON ST_Within(testA.geom, testB.geom);",
@@ -107,7 +107,7 @@ class JdbcSpatialJoinOperatorTest {
      * Sets up a JDBC execution pipeline (two table sources -> spatial join -> SqlToStream)
      * and returns the generated SQL query string.
      */
-    private String buildSpatialJoinSql(SpatialPredicateType predicateType) throws SQLException {
+    private String buildSpatialJoinSql(SpatialPredicate predicateType) throws SQLException {
         Configuration configuration = new Configuration();
 
         Job job = mock(Job.class);

@@ -81,7 +81,7 @@ public class SpatialFilterSpark {
                 .loadCollection(inputValues).withName("Load input values")
                 .spatialFilter(
                         (input -> (WayangGeometry) input),
-                        SpatialPredicate.INTERSECTS,
+                        JtsSpatialPredicate.INTERSECTS,
                         queryGeometry
                 ).withName("Spatial filter (INTERSECTS)")
                 .withUdfJarOf(CustomerTransactionHybridJoin.class)

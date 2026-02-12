@@ -18,13 +18,13 @@
 
 package org.apache.wayang.spatial.function;
 
-import org.apache.wayang.core.api.spatial.SpatialPredicateType;
+import org.apache.wayang.core.api.spatial.SpatialPredicate;
 import org.locationtech.jts.geom.Geometry;
 
 import java.util.Arrays;
 import java.util.function.BiPredicate;
 
-public enum SpatialPredicate {
+public enum JtsSpatialPredicate {
 
     INTERSECTS("INTERSECTS", "ST_Intersects", Geometry::intersects),
     CONTAINS("CONTAINS", "ST_Contains", Geometry::contains),
@@ -39,15 +39,15 @@ public enum SpatialPredicate {
     private final String sqlFunctionName;
     private final BiPredicate<Geometry, Geometry> predicate;
 
-    SpatialPredicate(String opName,
-                     String sqlFunctionName,
-                     BiPredicate<Geometry, Geometry> predicate) {
+    JtsSpatialPredicate(String opName,
+                        String sqlFunctionName,
+                        BiPredicate<Geometry, Geometry> predicate) {
         this.opName = opName;
         this.sqlFunctionName = sqlFunctionName;
         this.predicate = predicate;
     }
 
-    public static SpatialPredicate fromString(String opName) {
+    public static JtsSpatialPredicate fromString(String opName) {
         return Arrays.stream(values())
                 .filter(r -> r.opName.equalsIgnoreCase(opName))
                 .findFirst()
@@ -56,24 +56,23 @@ public enum SpatialPredicate {
     }
 
     /**
-     * Convert from the core module's {@link SpatialPredicateType} to this enum.
+     * Convert from the core module's {@link SpatialPredicate} to this enum.
      *
-     * @param type the abstract spatial predicate type
-     * @return the corresponding SpatialPredicate
+     * @param predicate the spatial predicate
+     * @return the corresponding JtsSpatialPredicate
      */
-    public static SpatialPredicate fromType(SpatialPredicateType type) {
-        switch (type) {
-            case INTERSECTS: return INTERSECTS;
-            case CONTAINS: return CONTAINS;
-            case WITHIN: return WITHIN;
-            case OVERLAPS: return OVERLAPS;
-            case TOUCHES: return TOUCHES;
-            case CROSSES: return CROSSES;
-            case DISJOINT: return DISJOINT;
-            case EQUALS: return EQUALS;
-            default:
-                throw new IllegalArgumentException("Unknown SpatialPredicateType: " + type);
-        }
+    public static JtsSpatialPredicate of(SpatialPredicate predicate) {
+        return switch (predicate) {
+            case INTERSECTS -> INTERSECTS;
+            case CONTAINS -> CONTAINS;
+            case WITHIN -> WITHIN;
+            case OVERLAPS -> OVERLAPS;
+            case TOUCHES -> TOUCHES;
+            case CROSSES -> CROSSES;
+            case DISJOINT -> DISJOINT;
+            case EQUALS -> EQUALS;
+            default -> throw new IllegalArgumentException("Unknown SpatialPredicate: " + predicate);
+        };
     }
 
     public boolean test(Geometry candidate, Geometry reference) {

@@ -20,7 +20,7 @@ package org.apache.wayang.spatial.operators.postgres;
 
 import org.apache.wayang.basic.operators.SpatialJoinOperator;
 import org.apache.wayang.core.api.spatial.SpatialGeometry;
-import org.apache.wayang.core.api.spatial.SpatialPredicateType;
+import org.apache.wayang.core.api.spatial.SpatialPredicate;
 import org.apache.wayang.core.function.TransformationDescriptor;
 import org.apache.wayang.basic.data.Record;
 import org.apache.wayang.spatial.operators.jdbc.JdbcSpatialJoinOperator;
@@ -34,7 +34,7 @@ public class PostgresSpatialJoinOperator extends JdbcSpatialJoinOperator impleme
      */
     public PostgresSpatialJoinOperator(TransformationDescriptor<Record, ? extends SpatialGeometry> keyDescriptor0,
                                        TransformationDescriptor<Record, ? extends SpatialGeometry> keyDescriptor1,
-                                       SpatialPredicateType predicate) {
+                                       SpatialPredicate predicate) {
         super(keyDescriptor0, keyDescriptor1, predicate);
     }
 

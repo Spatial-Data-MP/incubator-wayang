@@ -19,7 +19,7 @@
 package org.apache.wayang.basic.operators;
 
 import org.apache.wayang.core.api.spatial.SpatialGeometry;
-import org.apache.wayang.core.api.spatial.SpatialPredicateType;
+import org.apache.wayang.core.api.spatial.SpatialPredicate;
 import org.apache.wayang.core.function.FunctionDescriptor;
 import org.apache.wayang.core.function.TransformationDescriptor;
 import org.apache.wayang.core.optimizer.OptimizationContext;
@@ -33,12 +33,12 @@ import org.apache.wayang.core.types.DataSetType;
  */
 public class SpatialFilterOperator<Type> extends UnaryToUnaryOperator<Type, Type> {
 
-    protected final SpatialPredicateType predicateType;
+    protected final SpatialPredicate predicateType;
     protected final TransformationDescriptor<Type, SpatialGeometry> keyDescriptor;
     protected final SpatialGeometry referenceGeometry;
 
     @SuppressWarnings("unchecked")
-    public SpatialFilterOperator(SpatialPredicateType predicateType,
+    public SpatialFilterOperator(SpatialPredicate predicateType,
                                  FunctionDescriptor.SerializableFunction<Type, ? extends SpatialGeometry> keyExtractor,
                                  DataSetType<Type> inputClassDatasetType,
                                  SpatialGeometry geometry) {
@@ -62,7 +62,7 @@ public class SpatialFilterOperator<Type> extends UnaryToUnaryOperator<Type, Type
         this.referenceGeometry = that.referenceGeometry;
     }
 
-    public SpatialPredicateType getPredicateType() {
+    public SpatialPredicate getPredicateType() {
         return this.predicateType;
     }
 

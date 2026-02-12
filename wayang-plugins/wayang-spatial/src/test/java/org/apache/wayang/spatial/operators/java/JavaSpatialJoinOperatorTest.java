@@ -21,7 +21,7 @@ package org.apache.wayang.spatial.operators.java;
 import org.apache.wayang.basic.data.Tuple2;
 import org.apache.wayang.core.api.Configuration;
 import org.apache.wayang.core.api.Job;
-import org.apache.wayang.core.api.spatial.SpatialPredicateType;
+import org.apache.wayang.core.api.spatial.SpatialPredicate;
 import org.apache.wayang.core.optimizer.DefaultOptimizationContext;
 import org.apache.wayang.core.optimizer.OptimizationContext;
 import org.apache.wayang.core.optimizer.cardinality.CardinalityEstimate;
@@ -111,7 +111,7 @@ class JavaSpatialJoinOperatorTest {
                 w -> w,
                 WayangGeometry.class,
                 WayangGeometry.class,
-                SpatialPredicateType.INTERSECTS
+                SpatialPredicate.INTERSECTS
         );
 
         JavaChannelInstance[] inputs = new JavaChannelInstance[]{
@@ -144,7 +144,7 @@ class JavaSpatialJoinOperatorTest {
                 w -> w,
                 WayangGeometry.class,
                 WayangGeometry.class,
-                SpatialPredicateType.INTERSECTS
+                SpatialPredicate.INTERSECTS
         );
 
         JavaChannelInstance[] inputs = new JavaChannelInstance[]{
@@ -177,7 +177,7 @@ class JavaSpatialJoinOperatorTest {
                 WayangGeometry::fromStringInput,
                 String.class,
                 String.class,
-                SpatialPredicateType.INTERSECTS
+                SpatialPredicate.INTERSECTS
         );
 
         JavaChannelInstance[] inputs = new JavaChannelInstance[]{

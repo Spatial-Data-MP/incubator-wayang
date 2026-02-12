@@ -23,7 +23,7 @@ import org.apache.wayang.basic.data.Record;
 import org.apache.wayang.spatial.data.WayangGeometry;
 import org.apache.wayang.core.api.Configuration;
 import org.apache.wayang.core.api.WayangContext;
-import org.apache.wayang.core.api.spatial.SpatialPredicateType;
+import org.apache.wayang.core.api.spatial.SpatialPredicate;
 import org.apache.wayang.java.Java;
 import org.apache.wayang.postgres.Postgres;
 import org.apache.wayang.spark.Spark;
@@ -82,7 +82,7 @@ public class TestSpatialOperators {
                 .readTextFile("/incubator-wayang/wayang-applications/src/main/java/org/apache/wayang/applications/OSM2015_parks.csv")
                 .spatialFilter(
                         (input -> WayangGeometry.fromStringInput((input.split("\",")[0]).replace("\"", ""))),
-                        SpatialPredicateType.INTERSECTS,
+                        SpatialPredicate.INTERSECTS,
                         queryGeometry
                 ).withTargetPlatform(Java.platform())
                 .withName("Spatial Filter (intersects)")
@@ -128,13 +128,13 @@ public class TestSpatialOperators {
 
         SpatialFilterDataQuantaBuilder<String> filteredTable1 = table1.spatialFilter(
                 (input -> WayangGeometry.fromStringInput((input.split("\",")[0]).replace("\"", ""))),
-                SpatialPredicateType.INTERSECTS,
+                SpatialPredicate.INTERSECTS,
                 queryGeometry
         );
 
         SpatialFilterDataQuantaBuilder<String> filteredTable2 = table2.spatialFilter(
                 (input -> WayangGeometry.fromStringInput((input.split("\",")[0]).replace("\"", ""))),
-                SpatialPredicateType.INTERSECTS,
+                SpatialPredicate.INTERSECTS,
                 queryGeometry
         );
 
@@ -143,7 +143,7 @@ public class TestSpatialOperators {
                         (line -> WayangGeometry.fromStringInput(line.split("\",")[0].replace("\"", ""))),
                         table2,
                         (line -> WayangGeometry.fromStringInput(line.split("\",")[0].replace("\"", ""))),
-                        SpatialPredicateType.INTERSECTS
+                        SpatialPredicate.INTERSECTS
                 )
                 .withTargetPlatform(Spark.platform())
                 .count()

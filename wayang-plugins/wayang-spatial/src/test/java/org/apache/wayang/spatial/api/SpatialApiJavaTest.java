@@ -22,7 +22,7 @@ import org.apache.wayang.api.JavaPlanBuilder;
 import org.apache.wayang.basic.data.Record;
 import org.apache.wayang.core.api.Configuration;
 import org.apache.wayang.core.api.WayangContext;
-import org.apache.wayang.core.api.spatial.SpatialPredicateType;
+import org.apache.wayang.core.api.spatial.SpatialPredicate;
 import org.apache.wayang.java.Java;
 import org.apache.wayang.postgres.Postgres;
 import org.apache.wayang.postgres.operators.PostgresTableSource;
@@ -78,7 +78,7 @@ public class SpatialApiJavaTest {
                             );
                             return WayangGeometry.fromStringInput(wkt);
                         }),
-                        SpatialPredicateType.INTERSECTS,
+                        SpatialPredicate.INTERSECTS,
                         queryGeometry
                 )
                 .count()
@@ -115,7 +115,7 @@ public class SpatialApiJavaTest {
                         (input -> WayangGeometry.fromStringInput(input)),
                         planBuilder.loadCollection(rightData),
                         (input -> WayangGeometry.fromStringInput(input)),
-                        SpatialPredicateType.INTERSECTS
+                        SpatialPredicate.INTERSECTS
                 )
                 .count()
                 .collect();
@@ -165,7 +165,7 @@ public class SpatialApiJavaTest {
                             );
                             return WayangGeometry.fromStringInput(wkt);
                         }),
-                        SpatialPredicateType.INTERSECTS,
+                        SpatialPredicate.INTERSECTS,
                         queryGeometry
                 )
                 .map(line -> Integer.parseInt(line.split(",")[0]))  // Extract ID
@@ -206,7 +206,7 @@ public class SpatialApiJavaTest {
                         (input -> WayangGeometry.fromStringInput(input.split(";")[0])),
                         planBuilder.loadCollection(rightData),
                         (input -> WayangGeometry.fromStringInput(input.split(";")[0])),
-                        SpatialPredicateType.INTERSECTS
+                        SpatialPredicate.INTERSECTS
                 )
                 .map(tuple -> {
                     int leftValue = Integer.parseInt(tuple.field0.split(";")[1]);
@@ -251,13 +251,13 @@ public class SpatialApiJavaTest {
         Collection<Long> result = planBuilder.loadCollection(testData)
                 .spatialFilter(
                         (input -> WayangGeometry.fromStringInput(input)),
-                        SpatialPredicateType.INTERSECTS,
+                        SpatialPredicate.INTERSECTS,
                         queryGeometry1
                 )
                 .map(x -> x).withOutputClass(String.class)  // Preserve type for chaining
                 .spatialFilter(
                         (input -> WayangGeometry.fromStringInput(input)),
-                        SpatialPredicateType.INTERSECTS,
+                        SpatialPredicate.INTERSECTS,
                         queryGeometry2
                 )
                 .count()
@@ -296,7 +296,7 @@ public class SpatialApiJavaTest {
         var filteredLeft = planBuilder.loadCollection(leftData)
                 .spatialFilter(
                         (input -> WayangGeometry.fromStringInput(input)),
-                        SpatialPredicateType.INTERSECTS,
+                        SpatialPredicate.INTERSECTS,
                         preFilterGeometry
                 )
                 .map(x -> x).withOutputClass(String.class);
@@ -306,7 +306,7 @@ public class SpatialApiJavaTest {
                         (input -> WayangGeometry.fromStringInput(input)),
                         planBuilder.loadCollection(rightData),
                         (input -> WayangGeometry.fromStringInput(input)),
-                        SpatialPredicateType.INTERSECTS
+                        SpatialPredicate.INTERSECTS
                 )
                 .count()
                 .collect();
@@ -353,7 +353,7 @@ public class SpatialApiJavaTest {
                             );
                             return WayangGeometry.fromStringInput(wkt);
                         }),
-                        SpatialPredicateType.INTERSECTS,
+                        SpatialPredicate.INTERSECTS,
                         queryGeometry
                 )
                 .withTargetPlatform(Spark.platform())
@@ -389,7 +389,7 @@ public class SpatialApiJavaTest {
                         (input -> WayangGeometry.fromStringInput(input)),
                         planBuilder.loadCollection(rightData),
                         (input -> WayangGeometry.fromStringInput(input)),
-                        SpatialPredicateType.INTERSECTS
+                        SpatialPredicate.INTERSECTS
                 )
                 .withTargetPlatform(Spark.platform())
                 .count()
@@ -435,7 +435,7 @@ public class SpatialApiJavaTest {
                             );
                             return WayangGeometry.fromStringInput(wkt);
                         }),
-                        SpatialPredicateType.INTERSECTS,
+                        SpatialPredicate.INTERSECTS,
                         queryGeometry
                 )
                 .count()
@@ -482,7 +482,7 @@ public class SpatialApiJavaTest {
                 .readTable(new PostgresTableSource("spider_boxes", "x_min", "y_min", "x_max", "y_max", "geom"))
                 .spatialFilter(
                         (Record record) -> WayangGeometry.fromStringInput(record.getString(4)),
-                        SpatialPredicateType.INTERSECTS,
+                        SpatialPredicate.INTERSECTS,
                         queryGeometry,
                         "geom"  // SQL geometry column name for PostgreSQL pushdown
                 )
@@ -519,7 +519,7 @@ public class SpatialApiJavaTest {
                 .readTable(new PostgresTableSource("spider_boxes", "x_min", "y_min", "x_max", "y_max", "geom"))
                 .spatialFilter(
                         (Record record) -> WayangGeometry.fromStringInput(record.getString(4)),
-                        SpatialPredicateType.INTERSECTS,
+                        SpatialPredicate.INTERSECTS,
                         queryGeometry,
                         "geom"  // SQL geometry column name for PostgreSQL pushdown
                 )
@@ -556,7 +556,7 @@ public class SpatialApiJavaTest {
                 .readTable(new PostgresTableSource("spider_boxes", "x_min", "y_min", "x_max", "y_max", "geom"))
                 .spatialFilter(
                         (Record record) -> WayangGeometry.fromStringInput(record.getString(4)),
-                        SpatialPredicateType.WITHIN,
+                        SpatialPredicate.WITHIN,
                         queryGeometry,
                         "geom"  // SQL geometry column name for PostgreSQL pushdown
                 )

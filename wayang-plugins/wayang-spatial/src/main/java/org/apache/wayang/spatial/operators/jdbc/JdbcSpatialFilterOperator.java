@@ -20,11 +20,11 @@ package org.apache.wayang.spatial.operators.jdbc;
 
 import org.apache.wayang.basic.operators.SpatialFilterOperator;
 import org.apache.wayang.core.api.spatial.SpatialGeometry;
-import org.apache.wayang.core.api.spatial.SpatialPredicateType;
+import org.apache.wayang.core.api.spatial.SpatialPredicate;
 import org.apache.wayang.core.function.FunctionDescriptor;
 import org.apache.wayang.core.types.DataSetType;
 import org.apache.wayang.spatial.data.WayangGeometry;
-import org.apache.wayang.spatial.function.SpatialPredicate;
+import org.apache.wayang.spatial.function.JtsSpatialPredicate;
 import org.apache.wayang.jdbc.compiler.FunctionCompiler;
 import org.apache.wayang.jdbc.operators.JdbcExecutionOperator;
 
@@ -41,7 +41,7 @@ public abstract class JdbcSpatialFilterOperator<Type> extends SpatialFilterOpera
      *
      * @param relation the type of spatial filter (e.g., "INTERSECTS", "CONTAINS", "WITHIN")
      */
-    public JdbcSpatialFilterOperator(SpatialPredicateType relation,
+    public JdbcSpatialFilterOperator(SpatialPredicate relation,
                                      FunctionDescriptor.SerializableFunction<Type, ? extends SpatialGeometry> keyExtractor,
                                      DataSetType<Type> inputClassDatasetType,
                                      SpatialGeometry geometry) {
@@ -73,7 +73,7 @@ public abstract class JdbcSpatialFilterOperator<Type> extends SpatialFilterOpera
             geomLiteral = String.format("ST_GeomFromText('%s')", wkt);
         }
 
-        SpatialPredicate relation = SpatialPredicate.fromType(this.predicateType);
+        JtsSpatialPredicate relation = JtsSpatialPredicate.of(this.predicateType);
         return relation.toSql(columnExpr, geomLiteral);
     }
 

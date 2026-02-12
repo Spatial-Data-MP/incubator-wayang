@@ -25,7 +25,7 @@ import org.apache.wayang.api.UnarySourceDataQuantaBuilder;
 import org.apache.wayang.spatial.data.WayangGeometry;
 import org.apache.wayang.core.api.Configuration;
 import org.apache.wayang.core.api.WayangContext;
-import org.apache.wayang.core.api.spatial.SpatialPredicateType;
+import org.apache.wayang.core.api.spatial.SpatialPredicate;
 import org.apache.wayang.java.Java;
 import org.apache.wayang.postgres.Postgres;
 import org.apache.wayang.spatial.Spatial;
@@ -98,7 +98,7 @@ public class SpatialJoin {
         SpatialFilterDataQuantaBuilder<String> filteredTable1 = table1.spatialFilter(
                 (input -> WayangGeometry.fromStringInput((input.split("\",")[0]).replace("\"", ""))),
 //                        (input -> (WayangGeometry) input.getField(0)),
-                SpatialPredicateType.INTERSECTS,
+                SpatialPredicate.INTERSECTS,
                 queryGeometry
         );//.withTargetPlatform(Spark.platform());
 
@@ -110,7 +110,7 @@ public class SpatialJoin {
         SpatialFilterDataQuantaBuilder<String> filteredTable2 = table2.spatialFilter(
                 (input -> WayangGeometry.fromStringInput((input.split("\",")[0]).replace("\"", ""))),
 //                        (input -> (WayangGeometry) input.getField(0)),
-                SpatialPredicateType.INTERSECTS,
+                SpatialPredicate.INTERSECTS,
                 queryGeometry
         );//.withTargetPlatform(Spark.platform());//.map(x -> x);
 */
@@ -122,7 +122,7 @@ public class SpatialJoin {
                         (line -> WayangGeometry.fromStringInput(line.split("\",")[0].replace("\"", ""))),
                         table2,
                         (line -> WayangGeometry.fromStringInput(line.split("\",")[0].replace("\"", ""))),
-                        SpatialPredicateType.INTERSECTS
+                        SpatialPredicate.INTERSECTS
                 );
         joinResult.withTargetPlatform(Spark.platform());
 

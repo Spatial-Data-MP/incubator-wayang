@@ -34,7 +34,7 @@ import org.apache.wayang.core.optimizer.ProbabilisticDoubleInterval
 import org.apache.wayang.core.optimizer.cardinality.CardinalityEstimator
 import org.apache.wayang.core.optimizer.costs.LoadProfileEstimator
 import org.apache.wayang.core.plan.wayangplan._
-import org.apache.wayang.core.api.spatial.{SpatialGeometry, SpatialPredicateType}
+import org.apache.wayang.core.api.spatial.{SpatialGeometry, SpatialPredicate}
 import org.apache.wayang.core.platform.Platform
 import org.apache.wayang.core.util.{Tuple => WayangTuple}
 import org.apache.wayang.basic.data.{Record, Tuple2 => WayangTuple2}
@@ -638,7 +638,7 @@ class DataQuanta[Out: ClassTag](val operator: ElementaryOperator, outputIndex: I
     * @return a new instance representing the filtered output
     */
   def spatialFilter(keySelector: Out => SpatialGeometry,
-                    predicateType: SpatialPredicateType,
+                    predicateType: SpatialPredicate,
                     filterGeometry: SpatialGeometry,
                     columnName: String = null): DataQuanta[Out] =
     spatialFilterJava(toSerializableFunction(keySelector), predicateType, filterGeometry, columnName)
@@ -653,7 +653,7 @@ class DataQuanta[Out: ClassTag](val operator: ElementaryOperator, outputIndex: I
     * @return a new instance representing the filtered output
     */
   def spatialFilterJava(keySelector: SerializableFunction[Out, _ <: SpatialGeometry],
-                        predicateType: SpatialPredicateType,
+                        predicateType: SpatialPredicate,
                         filterGeometry: SpatialGeometry,
                         columnName: String = null): DataQuanta[Out] = {
     val op = new SpatialFilterOperator(predicateType, keySelector, dataSetType[Out], filterGeometry)
@@ -675,7 +675,7 @@ class DataQuanta[Out: ClassTag](val operator: ElementaryOperator, outputIndex: I
       thisKeyUdf: Out => SpatialGeometry,
       that: DataQuanta[ThatOut],
       thatKeyUdf: ThatOut => SpatialGeometry,
-      predicateType: SpatialPredicateType): DataQuanta[WayangTuple2[Out, ThatOut]] =
+      predicateType: SpatialPredicate): DataQuanta[WayangTuple2[Out, ThatOut]] =
     spatialJoinJava(toSerializableFunction(thisKeyUdf), that, toSerializableFunction(thatKeyUdf), predicateType)
 
   /**
@@ -691,7 +691,7 @@ class DataQuanta[Out: ClassTag](val operator: ElementaryOperator, outputIndex: I
       thisKeyUdf: SerializableFunction[Out, _ <: SpatialGeometry],
       that: DataQuanta[ThatOut],
       thatKeyUdf: SerializableFunction[ThatOut, _ <: SpatialGeometry],
-      predicateType: SpatialPredicateType): DataQuanta[WayangTuple2[Out, ThatOut]] = {
+      predicateType: SpatialPredicate): DataQuanta[WayangTuple2[Out, ThatOut]] = {
     require(this.planBuilder eq that.planBuilder, s"$this and $that must use the same plan builders.")
     val op = new SpatialJoinOperator(
       new TransformationDescriptor(thisKeyUdf.asInstanceOf[SerializableFunction[Out, SpatialGeometry]], basicDataUnitType[Out], basicDataUnitType[SpatialGeometry]),
