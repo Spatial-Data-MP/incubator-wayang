@@ -1970,7 +1970,7 @@ class SpatialFilterDataQuantaBuilder[T](inputDataQuanta: DataQuantaBuilder[_, T]
 
   override protected def build: DataQuanta[T] = {
     val dq = inputDataQuanta.dataQuanta()
-    dq.spatialFilter(keySelector, predicateType, filterGeometry, this.columnName)
+    dq.spatialFilterJava(keySelector, predicateType, filterGeometry, this.columnName)
   }
 }
 
