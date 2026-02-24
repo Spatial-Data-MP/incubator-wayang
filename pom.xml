@@ -28,12 +28,12 @@
 
     <groupId>org.apache.wayang</groupId>
     <artifactId>wayang</artifactId>
-    <version>1.1.1-SNAPSHOT</version>
+    <version>1.1.2-SNAPSHOT</version>
     <packaging>pom</packaging>
 
-    <name>Apache Wayang (incubating)</name>
+    <name>Apache Wayang</name>
     <description>
-        Apache Wayang (incubating) is a tool to build platform-agnostic data processing apps and have them both optimized for and
+        Apache Wayang is a tool to build platform-agnostic data processing apps and have them both optimized for and
         executed on multiple different execution platforms, such as Java Streams and Apache Spark.
     </description>
 
@@ -50,23 +50,15 @@
             <name>Apache License, Version 2.0</name>
             <url>https://www.apache.org/licenses/LICENSE-2.0</url>
             <distribution>repo</distribution>
-            <comments>
-                Apache Wayang (incubating) is an effort undergoing incubation at The Apache Software
-                Foundation (ASF), sponsored by the Apache Incubator PMC. Incubation is required
-                of all newly accepted projects until a further review indicates that the
-                infrastructure, communications, and decision making process have stabilized in
-                a manner consistent with other successful ASF projects. While incubation status
-                is not necessarily a reflection of the completeness or stability of the code,
-                it does indicate that the project has yet to be fully endorsed by the ASF.
-            </comments>
         </license>
     </licenses>
 
     <scm>
-        <connection>scm:git:https://gitbox.apache.org/repos/asf/incubator-wayang.git</connection>
-        <developerConnection>scm:git:https://gitbox.apache.org/repos/asf/incubator-wayang.git</developerConnection>
-        <url>https://github.com/apache/incubator-wayang</url>
-    </scm>
+        <connection>scm:git:https://gitbox.apache.org/repos/asf/wayang.git</connection>
+        <developerConnection>scm:git:https://gitbox.apache.org/repos/asf/wayang.git</developerConnection>
+        <url>https://github.com/apache/wayang</url>
+      <tag>apache-wayang-1.1.1</tag>
+  </scm>
 
     <issueManagement>
         <system>JIRA</system>
@@ -75,14 +67,14 @@
 
     <mailingLists>
         <mailingList>
-            <name>Apache Wayang (incubating) Developer List</name>
+            <name>Apache Wayang Developer List</name>
             <subscribe>mailto:dev-subscribe@wayang.apache.org</subscribe>
             <unsubscribe>mailto:dev-unsubscribe@wayang.apache.org</unsubscribe>
             <post>mailto:dev@wayang.apache.org</post>
             <archive>http://mail-archives.apache.org/mod_mbox/wayang-dev/</archive>
         </mailingList>
         <mailingList>
-            <name>Apache Wayang (incubating) Commits List</name>
+            <name>Apache Wayang Commits List</name>
             <subscribe>mailto:commits-subscribe@wayang.apache.org</subscribe>
             <unsubscribe>mailto:commits-unsubscribe@wayang.apache.org</unsubscribe>
             <post>mailto:commits@wayang.apache.org</post>
@@ -99,7 +91,7 @@
         <maven.kotlin.skip>false</maven.kotlin.skip>
 
         <!-- Timestamp for the reproducible builds -->
-        <project.build.outputTimestamp>2025-06-24T07:20:48Z</project.build.outputTimestamp>
+        <project.build.outputTimestamp>2026-02-10T16:43:08Z</project.build.outputTimestamp>
 
         <scala.version>2.12.17</scala.version>
         <scala.mayor.version>2.12</scala.mayor.version>
@@ -117,7 +109,7 @@
         <java-activation.version>1.1.1</java-activation.version>
         <javax-annotation-api>1.3.2</javax-annotation-api>
 
-        <assertj.version>3.25.3</assertj.version>
+        <assertj.version>3.27.7</assertj.version>
         <commons-io.version>2.15.1</commons-io.version>
         <guava.version>33.4.0-jre</guava.version>
         <hamcrest.version>2.2</hamcrest.version>
@@ -160,14 +152,14 @@
                 <dependency>
                     <groupId>org.apache.wayang</groupId>
                     <artifactId>wayang-resources</artifactId>
-                    <version>1.1.1-SNAPSHOT</version>
+                    <version>1.1.2-SNAPSHOT</version>
                     <type>zip</type>
                     <optional>true</optional>
                 </dependency>
             </dependencies>
 
             <build>
-              <finalName>apache-${project.artifactId}-incubating-${project.version}</finalName>
+              <finalName>apache-${project.artifactId}-${project.version}</finalName>
                 <plugins>
                     <!-- Configures JavaDoc generation. -->
                     <plugin>
@@ -201,7 +193,7 @@
         </profile>
 
         <profile>
-            <!-- Perform steps to deploy Apache Wayang (incubating). -->
+            <!-- Perform steps to deploy Apache Wayang. -->
             <id>deployment</id>
             <build>
                 <plugins>
@@ -222,7 +214,7 @@
         </profile>
 
         <profile>
-            <!-- Perform steps to deploy Apache Wayang (incubating). -->
+            <!-- Perform steps to deploy Apache Wayang -->
             <id>deployment-dryrun</id>
             <build>
                 <plugins>
@@ -665,7 +657,7 @@
         <profile>
             <id>apache-release</id>
             <build>
-                <finalName>apache-${project.artifactId}-incubating-${project.version}</finalName>
+                <finalName>apache-${project.artifactId}-${project.version}</finalName>
                 <resources>
                     <resource>
                         <directory>src/main/resources</directory>
@@ -696,7 +688,7 @@
                                     <goal>single</goal>
                                 </goals>
                                 <configuration>
-                                    <finalName>apache-${project.artifactId}-incubating-${project.version}</finalName>
+                                    <finalName>apache-${project.artifactId}-${project.version}</finalName>
                                 </configuration>
                             </execution>
                         </executions>
@@ -788,7 +780,7 @@
     </dependencies>
 
     <build>
-        <finalName>apache-${project.artifactId}-${project.version}-incubating</finalName>
+        <finalName>apache-${project.artifactId}-${project.version}</finalName>
         <!--
             Default versioned declarations of managed plugins
             to be overridden when the distribute profile is active.
@@ -812,7 +804,7 @@
                     <artifactId>maven-assembly-plugin</artifactId>
                     <version>3.5.0</version>
                     <configuration>
-                        <finalName>apache-${project.artifactId}-${project.version}-incubating</finalName>
+                        <finalName>apache-${project.artifactId}-${project.version}</finalName>
                     </configuration>
                 </plugin>
 
@@ -1114,8 +1106,6 @@
                             <resourceBundles>
                                 <!-- Will generate META-INF/{DEPENDENCIES,LICENSE,NOTICE} -->
                                 <resourceBundle>org.apache.apache.resources:apache-jar-resource-bundle:1.7</resourceBundle>
-                                <!-- Will generate META-INF/DISCLAIMER  -->
-                                <resourceBundle>org.apache.apache.resources:apache-incubator-disclaimer-resource-bundle:1.7</resourceBundle>
                             </resourceBundles>
                         </configuration>
                     </execution>
@@ -1305,12 +1295,10 @@
                     <releaseProfiles>apache-release</releaseProfiles>
                     <!--<pushChanges>false</pushChanges>-->
                     <!--<dryRun>true</dryRun>-->
-                    <releaseVersion>1.1.0</releaseVersion>
                     <updateWorkingCopyVersions>true</updateWorkingCopyVersions>
                     <updateDependencies>true</updateDependencies>
                     <scmReleaseCommitComment>@{prefix} prepare release 1.1.0</scmReleaseCommitComment>
-                    <tagNameFormat>apache-@{project.artifactId}-@{project.version}-incubating</tagNameFormat>
-                    <tagNameFormat>v${project.version}</tagNameFormat>
+                    <tagNameFormat>apache-@{project.artifactId}-@{project.version}</tagNameFormat>
                 </configuration>
             </plugin>
         </plugins>

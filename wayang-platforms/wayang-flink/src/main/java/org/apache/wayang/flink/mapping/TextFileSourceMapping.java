@@ -33,7 +33,6 @@ import java.util.Collections;
 /**
  * Mapping from {@link TextFileSource} to {@link FlinkTextFileSource}.
  */
-@SuppressWarnings("unchecked")
 public class TextFileSourceMapping implements Mapping {
     @Override
     public Collection<PlanTransformation> getTransformations() {
@@ -46,7 +45,7 @@ public class TextFileSourceMapping implements Mapping {
 
 
     private SubplanPattern createSubplanPattern() {
-        final OperatorPattern operatorPattern = new OperatorPattern(
+        final OperatorPattern<?> operatorPattern = new OperatorPattern<>(
                 "source", new TextFileSource("", null), false
         );
         return SubplanPattern.createSingleton(operatorPattern);
