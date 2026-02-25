@@ -123,9 +123,8 @@ public class SparkSpatialJoinOperator<InputType0, InputType1>
             spatialRDDLeft.analyze();
             spatialRDDRight.analyze();
 
-            int numPartitions = (int) Math.min(Math.floor((double) spatialRDDLeft.approximateTotalCount / 2), 64);
-            System.out.println(numPartitions);
-            // TODO: fix num partitions max |spatialRDDLeft|/2
+            final long estimatedCount = spatialRDDLeft.approximateTotalCount;
+            final int numPartitions = (int) Math.max(1, Math.min(estimatedCount / 2, 64));
             spatialRDDLeft.spatialPartitioning(GridType.QUADTREE, numPartitions);
             spatialRDDRight.spatialPartitioning(spatialRDDLeft.getPartitioner());
 

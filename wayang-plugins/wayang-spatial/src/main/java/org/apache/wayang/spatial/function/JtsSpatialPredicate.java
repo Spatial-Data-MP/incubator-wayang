@@ -32,7 +32,6 @@ public enum JtsSpatialPredicate {
     TOUCHES("TOUCHES", "ST_Touches", Geometry::touches),
     OVERLAPS("OVERLAPS", "ST_Overlaps", Geometry::overlaps),
     CROSSES("CROSSES", "ST_Crosses", Geometry::crosses),
-    DISJOINT("DISJOINT", "ST_Disjoint", Geometry::disjoint),
     EQUALS("EQUALS", "ST_Equals", Geometry::equalsTopo);
 
     private final String opName;
@@ -69,7 +68,6 @@ public enum JtsSpatialPredicate {
             case OVERLAPS -> OVERLAPS;
             case TOUCHES -> TOUCHES;
             case CROSSES -> CROSSES;
-            case DISJOINT -> DISJOINT;
             case EQUALS -> EQUALS;
             default -> throw new IllegalArgumentException("Unknown SpatialPredicate: " + predicate);
         };

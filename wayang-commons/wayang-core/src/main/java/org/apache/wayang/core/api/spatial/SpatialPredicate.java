@@ -42,9 +42,6 @@ public enum SpatialPredicate {
     /** Tests if geometries cross (share some interior points). */
     CROSSES,
 
-    /** Tests if geometries are disjoint (share no points). */
-    DISJOINT,
-
     /** Tests if geometries are topologically equal. */
     EQUALS
 }
