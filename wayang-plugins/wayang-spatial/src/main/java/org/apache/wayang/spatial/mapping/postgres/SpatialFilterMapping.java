@@ -46,7 +46,7 @@ public class SpatialFilterMapping implements Mapping {
     private SubplanPattern createSubplanPattern() {
         final OperatorPattern<SpatialFilterOperator> operatorPattern = new OperatorPattern<>(
                 "spatialFilter", new SpatialFilterOperator(null, null, DataSetType.none(), null), false
-        ).withAdditionalTest(op -> op.getKeyDescriptor().getSqlImplementation() != null); // TODO: test
+        ).withAdditionalTest(op -> op.getKeyDescriptor().getSqlImplementation() != null);
         return SubplanPattern.createSingleton(operatorPattern);
     }
 
