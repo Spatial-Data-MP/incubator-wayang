@@ -46,7 +46,8 @@ public class SpatialJoinMapping implements Mapping {
     private SubplanPattern createSubplanPattern() {
         final OperatorPattern<SpatialJoinOperator> operatorPattern = new OperatorPattern<>(
                 "spatialFilter", new SpatialJoinOperator(null, null, DataSetType.none(), DataSetType.none(), null), false
-        );
+        ).withAdditionalTest(op -> op.getKeyDescriptor0().getSqlImplementation() != null
+                && op.getKeyDescriptor1().getSqlImplementation() != null); // require SQL pushdown support
         return SubplanPattern.createSingleton(operatorPattern);
     }
 

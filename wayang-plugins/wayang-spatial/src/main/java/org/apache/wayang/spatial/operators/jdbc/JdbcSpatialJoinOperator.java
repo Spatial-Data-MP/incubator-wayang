@@ -62,6 +62,9 @@ public abstract class JdbcSpatialJoinOperator
     public String createSqlClause(Connection connection, FunctionCompiler compiler) {
         final Tuple<String, String> left = this.keyDescriptor0.getSqlImplementation();
         final Tuple<String, String> right = this.keyDescriptor1.getSqlImplementation();
+        if (left == null || right == null) {
+            throw new IllegalStateException("Spatial join requires SQL implementations for both inputs.");
+        }
         final String leftTableName = left.field0;
         final String leftKey = left.field1;
         final String rightTableName = right.field0;

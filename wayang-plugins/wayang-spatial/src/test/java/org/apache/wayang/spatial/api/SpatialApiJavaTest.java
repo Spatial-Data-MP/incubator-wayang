@@ -29,6 +29,7 @@ import org.apache.wayang.postgres.operators.PostgresTableSource;
 import org.apache.wayang.spark.Spark;
 import org.apache.wayang.spatial.Spatial;
 import org.apache.wayang.spatial.data.WayangGeometry;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 import java.util.Arrays;
@@ -461,6 +462,7 @@ public class SpatialApiJavaTest {
     }
 
     @Test
+    @Disabled("Requires local Postgres test database.")
     void testSpatialFilterWithPostgres() {
         Configuration configuration = getPostgresConfiguration();
 
@@ -498,6 +500,7 @@ public class SpatialApiJavaTest {
     }
 
     @Test
+    @Disabled("Requires local Postgres test database.")
     void testSpatialFilterWithPostgresAndMapping() {
         Configuration configuration = getPostgresConfiguration();
 
@@ -535,6 +538,7 @@ public class SpatialApiJavaTest {
     }
 
     @Test
+    @Disabled("Requires local Postgres test database.")
     void testSpatialFilterWithPostgresContains() {
         Configuration configuration = getPostgresConfiguration();
 

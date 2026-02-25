@@ -31,6 +31,7 @@ import org.apache.wayang.java.Java;
 import org.apache.wayang.postgres.Postgres;
 import org.apache.wayang.postgres.operators.PostgresTableSource;
 import org.apache.wayang.spark.Spark;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.locationtech.jts.geom.Envelope;
 import org.locationtech.jts.geom.Geometry;
@@ -44,6 +45,7 @@ import java.util.List;
 import static org.junit.jupiter.api.Assertions.*;
 
 
+@Disabled("Requires local Postgres test database.")
 public class SqlTest {
 
 
