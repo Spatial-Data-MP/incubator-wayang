@@ -16,9 +16,8 @@
  * limitations under the License.
  */
 
-package org.apache.wayang.spatial.api;
+package org.apache.wayang.api;
 
-import org.apache.wayang.api.JavaPlanBuilder;
 import org.apache.wayang.basic.data.Record;
 import org.apache.wayang.core.api.Configuration;
 import org.apache.wayang.core.api.WayangContext;
@@ -41,7 +40,7 @@ import static org.junit.jupiter.api.Assertions.*;
 /**
  * Tests for the fluent spatial API on DataQuantaBuilder.
  */
-public class SpatialApiJavaTest {
+public class JavaApiSpatialTest {
 
     // ==================== Java Platform Tests ====================
 

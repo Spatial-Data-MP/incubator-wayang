@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-package org.apache.wayang.api.sql;
+package org.apache.wayang.spatial.integration;
 
 import org.apache.wayang.basic.data.Record;
 import org.apache.wayang.basic.data.Tuple2;
@@ -44,9 +44,8 @@ import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-
 @Disabled("Requires local Postgres test database.")
-public class SqlTest {
+public class PostgresSpatialIntegrationTest {
 
 
     public static void main(String[] args) {
@@ -68,12 +67,6 @@ public class SqlTest {
                 Record.class,
                 Record.class,
                 "name");
-
-        /*int[] fields = new int[]{1};
-        MapOperator<Record, Record> projection = new MapOperator(
-                new WayangProjectVisitor.MapFunctionImpl(fields),
-                Record.class,
-                Record.class);*/
 
         LocalCallbackSink<Record> sink = LocalCallbackSink.createCollectingSink(collector, Record.class);
         customer.connectTo(0,projection,0);
@@ -104,37 +97,13 @@ public class SqlTest {
         return new WayangContext(configuration);
     }
 
-//    @Test
-//    void testGeoJson() {
-//        GeoJsonReader reader = new GeoJsonReader();
-//        // Read from file
-//        try {
-//            File file = new File("/Users/maximilianspeer/wayang/incubator-wayang/wayang-platforms/wayang-java/src/test/resources/geojson-sample.json");
-//            FileReader fileReader = new FileReader(file);
-//            char[] chars = new char[(int) file.length()];
-//            fileReader.read(chars);
-//            String geoJson = new String(chars);
-//            org.locationtech.jts.geom.Geometry geometry = reader.read(geoJson);
-//            System.out.println(geometry);
-//        } catch (Exception e) {
-//            e.printStackTrace();
-//        }
-//    }
-
     @Test
+    @Disabled("Requires local Postgres test database.")
     void testSpatialFilterOperator() {
         WayangContext wayangContext = getTestWayangContext()
                 .withPlugin(Java.basicPlugin())
                 .withPlugin(Spark.basicPlugin())
                 .withPlugin(Postgres.plugin());
-
-        //// Debugging might be useful, set level to "FINEST" to see actual db query strings
-//        Logger logger = Logger.getLogger(QueryExecutorImpl.class.getName());
-//        ConsoleHandler handler = new ConsoleHandler();
-//        handler.setLevel(Level.FINEST);
-//        // handler.setFilter(record -> record.getMessage() != null && record.getMessage().contains("query="));
-//        logger.addHandler(handler);
-//        logger.setLevel(Level.FINEST);
 
         ///  Scalar Geometry
         GeometryFactory geometryFactory = new GeometryFactory();
@@ -167,6 +136,7 @@ public class SqlTest {
     }
 
     @Test
+    @Disabled("Requires local Postgres test database.")
     void testSpatialFilterWithTuple() {
         WayangContext wayangContext = getTestWayangContext()
                 .withPlugin(Java.basicPlugin())
@@ -214,6 +184,7 @@ public class SqlTest {
     }
 
     @Test
+    @Disabled("Requires local Postgres test database.")
     void testSpatialJoin() {
         WayangContext wayangContext = getTestWayangContext()
                 .withPlugin(Java.basicPlugin())
@@ -221,7 +192,6 @@ public class SqlTest {
                 .withPlugin(Postgres.plugin());
 
         TableSource table1 = new PostgresTableSource("spider_boxes", "id", "x_min", "y_min", "x_max", "y_max", "geom");
-//        TableSource table2 = new PostgresTableSource("spider", "id", "geom");
 
         // Input polygons: nested axis-aligned squares.
         final List<WayangGeometry> inputValues = Arrays.asList(
@@ -253,7 +223,6 @@ public class SqlTest {
         assertEquals(30, collector.size());
     }
 
-    // TODO: Fix and Test
     @Test
     void testSpatialJoinDbSources() {
         WayangContext wayangContext = getTestWayangContext()
@@ -311,85 +280,4 @@ public class SqlTest {
             );
         }
     }
-
-
-
-    // Alt
-    @Test
-    void testSpatialFilter() {
-                WayangPlan wayangPlan;
-        //// Db Connection, local db credentials!
-        Configuration configuration = new Configuration();
-        configuration.setProperty("wayang.postgres.jdbc.url", "jdbc:postgresql://localhost:5432/spatialdb"); // Default port 5432
-        configuration.setProperty("wayang.postgres.jdbc.user", "postgres");
-        configuration.setProperty("wayang.postgres.jdbc.password", "postgres");
-
-
-
-        WayangContext wayangContext = new WayangContext(configuration)
-                .withPlugin(Java.basicPlugin())
-                .withPlugin(Postgres.plugin());
-//        JavaPlanBuilder planBuilder = new JavaPlanBuilder(wayangContext)
-//                .withJobName("Filter Test")
-//                .withUdfJarOf(TestSpatialOperators.class);
-
-
-        GeometryFactory geometryFactory = new GeometryFactory();
-        Envelope envelope = new Envelope(0.00, 0.2, 0.00, 0.20);
-        Geometry geom2 = geometryFactory.toGeometry(envelope);
-
-        Collection<org.apache.wayang.basic.data.Record> collector = new ArrayList<>();
-
-        TableSource customer = new PostgresTableSource("spider", "id", "geom");
-//        MapOperator<org.apache.wayang.basic.data.Record, org.apache.wayang.basic.data.Record> projection = MapOperator.createProjection(
-//                org.apache.wayang.basic.data.Record.class,
-//                org.apache.wayang.basic.data.Record.class,
-//                "name");
-
-        /*int[] fields = new int[]{1};
-        MapOperator<Record, Record> projection = new MapOperator(
-                new WayangProjectVisitor.MapFunctionImpl(fields),
-                Record.class,
-                Record.class);*/
-
-        LocalCallbackSink<org.apache.wayang.basic.data.Record> sink = LocalCallbackSink.createCollectingSink(collector, Record.class);
-//        customer.connectTo(0,projection,0);
-
-
-//        MapOperator<Record, SpatialRecord> mapToSpatial = new MapOperator<Record,SpatialRecord>(
-//                (record -> new SpatialRecord(record.getValues())), Record.class, SpatialRecord.class
-//        );
-//        mapToSpatial.addTargetPlatform(Postgres.platform());
-
-//        customer.connectTo(0, mapToSpatial, 0);
-
-//        SpatialFilterOperator spatialFilterOperator = new SpatialFilterOperator(
-//                "INTERSECTS",
-//                1,
-//                geom2,
-////                , DataSetType.createDefault(Record.class)
-//                "");
-
-//        FilterOperator<Record> simpleFilter = new FilterOperator<Record>(
-//                (record -> (record.getInt(0)) > 20), Record.class
-//        );
-//        simpleFilter.getPredicateDescriptor().withSqlImplementation("id > 30");
-//
-//        // Basic sanity check: we should get at least self-intersections.
-//        assertFalse(collector.isEmpty(), "Spatial join result should not be empty.");
-//
-//        // Semantic check: every returned pair must actually intersect according to JTS.
-//        for (Tuple2<Record, Record> pair : collector) {
-//            Geometry g1 = WayangGeometry.fromStringInput(pair.field0.getString(1)).getGeometry();
-//            Geometry g2 = WayangGeometry.fromStringInput(pair.field1.getString(1)).getGeometry();
-//            assertTrue(
-//                    g1.intersects(g2),
-//                    "Found non-intersecting pair in spatial join result."
-//            );
-//        }
-//    }
-
-
-    }
-
 }
