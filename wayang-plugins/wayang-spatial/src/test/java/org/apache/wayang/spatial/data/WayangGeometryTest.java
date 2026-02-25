@@ -24,10 +24,9 @@ import org.locationtech.jts.geom.Coordinate;
 import org.locationtech.jts.geom.Geometry;
 import org.locationtech.jts.geom.GeometryFactory;
 import org.locationtech.jts.geom.Point;
+import org.locationtech.jts.io.WKBReader;
 import org.locationtech.jts.io.WKBWriter;
 import org.locationtech.jts.io.WKTWriter;
-
-import javax.xml.bind.DatatypeConverter;
 
 import static org.junit.Assert.*;
 
@@ -115,7 +114,7 @@ public class WayangGeometryTest {
         // Encode to WKB hex using same mechanism as WayangGeometry
         WKBWriter wkbWriter = new WKBWriter();
         byte[] wkbBytes = wkbWriter.write(original);
-        String wkbHex = DatatypeConverter.printHexBinary(wkbBytes);
+        String wkbHex = WKBWriter.toHex(wkbBytes);
 
         WayangGeometry wGeometry = WayangGeometry.fromStringInput(wkbHex);
         Geometry parsed = wGeometry.getGeometry();
@@ -126,7 +125,7 @@ public class WayangGeometryTest {
 
         // getWKB should give back a hex string that decodes to the same WKB bytes
         String producedHex = wGeometry.getWKB();
-        byte[] producedBytes = DatatypeConverter.parseHexBinary(producedHex);
+        byte[] producedBytes = WKBReader.hexToBytes(producedHex);
         assertArrayEquals("WKB bytes should be identical after round-trip.",
                 wkbBytes, producedBytes);
     }
@@ -172,7 +171,7 @@ public class WayangGeometryTest {
         // Now WKB-only instance
         WKBWriter wkbWriter = new WKBWriter();
         byte[] wkbBytes = wkbWriter.write(point);
-        String wkbHex = DatatypeConverter.printHexBinary(wkbBytes);
+        String wkbHex = WKBWriter.toHex(wkbBytes);
         WayangGeometry wFromWkb = WayangGeometry.fromStringInput(wkbHex);
 
         Geometry g2 = wFromWkb.getGeometry();

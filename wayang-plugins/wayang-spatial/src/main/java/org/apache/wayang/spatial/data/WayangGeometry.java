@@ -148,7 +148,7 @@ public class WayangGeometry implements SpatialGeometry {
         Geometry geometry = getGeometry();
         WKBWriter writer = new WKBWriter();
         byte[] wkbBytes = writer.write(geometry);
-        String wkbHex = javax.xml.bind.DatatypeConverter.printHexBinary(wkbBytes);
+        String wkbHex = WKBWriter.toHex(wkbBytes);
         this.data.put("wkb", wkbHex);
         return wkbHex;
     }
@@ -201,7 +201,7 @@ public class WayangGeometry implements SpatialGeometry {
 
             } else if (this.data.containsKey("wkb")) {
                 String wkbHex = this.data.get("wkb").toString().trim();
-                byte[] wkbBytes = javax.xml.bind.DatatypeConverter.parseHexBinary(wkbHex);
+                byte[] wkbBytes = WKBReader.hexToBytes(wkbHex);
                 WKBReader reader = new WKBReader(gf);
                 geometry = reader.read(wkbBytes);
 
