@@ -278,8 +278,3 @@ limitations under the License.
 
 ## Acknowledgements
 The [Logo](https://wayang.apache.org/img/wayang.png) was donated by Brian Vera.
-
-
-## Sedona
-brew install geos
-pip install apache-sedona
