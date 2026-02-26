@@ -69,7 +69,6 @@ public enum JtsSpatialPredicate {
             case TOUCHES -> TOUCHES;
             case CROSSES -> CROSSES;
             case EQUALS -> EQUALS;
-            default -> throw new IllegalArgumentException("Unknown SpatialPredicate: " + predicate);
         };
     }
 

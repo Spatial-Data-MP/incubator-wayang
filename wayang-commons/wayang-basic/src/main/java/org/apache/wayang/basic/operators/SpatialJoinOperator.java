@@ -78,10 +78,10 @@ public class SpatialJoinOperator<InputType0, InputType1> extends BinaryToUnaryOp
             SpatialPredicate predicateType) {
         this(
                 new TransformationDescriptor<>(
-                        (FunctionDescriptor.SerializableFunction<InputType0, SpatialGeometry>) (FunctionDescriptor.SerializableFunction) keyExtractor0,
+                        (FunctionDescriptor.SerializableFunction<InputType0, SpatialGeometry>) keyExtractor0,
                         input0Class, SpatialGeometry.class),
                 new TransformationDescriptor<>(
-                        (FunctionDescriptor.SerializableFunction<InputType1, SpatialGeometry>) (FunctionDescriptor.SerializableFunction) keyExtractor1,
+                        (FunctionDescriptor.SerializableFunction<InputType1, SpatialGeometry>) keyExtractor1,
                         input1Class, SpatialGeometry.class),
                 predicateType
         );

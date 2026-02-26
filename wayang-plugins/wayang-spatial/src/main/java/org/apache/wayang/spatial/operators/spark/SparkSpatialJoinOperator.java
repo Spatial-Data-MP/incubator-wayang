@@ -112,7 +112,6 @@ public class SparkSpatialJoinOperator<InputType0, InputType1>
         });
 
 
-        // TODO: consider cardinality and tell sedona which index to use
         final SpatialRDD<Geometry> spatialRDDLeft = new SpatialRDD<>();
         final SpatialRDD<Geometry> spatialRDDRight = new SpatialRDD<>();
 
@@ -123,8 +122,9 @@ public class SparkSpatialJoinOperator<InputType0, InputType1>
             spatialRDDLeft.analyze();
             spatialRDDRight.analyze();
 
+            final int maxPartitions = 64; // constant for now, later depend on cluster size
             final long estimatedCount = spatialRDDLeft.approximateTotalCount;
-            final int numPartitions = (int) Math.max(1, Math.min(estimatedCount / 2, 64));
+            final int numPartitions = (int) Math.max(1, Math.min(estimatedCount / 2, maxPartitions));
             spatialRDDLeft.spatialPartitioning(GridType.QUADTREE, numPartitions);
             spatialRDDRight.spatialPartitioning(spatialRDDLeft.getPartitioner());
 

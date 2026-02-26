@@ -23,7 +23,6 @@ import org.apache.wayang.core.api.spatial.SpatialGeometry;
 import org.apache.wayang.core.api.spatial.SpatialPredicate;
 import org.apache.wayang.core.function.FunctionDescriptor;
 import org.apache.wayang.core.types.DataSetType;
-import org.apache.wayang.spatial.data.WayangGeometry;
 import org.apache.wayang.spatial.function.JtsSpatialPredicate;
 import org.apache.wayang.jdbc.compiler.FunctionCompiler;
 import org.apache.wayang.jdbc.operators.JdbcExecutionOperator;
@@ -76,17 +75,4 @@ public abstract class JdbcSpatialFilterOperator<Type> extends SpatialFilterOpera
         JtsSpatialPredicate relation = JtsSpatialPredicate.of(this.predicateType);
         return relation.toSql(columnExpr, geomLiteral);
     }
-
-    @Override
-    public String getLoadProfileEstimatorConfigurationKey() {
-        return String.format("wayang.%s.filter.load", this.getPlatform().getPlatformId());
-    }
-
-//    @Override
-//    public Optional<LoadProfileEstimator> createLoadProfileEstimator(Configuration configuration) {
-//        final Optional<LoadProfileEstimator> optEstimator =
-//                JdbcExecutionOperator.super.createLoadProfileEstimator(configuration);
-//        LoadProfileEstimators.nestUdfEstimator(optEstimator, this.predicateDescriptor, configuration);
-//        return optEstimator;
-//    }
 }

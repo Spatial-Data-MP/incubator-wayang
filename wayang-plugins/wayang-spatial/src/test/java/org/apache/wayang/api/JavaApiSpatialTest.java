@@ -112,9 +112,9 @@ public class JavaApiSpatialTest {
 
         Collection<Long> result = planBuilder.loadCollection(leftData)
                 .spatialJoin(
-                        (input -> WayangGeometry.fromStringInput(input)),
+                        (WayangGeometry::fromStringInput),
                         planBuilder.loadCollection(rightData),
-                        (input -> WayangGeometry.fromStringInput(input)),
+                        (WayangGeometry::fromStringInput),
                         SpatialPredicate.INTERSECTS
                 )
                 .count()
@@ -250,13 +250,13 @@ public class JavaApiSpatialTest {
         // Chain two spatial filters
         Collection<Long> result = planBuilder.loadCollection(testData)
                 .spatialFilter(
-                        (input -> WayangGeometry.fromStringInput(input)),
+                        (WayangGeometry::fromStringInput),
                         SpatialPredicate.INTERSECTS,
                         queryGeometry1
                 )
                 .map(x -> x).withOutputClass(String.class)  // Preserve type for chaining
                 .spatialFilter(
-                        (input -> WayangGeometry.fromStringInput(input)),
+                        (WayangGeometry::fromStringInput),
                         SpatialPredicate.INTERSECTS,
                         queryGeometry2
                 )

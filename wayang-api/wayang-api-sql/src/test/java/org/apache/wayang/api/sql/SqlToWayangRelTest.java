@@ -236,7 +236,7 @@ class SqlToWayangRelTest {
                 .map(JdbcProjectionOperator.class::cast).findFirst().orElseThrow();
 
         final JdbcExecutor jdbcExecutor = mock();
-        final StringBuilder query = JdbcExecutor.createSqlString(jdbcExecutor, table, List.of(), List.of(), projection, List.of(), List.of());
+        final StringBuilder query = JdbcExecutor.createSqlString(jdbcExecutor, table, List.of(), projection, List.of());
 
         assertEquals("SELECT ID, NAME FROM T1;", query.toString());
     }

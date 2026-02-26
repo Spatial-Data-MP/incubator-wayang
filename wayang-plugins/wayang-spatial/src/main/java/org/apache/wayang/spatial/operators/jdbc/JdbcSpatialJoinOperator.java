@@ -31,21 +31,19 @@ import org.apache.wayang.jdbc.operators.JdbcExecutionOperator;
 
 import java.sql.Connection;
 
-public abstract class JdbcSpatialJoinOperator
-        extends SpatialJoinOperator<Record, Record>
+public abstract class JdbcSpatialJoinOperator<InputType0, InputType1>
+        extends SpatialJoinOperator<InputType0, InputType1>
         implements JdbcExecutionOperator {
 
 
     public JdbcSpatialJoinOperator(
-            TransformationDescriptor<Record, ? extends SpatialGeometry> keyDescriptor0,
-            TransformationDescriptor<Record, ? extends SpatialGeometry> keyDescriptor1,
+            TransformationDescriptor<InputType0, ? extends SpatialGeometry> keyDescriptor0,
+            TransformationDescriptor<InputType1, ? extends SpatialGeometry> keyDescriptor1,
             SpatialPredicate predicateType
     ) {
         super(
                 keyDescriptor0,
                 keyDescriptor1,
-                DataSetType.createDefault(Record.class),
-                DataSetType.createDefault(Record.class),
                 predicateType
         );
     }
@@ -55,7 +53,7 @@ public abstract class JdbcSpatialJoinOperator
      *
      * @param that that should be copied
      */
-    public JdbcSpatialJoinOperator(SpatialJoinOperator<Record, Record> that) {
+    public JdbcSpatialJoinOperator(SpatialJoinOperator<InputType0, InputType1> that) {
         super(that);
     }
 

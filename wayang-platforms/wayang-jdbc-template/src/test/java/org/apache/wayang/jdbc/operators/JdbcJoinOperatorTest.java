@@ -116,7 +116,7 @@ class JdbcJoinOperatorTest extends OperatorTestBase {
         SqlQueryChannel.Instance sqlQueryChannelInstance =
                 (SqlQueryChannel.Instance) job.getCrossPlatformExecutor().getChannelInstance(sqlToStreamTask.getInputChannel(0));
 
-        System.out.println(sqlQueryChannelInstance.getSqlQuery());
+        System.out.println();
 
         assertEquals(
             "SELECT * FROM testA JOIN testB ON testB.a=testA.a;",

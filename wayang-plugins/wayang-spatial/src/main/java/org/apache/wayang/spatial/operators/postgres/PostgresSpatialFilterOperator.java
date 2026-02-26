@@ -49,12 +49,12 @@ public class PostgresSpatialFilterOperator<Type> extends JdbcSpatialFilterOperat
      *
      * @param that that should be copied
      */
-    public PostgresSpatialFilterOperator(SpatialFilterOperator that) {
+    public PostgresSpatialFilterOperator(SpatialFilterOperator<Type> that) {
         super(that);
     }
 
     @Override
-    protected PostgresSpatialFilterOperator createCopy() {
-        return new PostgresSpatialFilterOperator(this);
+    protected PostgresSpatialFilterOperator<Type> createCopy() {
+        return new PostgresSpatialFilterOperator<>(this);
     }
 }

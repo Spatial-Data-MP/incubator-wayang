@@ -224,6 +224,7 @@ public class PostgresSpatialIntegrationTest {
     }
 
     @Test
+    @Disabled("Requires local Postgres test database.")
     void testSpatialJoinDbSources() {
         WayangContext wayangContext = getTestWayangContext()
                 .withPlugin(Java.basicPlugin())

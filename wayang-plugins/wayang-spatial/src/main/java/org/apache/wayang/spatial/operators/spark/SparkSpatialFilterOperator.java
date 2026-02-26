@@ -101,12 +101,6 @@ public class SparkSpatialFilterOperator<Type>
 
         final JavaRDD<Type> inputRdd = ((RddChannel.Instance) inputs[0]).provideRdd();
 
-        //TODO: double check this approach
-
-        // Get the Java implementation ONCE and keep it out of the operator instance.
-        // getJavaImplementation() returns Function<Input,Output>, but the underlying
-        // object is a SerializableFunction, so we can safely cast (unchecked).
-        @SuppressWarnings("unchecked")
         final FunctionDescriptor.SerializableFunction<Type, ? extends SpatialGeometry> keyExtractor =
                 (FunctionDescriptor.SerializableFunction<Type, ? extends SpatialGeometry>) this.keyDescriptor.getJavaImplementation();
 

@@ -19,6 +19,8 @@
 package org.apache.wayang.spatial.operators.java;
 
 import com.fasterxml.jackson.core.JsonToken;
+import com.fasterxml.jackson.core.JsonFactory;
+import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.wayang.basic.data.Record;
@@ -38,6 +40,7 @@ import org.apache.wayang.java.operators.JavaExecutionOperator;
 import java.net.URI;
 import java.nio.file.Files;
 import java.nio.file.Paths;
+import java.io.InputStream;
 import java.util.*;
 import java.util.stream.Stream;
 
@@ -63,11 +66,11 @@ public class JavaGeoJsonFileSource extends GeoJsonFileSource implements JavaExec
 
             // use streaming parser to avoid loading entire file into memory
             ObjectMapper objectMapper = new ObjectMapper();
-            com.fasterxml.jackson.core.JsonFactory jsonFactory = objectMapper.getFactory();
+            JsonFactory jsonFactory = objectMapper.getFactory();
             List<Record> records = new ArrayList<>();
 
-            try (java.io.InputStream in = Files.newInputStream(Paths.get(uri.getPath()));
-                 com.fasterxml.jackson.core.JsonParser parser = jsonFactory.createParser(in)) {
+            try (InputStream in = Files.newInputStream(Paths.get(uri.getPath()));
+                 JsonParser parser = jsonFactory.createParser(in)) {
 
                 // advance to start object
                 if (parser.nextToken() != JsonToken.START_OBJECT) {
@@ -89,16 +92,16 @@ public class JavaGeoJsonFileSource extends GeoJsonFileSource implements JavaExec
                             JsonNode propertiesNode = featureNode.path("properties");
 
                             String geometryJsonString = objectMapper.writeValueAsString(geometryNode);
-                            WayangGeometry wGeometry = WayangGeometry.fromGeoJson(geometryJsonString);
+                            WayangGeometry wayangGeometry = WayangGeometry.fromGeoJson(geometryJsonString);
 
                             Map<String, Object> propertiesMap = objectMapper.convertValue(propertiesNode, Map.class);
 
                             Record record = new Record();
-                            record.addField(wGeometry);
+                            record.addField(wayangGeometry);
                             record.addField(propertiesMap);
                             records.add(record);
                         }
-                        break; // done reading features
+                        break;
                     }
                 }
             }
@@ -118,9 +121,9 @@ public class JavaGeoJsonFileSource extends GeoJsonFileSource implements JavaExec
         assert outputs.length == this.getNumOutputs();
 
         final String path = this.getInputUrl();
-        final Stream<Record> wGeometryStream = readFeatureCollectionFromFile(path);
+        final Stream<Record> wayangGeometryStream = readFeatureCollectionFromFile(path);
 
-        ((StreamChannel.Instance) outputs[0]).accept(wGeometryStream);
+        ((StreamChannel.Instance) outputs[0]).accept(wayangGeometryStream);
 
         return ExecutionOperator.modelLazyExecution(inputs, outputs, operatorContext);
     }

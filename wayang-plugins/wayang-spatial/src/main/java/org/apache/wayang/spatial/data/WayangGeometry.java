@@ -25,9 +25,7 @@ import org.locationtech.jts.io.*;
 import org.locationtech.jts.io.geojson.GeoJsonReader;
 import org.locationtech.jts.io.geojson.GeoJsonWriter;
 
-import java.io.Serializable;
 import java.util.HashMap;
-import java.util.Map;
 
 public class WayangGeometry implements SpatialGeometry {
 

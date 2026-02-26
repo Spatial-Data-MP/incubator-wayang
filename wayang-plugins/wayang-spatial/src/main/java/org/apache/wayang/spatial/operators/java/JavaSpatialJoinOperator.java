@@ -25,6 +25,7 @@ import org.apache.wayang.core.function.FunctionDescriptor;
 import org.apache.wayang.core.function.TransformationDescriptor;
 import org.apache.wayang.core.optimizer.OptimizationContext;
 import org.apache.wayang.core.types.DataSetType;
+import org.apache.wayang.core.plan.wayangplan.ExecutionOperator;
 import org.apache.wayang.core.platform.ChannelDescriptor;
 import org.apache.wayang.core.platform.ChannelInstance;
 import org.apache.wayang.core.platform.lineage.ExecutionLineageNode;
@@ -84,10 +85,10 @@ public class JavaSpatialJoinOperator<InputType0, InputType1>
 
         final Stream<InputType0> leftStream =
                 ((org.apache.wayang.java.channels.JavaChannelInstance) inputs[0])
-                        .<InputType0>provideStream();
+                        .provideStream();
         final Stream<InputType1> rightStream =
                 ((org.apache.wayang.java.channels.JavaChannelInstance) inputs[1])
-                        .<InputType1>provideStream();
+                        .provideStream();
 
         JtsSpatialPredicate predicate = JtsSpatialPredicate.of(this.predicateType);
 
@@ -119,8 +120,7 @@ public class JavaSpatialJoinOperator<InputType0, InputType1>
         ((org.apache.wayang.java.channels.StreamChannel.Instance) outputs[0]).accept(joinStream);
 
         // Use the standard lazy-execution lineage modeling.
-        return org.apache.wayang.core.plan.wayangplan.ExecutionOperator
-                .modelLazyExecution(inputs, outputs, operatorContext);
+        return ExecutionOperator.modelLazyExecution(inputs, outputs, operatorContext);
     }
 
     @Override

@@ -22,18 +22,17 @@ import org.apache.wayang.basic.operators.SpatialJoinOperator;
 import org.apache.wayang.core.api.spatial.SpatialGeometry;
 import org.apache.wayang.core.api.spatial.SpatialPredicate;
 import org.apache.wayang.core.function.TransformationDescriptor;
-import org.apache.wayang.basic.data.Record;
 import org.apache.wayang.spatial.operators.jdbc.JdbcSpatialJoinOperator;
 import org.apache.wayang.postgres.operators.PostgresExecutionOperator;
 
-public class PostgresSpatialJoinOperator extends JdbcSpatialJoinOperator implements PostgresExecutionOperator {
+public class PostgresSpatialJoinOperator<InputType0, InputType1> extends JdbcSpatialJoinOperator<InputType0, InputType1> implements PostgresExecutionOperator {
     /**
      * Creates a new instance.
      *
      * @param predicate the type of spatial join (e.g., "INTERSECTS", "CONTAINS", "WITHIN")
      */
-    public PostgresSpatialJoinOperator(TransformationDescriptor<Record, ? extends SpatialGeometry> keyDescriptor0,
-                                       TransformationDescriptor<Record, ? extends SpatialGeometry> keyDescriptor1,
+    public PostgresSpatialJoinOperator(TransformationDescriptor<InputType0, ? extends SpatialGeometry> keyDescriptor0,
+                                       TransformationDescriptor<InputType1, ? extends SpatialGeometry> keyDescriptor1,
                                        SpatialPredicate predicate) {
         super(keyDescriptor0, keyDescriptor1, predicate);
     }
@@ -43,12 +42,12 @@ public class PostgresSpatialJoinOperator extends JdbcSpatialJoinOperator impleme
      *
      * @param that that should be copied
      */
-    public PostgresSpatialJoinOperator(SpatialJoinOperator that) {
+    public PostgresSpatialJoinOperator(SpatialJoinOperator<InputType0, InputType1> that) {
         super(that);
     }
 
     @Override
-    protected PostgresSpatialJoinOperator createCopy() {
-        return new PostgresSpatialJoinOperator(this);
+    protected PostgresSpatialJoinOperator<InputType0, InputType1> createCopy() {
+        return new PostgresSpatialJoinOperator<>(this);
     }
 }

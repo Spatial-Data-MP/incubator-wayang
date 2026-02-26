@@ -31,9 +31,8 @@ public class SpatialFilterSpark {
     public static void main(String[] args) {
 
         WayangContext wayangContext = new WayangContext()
-                .withPlugin(Spark.basicPlugin())
-//                .with(Java.basicPlugin())
-                ;
+                .withPlugin(Spark.basicPlugin());
+
         // Set up WayangContext.
         JavaPlanBuilder builder = new JavaPlanBuilder(wayangContext);
 
@@ -52,104 +51,5 @@ public class SpatialFilterSpark {
         for (Integer t : outputValues) {
             System.out.println(t.toString());
         }
-
-        /*
-
-        // Set up WayangContext.
-        WayangContext wayangContext = new WayangContext()
-//                .withPlugin(Java.basicPlugin())
-                .withPlugin(Spark.basicPlugin())
-                ;
-
-        JavaPlanBuilder builder = new JavaPlanBuilder(wayangContext);
-
-        // Input polygons: nested axis-aligned squares.
-        final List<WayangGeometry> inputValues = Arrays.asList(
-                WayangGeometry.fromStringInput("POLYGON((0.00 0.00,0.40 0.00,0.40 0.40,0.00 0.40,0.00 0.00))"),
-                WayangGeometry.fromStringInput("POLYGON((0.00 0.00,0.30 0.00,0.30 0.30,0.00 0.30,0.00 0.00))"),
-                WayangGeometry.fromStringInput("POLYGON((0.00 0.00,0.20 0.00,0.20 0.20,0.00 0.20,0.00 0.00))"),
-                WayangGeometry.fromStringInput("POLYGON((0.00 0.00,0.10 0.00,0.10 0.10,0.00 0.10,0.00 0.00))")
-        );
-
-        // Query geometry: a square entirely inside the 0.4 and 0.3 squares,
-        // but outside the 0.2 and 0.1 squares.
-        WayangGeometry queryGeometry = WayangGeometry.fromStringInput(
-                "POLYGON((0.25 0.25,0.35 0.25,0.35 0.35,0.25 0.35,0.25 0.25))"
-        );
-
-        final Collection<WayangGeometry> outputValues = builder
-                .loadCollection(inputValues).withName("Load input values")
-                .spatialFilter(
-                        (input -> (WayangGeometry) input),
-                        JtsSpatialPredicate.INTERSECTS,
-                        queryGeometry
-                ).withName("Spatial filter (INTERSECTS)")
-                .withUdfJarOf(CustomerTransactionHybridJoin.class)
-                .collect();
-
-        // We expect only the first two polygons to intersect the query geometry.
-        Set<WayangGeometry> expectedOutput = WayangCollections.asSet(
-                WayangGeometry.fromStringInput("POLYGON((0.00 0.00,0.40 0.00,0.40 0.40,0.00 0.40,0.00 0.00))"),
-                WayangGeometry.fromStringInput("POLYGON((0.00 0.00,0.30 0.00,0.30 0.30,0.00 0.30,0.00 0.00))")
-        );
-        // Print output
-        for (WayangGeometry t : outputValues) {
-            System.out.println(t.toString());
-        }
-        */
-
-
-
-
-//        assertEquals(expectedOutput, WayangCollections.asSet(outputValues));
-
-        /*
-
-        Configuration configuration = new Configuration();
-        configuration.setProperty("wayang.postgres.jdbc.url", "jdbc:postgresql://localhost:5432/mydb");
-        configuration.setProperty("wayang.postgres.jdbc.user", "zoi");
-
-        // Create Wayang context
-        WayangContext wayangContext = new WayangContext(configuration)
-                .withPlugin(Java.basicPlugin())
-                .withPlugin(Spark.basicPlugin())
-                .withPlugin(Postgres.plugin());
-
-        // Plan builder
-        JavaPlanBuilder planBuilder = new JavaPlanBuilder(wayangContext)
-                .withJobName("CustomerTransactionChurn")
-                .withUdfJarOf(CustomerTransactionHybridJoin.class);
-
-        // Read transactions from PostgreSQL
-        DataQuantaBuilder<?, Record> transactions =
-                planBuilder.readTable(new PostgresTableSource("transactions"))
-                        .filter(tuple -> (Double) tuple.getField(2) > 1000);
-
-        Path path = Paths.get("src/main/resources/input/customers.csv").toAbsolutePath();
-
-        DataQuantaBuilder<?, Record> customers = planBuilder
-                // Read customers from csv file
-                .readTextFile("file:" + path.toUri().getPath())
-
-                // Map customers to Record(customerId, name, location)
-                .map(line -> {
-                    String[] cols = line.split(",");
-                    return new Record(Integer.parseInt(cols[0]), cols[1], cols[2]);
-                });
-
-
-        // Join customers with transactions on customerId
-        Collection<Tuple2<Record, Record>> joined = customers
-                .join(  customerRecord -> customerRecord.getInt(0), // customer.id
-                        transactions,
-                        transactionsRecord -> transactionsRecord.getInt(1) // transaction.customerId
-                )
-                .collect();
-
-        // Print output
-        for (Tuple2<Record, Record> t : joined) {
-            System.out.println(t);
-        }
-        */
     }
 }
