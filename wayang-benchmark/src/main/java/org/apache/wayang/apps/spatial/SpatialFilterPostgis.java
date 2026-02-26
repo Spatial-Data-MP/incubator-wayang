@@ -19,14 +19,15 @@
 package org.apache.wayang.apps.spatial;
 
 import org.apache.wayang.api.JavaPlanBuilder;
-import org.apache.wayang.spatial.data.WayangGeometry;
 import org.apache.wayang.core.api.Configuration;
 import org.apache.wayang.core.api.WayangContext;
-import org.apache.wayang.spatial.function.JtsSpatialPredicate;
+import org.apache.wayang.core.api.spatial.SpatialGeometry;
+import org.apache.wayang.core.api.spatial.SpatialPredicate;
 import org.apache.wayang.java.Java;
 import org.apache.wayang.postgres.Postgres;
 import org.apache.wayang.postgres.operators.PostgresTableSource;
 import org.apache.wayang.spark.Spark;
+import org.apache.wayang.spatial.data.WayangGeometry;
 
 import java.util.Arrays;
 import java.util.Collection;
@@ -38,31 +39,41 @@ public class SpatialFilterPostgis {
     public static void main(String[] args) {
         Configuration configuration = new Configuration();
 
+        String tableName = "boxes_100k_1";
+        String postgresUrl = args[2];
+
+        configuration.setProperty("wayang.postgres.jdbc.url", "jdbc:postgresql://cx23:5432/spatialdb"); // Default port 5432
+        configuration.setProperty("wayang.postgres.jdbc.user", "wayang_user");
+
+        configuration.setProperty("wayang.postgres.jdbc.password", "wayang");
+
 
         WayangContext wayangContext = new WayangContext(configuration)
                 .with(Java.basicPlugin())
                 .with(Postgres.plugin());
 
-
         // Set up WayangContext.
         JavaPlanBuilder builder = new JavaPlanBuilder(wayangContext);
-
 
         // Generate test data.
         final List<Integer> inputValues = Arrays.asList(1, 2, 3, 4, 5, 10);
 
+        SpatialGeometry queryGeometry = WayangGeometry.fromStringInput(
+                "POLYGON((0.0 0.0, 1.0 0.0, 1.0 1.0, 0.0 1.0, 0.0 0.0))"
+        );
+
         // Execute the job: keep only even numbers.
-        final Collection<Integer> outputValues = builder
-                .readTable(new PostgresTableSource("spider_boxes", "id", "geom"))
-                .filter(record -> (record.getInt(0) & 1) == 0).withName("Filter even numbers")
-                .withUdfJarOf(SpatialFilterPostgis.class)
-                .map(record -> record.getInt(0))
+        final Collection<Long> outputcount = builder
+                .readTable(new PostgresTableSource(tableName, "ST_AsText(geom)"))
+                .spatialFilter(
+                        (input -> WayangGeometry.fromStringInput(input.getString(0))),
+                        SpatialPredicate.INTERSECTS,
+                        queryGeometry
+                )
+                .withTargetPlatform(Postgres.platform())
+                .count()
                 .collect();
 
-
-        // Print output
-        for (Integer t : outputValues) {
-            System.out.println(t.toString());
-        }
+        System.out.println("Spatial Postgres Filter (intersects): " + outputcount);
     }
 }
