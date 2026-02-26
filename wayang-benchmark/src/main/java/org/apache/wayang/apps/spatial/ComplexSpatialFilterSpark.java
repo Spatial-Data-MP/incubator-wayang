@@ -25,11 +25,8 @@ import org.apache.wayang.core.api.WayangContext;
 import org.apache.wayang.core.api.spatial.SpatialPredicate;
 import org.apache.wayang.java.Java;
 import org.apache.wayang.spatial.Spatial;
-import org.postgresql.core.v3.QueryExecutorImpl;
 
 import java.util.Collection;
-import java.util.logging.ConsoleHandler;
-import java.util.logging.Logger;
 
 public class ComplexSpatialFilterSpark {
 
@@ -62,12 +59,9 @@ public class ComplexSpatialFilterSpark {
 
                 .spatialFilter(
                         (input -> {
-//                            System.out.println(input.split("\",")[0]);
                             WayangGeometry geom =  WayangGeometry.fromStringInput((input.split("\",")[0]).replace("\"", ""));
-//                            System.out.println(geom);
                             return geom;
                         }),
-//                        (input -> (WayangGeometry) input.getField(0)),
                         SpatialPredicate.INTERSECTS,
                         queryGeometry
                 ).withTargetPlatform(Java.platform())
@@ -77,10 +71,7 @@ public class ComplexSpatialFilterSpark {
 
         System.out.println("Spatial Filter (intersects): " + outputValues);
 
-        if (1+1 == 2) {
-            return;
-        }
+        return;
 
-        System.out.println( "*** Done. ***" );
     }
 }
