@@ -133,8 +133,6 @@ public class CsvRowConverter {
                     return null;
                 }
             case GEOMETRY:
-                // TODO: Maybe geometry handling can be added here
-                return string;
             case VARCHAR:
             default:
                 return string;

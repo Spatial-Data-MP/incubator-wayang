@@ -18,12 +18,13 @@
 
 package org.apache.wayang.api;
 
-import org.apache.wayang.basic.data.Record;
 import org.apache.wayang.basic.data.Tuple2;
-import org.apache.wayang.basic.operators.TableSource;
 import org.apache.wayang.core.api.Configuration;
 import org.apache.wayang.core.api.WayangContext;
-import org.apache.wayang.core.function.*;
+import org.apache.wayang.core.function.ExecutionContext;
+import org.apache.wayang.core.function.FunctionDescriptor;
+import org.apache.wayang.core.function.PredicateDescriptor;
+import org.apache.wayang.core.function.TransformationDescriptor;
 import org.apache.wayang.core.types.DataSetType;
 import org.apache.wayang.core.util.WayangArrays;
 import org.apache.wayang.core.util.WayangCollections;
@@ -31,8 +32,6 @@ import org.apache.wayang.core.util.Tuple;
 import org.apache.wayang.core.util.fs.LocalFileSystem;
 import org.apache.wayang.java.Java;
 import org.apache.wayang.java.operators.JavaMapOperator;
-import org.apache.wayang.postgres.Postgres;
-import org.apache.wayang.postgres.operators.PostgresTableSource;
 import org.apache.wayang.spark.Spark;
 import org.apache.wayang.sqlite3.Sqlite3;
 import org.apache.wayang.sqlite3.operators.Sqlite3TableSource;
@@ -116,20 +115,16 @@ class JavaApiTest {
 
     @Test
     void testFilter() {
-        // Set up WayangContext.
         WayangContext wayangContext = new WayangContext().with(Java.basicPlugin());
         JavaPlanBuilder builder = new JavaPlanBuilder(wayangContext);
 
-        // Generate test data.
         final List<Integer> inputValues = Arrays.asList(1, 2, 3, 4, 5, 6);
 
-        // Execute the job: keep only even numbers.
         final Collection<Integer> outputValues = builder
                 .loadCollection(inputValues).withName("Load input values")
                 .filter(i -> (i & 1) == 0).withName("Filter even numbers")
                 .collect();
 
-        // Verify the outcome.
         Set<Integer> expectedValues = WayangCollections.asSet(2, 4, 6);
         assertEquals(expectedValues, WayangCollections.asSet(outputValues));
     }
