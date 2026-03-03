@@ -45,8 +45,8 @@ public class SpatialFilterMapping implements Mapping {
     }
 
     private SubplanPattern createSubplanPattern() {
-        final OperatorPattern operatorPattern = new OperatorPattern(
-                "spatialFilter", new SpatialFilterOperator(null, null, DataSetType.none(), null), false);
+        final OperatorPattern<SpatialFilterOperator> operatorPattern = new OperatorPattern<>(
+                "spatialFilter", new SpatialFilterOperator<>(null, null, DataSetType.none(), null), false);
         return SubplanPattern.createSingleton(operatorPattern);
     }
 

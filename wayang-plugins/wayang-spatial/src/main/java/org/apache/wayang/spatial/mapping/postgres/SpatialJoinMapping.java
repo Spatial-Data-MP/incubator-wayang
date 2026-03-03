@@ -18,11 +18,17 @@
 
 package org.apache.wayang.spatial.mapping.postgres;
 
+import org.apache.wayang.basic.data.Record;
 import org.apache.wayang.basic.operators.SpatialJoinOperator;
-import org.apache.wayang.core.mapping.*;
+import org.apache.wayang.core.function.TransformationDescriptor;
+import org.apache.wayang.core.mapping.Mapping;
+import org.apache.wayang.core.mapping.OperatorPattern;
+import org.apache.wayang.core.mapping.PlanTransformation;
+import org.apache.wayang.core.mapping.ReplacementSubplanFactory;
+import org.apache.wayang.core.mapping.SubplanPattern;
 import org.apache.wayang.core.types.DataSetType;
-import org.apache.wayang.spatial.operators.postgres.PostgresSpatialJoinOperator;
 import org.apache.wayang.postgres.platform.PostgresPlatform;
+import org.apache.wayang.spatial.operators.postgres.PostgresSpatialJoinOperator;
 
 import java.util.Collection;
 import java.util.Collections;
@@ -44,16 +50,29 @@ public class SpatialJoinMapping implements Mapping {
     }
 
     private SubplanPattern createSubplanPattern() {
-        final OperatorPattern<SpatialJoinOperator> operatorPattern = new OperatorPattern<>(
-                "spatialFilter", new SpatialJoinOperator(null, null, DataSetType.none(), DataSetType.none(), null), false
-        ).withAdditionalTest(op -> op.getKeyDescriptor0().getSqlImplementation() != null
-                && op.getKeyDescriptor1().getSqlImplementation() != null); // require SQL pushdown support
+        OperatorPattern<SpatialJoinOperator<Record, Record>> operatorPattern = new OperatorPattern<>(
+                "spatialJoin",
+                new SpatialJoinOperator<Record, Record>(
+                        null,
+                        null,
+                        DataSetType.createDefault(Record.class),
+                        DataSetType.createDefault(Record.class),
+                        null
+                ),
+                false
+        )
+            .withAdditionalTest(op -> op.getKeyDescriptor0() instanceof TransformationDescriptor)
+            .withAdditionalTest(op -> op.getKeyDescriptor1() instanceof TransformationDescriptor)
+            .withAdditionalTest(op -> op.getKeyDescriptor0().getSqlImplementation() != null)
+            .withAdditionalTest(op -> op.getKeyDescriptor1().getSqlImplementation() != null);
         return SubplanPattern.createSingleton(operatorPattern);
     }
 
     private ReplacementSubplanFactory createReplacementSubplanFactory() {
-        return new ReplacementSubplanFactory.OfSingleOperators<SpatialJoinOperator>(
-                (matchedOperator, epoch) -> new PostgresSpatialJoinOperator(matchedOperator).at(epoch)
+        return new ReplacementSubplanFactory.OfSingleOperators<SpatialJoinOperator<Record, Record>>(
+                (matchedOperator, epoch) -> {
+                    return new PostgresSpatialJoinOperator<>(matchedOperator).at(epoch);
+                }
         );
     }
 }
