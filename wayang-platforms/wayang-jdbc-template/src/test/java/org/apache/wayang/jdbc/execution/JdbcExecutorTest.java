@@ -33,13 +33,17 @@ import org.apache.wayang.jdbc.operators.JdbcProjectionOperator;
 import org.apache.wayang.jdbc.operators.JdbcTableSource;
 import org.apache.wayang.jdbc.operators.SqlToStreamOperator;
 import org.apache.wayang.jdbc.test.HsqldbFilterOperator;
+import org.apache.wayang.jdbc.test.HsqldbJoinOperator;
 import org.apache.wayang.jdbc.test.HsqldbPlatform;
 import org.apache.wayang.jdbc.test.HsqldbProjectionOperator;
 import org.apache.wayang.jdbc.test.HsqldbTableSource;
+import org.apache.wayang.core.function.TransformationDescriptor;
 import org.junit.jupiter.api.Test;
 
 import java.sql.SQLException;
 import java.util.Collections;
+import java.util.LinkedHashSet;
+import java.util.Set;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.Mockito.mock;
@@ -241,6 +245,99 @@ class JdbcExecutorTest {
                 (SqlQueryChannel.Instance) job.getCrossPlatformExecutor().getChannelInstance(sqlToStreamTask.getInputChannel(0));
         assertEquals(
                 "SELECT name, age FROM customer WHERE age >= 18 AND name IS NOT NULL;",
+                sqlQueryChannelInstance.getSqlQuery()
+        );
+    }
+
+    @Test
+    void testExecuteWithJoinAndFiltersOnBothSides() throws SQLException {
+        Configuration configuration = new Configuration();
+        Job job = mock(Job.class);
+        when(job.getConfiguration()).thenReturn(configuration);
+        when(job.getCrossPlatformExecutor()).thenReturn(new CrossPlatformExecutor(job, new NoInstrumentationStrategy()));
+        SqlQueryChannel.Descriptor sqlChannelDescriptor = HsqldbPlatform.getInstance().getSqlQueryChannelDescriptor();
+
+        ExecutionStage sqlStage = mock(ExecutionStage.class);
+
+        // Two table sources.
+        JdbcTableSource tableSourceA = new HsqldbTableSource("testA");
+        ExecutionTask tableSourceATask = new ExecutionTask(tableSourceA);
+        tableSourceATask.setOutputChannel(0, new SqlQueryChannel(sqlChannelDescriptor, tableSourceA.getOutput(0)));
+        tableSourceATask.setStage(sqlStage);
+
+        JdbcTableSource tableSourceB = new HsqldbTableSource("testB");
+        ExecutionTask tableSourceBTask = new ExecutionTask(tableSourceB);
+        tableSourceBTask.setOutputChannel(0, new SqlQueryChannel(sqlChannelDescriptor, tableSourceB.getOutput(0)));
+        tableSourceBTask.setStage(sqlStage);
+
+        // Filter on the left side (testA).
+        JdbcFilterOperator ageFilterOperator = new HsqldbFilterOperator(
+                new PredicateDescriptor<>(
+                        (PredicateDescriptor.SerializablePredicate<Record>) record -> {
+                            throw new UnsupportedOperationException();
+                        },
+                        Record.class
+                ).withSqlImplementation("age >= 18")
+        );
+        ExecutionTask ageFilterTask = new ExecutionTask(ageFilterOperator);
+        ageFilterTask.setStage(sqlStage);
+        tableSourceATask.getOutputChannel(0).addConsumer(ageFilterTask, 0);
+        ageFilterTask.setOutputChannel(0, new SqlQueryChannel(sqlChannelDescriptor, ageFilterOperator.getOutput(0)));
+
+        // Filter on the right side (testB).
+        JdbcFilterOperator nameFilterOperator = new HsqldbFilterOperator(
+                new PredicateDescriptor<>(
+                        (PredicateDescriptor.SerializablePredicate<Record>) record -> {
+                            throw new UnsupportedOperationException();
+                        },
+                        Record.class
+                ).withSqlImplementation("name IS NOT NULL")
+        );
+        ExecutionTask nameFilterTask = new ExecutionTask(nameFilterOperator);
+        nameFilterTask.setStage(sqlStage);
+        tableSourceBTask.getOutputChannel(0).addConsumer(nameFilterTask, 0);
+        nameFilterTask.setOutputChannel(0, new SqlQueryChannel(sqlChannelDescriptor, nameFilterOperator.getOutput(0)));
+
+        // Join consuming both filtered streams.
+        final HsqldbJoinOperator<Integer> joinOperator = new HsqldbJoinOperator<>(
+                new TransformationDescriptor<>(
+                        (record) -> (Integer) record.getField(0),
+                        Record.class,
+                        Integer.class
+                ).withSqlImplementation("testA", "a"),
+                new TransformationDescriptor<>(
+                        (record) -> (Integer) record.getField(0),
+                        Record.class,
+                        Integer.class
+                ).withSqlImplementation("testB", "a")
+        );
+        ExecutionTask joinTask = new ExecutionTask(joinOperator);
+        ageFilterTask.getOutputChannel(0).addConsumer(joinTask, 0);
+        nameFilterTask.getOutputChannel(0).addConsumer(joinTask, 1);
+        joinTask.setOutputChannel(0, new SqlQueryChannel(sqlChannelDescriptor, joinOperator.getOutput(0)));
+        joinTask.setStage(sqlStage);
+
+        // Both table sources are start tasks.
+        Set<ExecutionTask> startTaskSet = new LinkedHashSet<>();
+        startTaskSet.add(tableSourceATask);
+        startTaskSet.add(tableSourceBTask);
+        when(sqlStage.getStartTasks()).thenReturn(startTaskSet);
+        when(sqlStage.getTerminalTasks()).thenReturn(Collections.singleton(joinTask));
+
+        // Next stage consuming the SQL.
+        ExecutionStage nextStage = mock(ExecutionStage.class);
+        SqlToStreamOperator sqlToStreamOperator = new SqlToStreamOperator(HsqldbPlatform.getInstance());
+        ExecutionTask sqlToStreamTask = new ExecutionTask(sqlToStreamOperator);
+        joinTask.getOutputChannel(0).addConsumer(sqlToStreamTask, 0);
+        sqlToStreamTask.setStage(nextStage);
+
+        JdbcExecutor executor = new JdbcExecutor(HsqldbPlatform.getInstance(), job);
+        executor.execute(sqlStage, new DefaultOptimizationContext(job), job.getCrossPlatformExecutor());
+
+        SqlQueryChannel.Instance sqlQueryChannelInstance =
+                (SqlQueryChannel.Instance) job.getCrossPlatformExecutor().getChannelInstance(sqlToStreamTask.getInputChannel(0));
+        assertEquals(
+                "SELECT * FROM testA JOIN testB ON testB.a=testA.a WHERE age >= 18 AND name IS NOT NULL;",
                 sqlQueryChannelInstance.getSqlQuery()
         );
     }

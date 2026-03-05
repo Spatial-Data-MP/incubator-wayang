@@ -84,7 +84,7 @@ class JdbcSpatialFilterOperatorTest {
                 "SQL should be a SELECT statement, but was: " + sql);
         assertTrue(sql.contains("FROM testGeom"),
                 "SQL should select from testGeom, but was: " + sql);
-        assertTrue(sql.contains("ST_Intersects(geom, ST_GeomFromText('POINT (0 0)', 4326))"),
+        assertTrue(sql.contains("ST_Intersects(testGeom.geom, ST_GeomFromText('POINT (0 0)', 4326))"),
                 "SQL should contain ST_Intersects predicate, but was: " + sql);
     }
 
@@ -93,7 +93,7 @@ class JdbcSpatialFilterOperatorTest {
         WayangGeometry polygon = new WayangGeometry("POLYGON ((0 0, 1 0, 1 1, 0 1, 0 0))");
         String sql = buildSpatialFilterSql(SpatialPredicate.WITHIN, polygon);
 
-        assertTrue(sql.contains("ST_Within(geom, ST_GeomFromText('" + polygon.getWKT() + "', 4326))"),
+        assertTrue(sql.contains("ST_Within(testGeom.geom, ST_GeomFromText('" + polygon.getWKT() + "', 4326))"),
                 "SQL should contain ST_Within predicate, but was: " + sql);
     }
 
@@ -102,7 +102,7 @@ class JdbcSpatialFilterOperatorTest {
         WayangGeometry polygon = new WayangGeometry("POLYGON ((0 0, 1 0, 1 1, 0 1, 0 0))");
         String sql = buildSpatialFilterSql(SpatialPredicate.CONTAINS, polygon);
 
-        assertTrue(sql.contains("ST_Contains(geom, ST_GeomFromText('" + polygon.getWKT() + "', 4326))"),
+        assertTrue(sql.contains("ST_Contains(testGeom.geom, ST_GeomFromText('" + polygon.getWKT() + "', 4326))"),
                 "SQL should contain ST_Contains predicate, but was: " + sql);
     }
 

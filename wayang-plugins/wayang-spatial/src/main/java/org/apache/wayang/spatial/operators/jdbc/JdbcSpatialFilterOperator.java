@@ -58,7 +58,11 @@ public abstract class JdbcSpatialFilterOperator<Type> extends SpatialFilterOpera
         }
 
         // Column expression (e.g. "geom" or "t.geom")
-        final String columnExpr = this.keyDescriptor.getSqlImplementation().getField1();
+        final String tableName = this.keyDescriptor.getSqlImplementation().getField0();
+        final String columnName = this.keyDescriptor.getSqlImplementation().getField1();
+        final String columnExpr = (tableName != null && !tableName.isEmpty())
+                ? tableName + "." + columnName
+                : columnName;
 
         // Geometry literal as ST_GeomFromText('WKT', srid)
         final String wkt = this.referenceGeometry.toWKT();
