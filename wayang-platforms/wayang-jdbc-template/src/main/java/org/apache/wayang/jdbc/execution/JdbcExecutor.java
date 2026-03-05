@@ -33,7 +33,6 @@ import org.apache.wayang.core.platform.ExecutionState;
 import org.apache.wayang.core.platform.Executor;
 import org.apache.wayang.core.platform.ExecutorTemplate;
 import org.apache.wayang.core.platform.Platform;
-import org.apache.wayang.core.util.WayangCollections;
 import org.apache.wayang.core.util.fs.FileSystem;
 import org.apache.wayang.core.util.fs.FileSystems;
 import org.apache.wayang.jdbc.channels.SqlQueryChannel;
@@ -56,7 +55,9 @@ import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Set;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 /**
@@ -91,32 +92,7 @@ public class JdbcExecutor extends ExecutorTemplate {
     }
 
     /**
-     * Retrieves the follow-up {@link ExecutionTask} of the given {@code task}
-     * unless it is not comprising a
-     * {@link JdbcExecutionOperator} and/or not in the given {@link ExecutionStage}.
-     *
-     * @param task  whose follow-up {@link ExecutionTask} is requested; should have
-     *              a single follower
-     * @param stage in which the follow-up {@link ExecutionTask} should be
-     * @return the said follow-up {@link ExecutionTask} or {@code null} if none
-     */
-    private static ExecutionTask findJdbcExecutionOperatorTaskInStage(final ExecutionTask task, final ExecutionStage stage) {
-        assert task.getNumOuputChannels() == 1;
-        final Channel outputChannel = task.getOutputChannel(0);
-        final ExecutionTask consumer = WayangCollections.getSingle(outputChannel.getConsumers());
-        return consumer.getStage() == stage && consumer.getOperator() instanceof JdbcExecutionOperator ? consumer
-                : null;
-    }
-
-    /**
-     * Instantiates the outbound {@link SqlQueryChannel} of an
-     * {@link ExecutionTask}.
-     *
-     * @param task                whose outbound {@link SqlQueryChannel} should be
-     *                            instantiated
-     * @param optimizationContext provides information about the
-     *                            {@link ExecutionTask}
-     * @return the {@link SqlQueryChannel.Instance}
+     * Instantiates the outbound {@link SqlQueryChannel} of an {@link ExecutionTask}.
      */
     private static SqlQueryChannel.Instance instantiateOutboundChannel(final ExecutionTask task,
             final OptimizationContext optimizationContext, final JdbcExecutor jdbcExecutor) {
@@ -130,78 +106,85 @@ public class JdbcExecutor extends ExecutorTemplate {
     }
 
     /**
-     * Instantiates the outbound {@link SqlQueryChannel} of an
-     * {@link ExecutionTask}.
-     *
-     * @param task                       whose outbound {@link SqlQueryChannel}
-     *                                   should be instantiated
-     * @param optimizationContext        provides information about the
-     *                                   {@link ExecutionTask}
-     * @param predecessorChannelInstance preceeding {@link SqlQueryChannel.Instance}
-     *                                   to keep track of lineage
-     * @return the {@link SqlQueryChannel.Instance}
+     * Holds the operators discovered during a backward walk of the execution stage.
      */
-    private static SqlQueryChannel.Instance instantiateOutboundChannel(final ExecutionTask task,
-            final OptimizationContext optimizationContext,
-            final SqlQueryChannel.Instance predecessorChannelInstance, final JdbcExecutor jdbcExecutor) {
-        final SqlQueryChannel.Instance newInstance = JdbcExecutor.instantiateOutboundChannel(task, optimizationContext, jdbcExecutor);
-        newInstance.getLineage().addPredecessor(predecessorChannelInstance.getLineage());
-        return newInstance;
+    private static final class StageOperators {
+        final List<JdbcTableSource> tableSources = new ArrayList<>();
+        final Collection<JdbcExecutionOperator> filters = new ArrayList<>(4);
+        final Collection<JdbcExecutionOperator> joins = new ArrayList<>();
+        JdbcProjectionOperator projection;
     }
 
     /**
-     * Creates a query channel and the sql statement
-     * 
-     * @param stage
-     * @param context
-     * @return a tuple containing the sql statement
+     * Creates a query channel and the sql statement.
      */
     protected static Tuple2<String, SqlQueryChannel.Instance> createSqlQuery(final ExecutionStage stage,
             final OptimizationContext context, final JdbcExecutor jdbcExecutor) {
-        final Collection<?> startTasks = stage.getStartTasks();
         final Collection<?> termTasks = stage.getTerminalTasks();
-
-        // Verify that we can handle this instance.
-        assert startTasks.size() == 1 : "Invalid jdbc stage: multiple sources are not currently supported";
-        final ExecutionTask startTask = (ExecutionTask) startTasks.toArray()[0];
         assert termTasks.size() == 1 : "Invalid JDBC stage: multiple terminal tasks are not currently supported.";
         final ExecutionTask termTask = (ExecutionTask) termTasks.toArray()[0];
-        assert startTask.getOperator() instanceof TableSource
-                : "Invalid JDBC stage: Start task has to be a TableSource";
 
-        // Extract the different types of ExecutionOperators from the stage.
-        final JdbcTableSource tableOp = (JdbcTableSource) startTask.getOperator();
-        SqlQueryChannel.Instance tipChannelInstance = JdbcExecutor.instantiateOutboundChannel(startTask, context, jdbcExecutor);
-        final Collection<JdbcExecutionOperator> filterTasks = new ArrayList<>(4);
-        JdbcProjectionOperator projectionTask = null;
-        final Collection<JdbcExecutionOperator> joinTasks = new ArrayList<>();
-        final Set<ExecutionTask> allTasks = stage.getAllTasks();
-        assert allTasks.size() <= 3;
-        ExecutionTask nextTask = JdbcExecutor.findJdbcExecutionOperatorTaskInStage(startTask, stage);
-        while (nextTask != null) {
-            // Evaluate the nextTask.
-            final var operator = nextTask.getOperator();
-            if (operator instanceof JdbcFilterOperator || operator instanceof SpatialFilterOperator) {
-                filterTasks.add((JdbcExecutionOperator) operator);
-            } else if (operator instanceof JdbcProjectionOperator) {
-                assert projectionTask == null; // Allow one projection operator per stage for now.
-                projectionTask = (JdbcProjectionOperator) operator;
-            } else if (operator instanceof JdbcJoinOperator || (operator instanceof SpatialJoinOperator)) {
-                joinTasks.add((JdbcExecutionOperator) operator);
-            } else {
-                throw new WayangException(String.format("Unsupported JDBC execution task %s", nextTask.toString()));
+        // Single backward walk: collects operators by type and builds channel lineage.
+        final StageOperators ops = new StageOperators();
+        final SqlQueryChannel.Instance tipChannelInstance = walkBackwards(
+                termTask, stage, ops, new HashMap<>(), context, jdbcExecutor);
+
+        assert !ops.tableSources.isEmpty() : "Invalid JDBC stage: no TableSource found";
+
+        final StringBuilder query = createSqlString(
+                jdbcExecutor, ops.tableSources.get(0), ops.filters, ops.projection, ops.joins);
+        return new Tuple2<>(query.toString(), tipChannelInstance);
+    }
+
+    /**
+     * Walks backwards from the given task through input channels, collecting operators
+     * by type in forward traversal order and building channel lineage in a single pass.
+     *
+     * @return the {@link SqlQueryChannel.Instance} for the given task
+     */
+    private static SqlQueryChannel.Instance walkBackwards(final ExecutionTask task, final ExecutionStage stage,
+            final StageOperators ops,
+            final Map<ExecutionTask, SqlQueryChannel.Instance> visited,
+            final OptimizationContext context, final JdbcExecutor jdbcExecutor) {
+        final SqlQueryChannel.Instance cached = visited.get(task);
+        if (cached != null) return cached;
+
+        // Recurse into predecessors first (preserves forward traversal order).
+        // Keep the first predecessor's channel instance for lineage linking.
+        SqlQueryChannel.Instance predecessorInstance = null;
+        for (int i = 0; i < task.getNumInputChannels(); i++) {
+            final Channel inputChannel = task.getInputChannel(i);
+            if (inputChannel == null) continue;
+            final ExecutionTask producer = inputChannel.getProducer();
+            if (producer != null && producer.getStage() == stage) {
+                final SqlQueryChannel.Instance pi = walkBackwards(producer, stage, ops, visited, context, jdbcExecutor);
+                if (predecessorInstance == null) predecessorInstance = pi;
             }
-
-            // Move the tipChannelInstance.
-            tipChannelInstance = JdbcExecutor.instantiateOutboundChannel(nextTask, context, tipChannelInstance, jdbcExecutor);
-
-            // Go to the next nextTask.
-            nextTask = JdbcExecutor.findJdbcExecutionOperatorTaskInStage(nextTask, stage);
         }
 
-        // Create the SQL query.
-        final StringBuilder query = createSqlString(jdbcExecutor, tableOp, filterTasks, projectionTask, joinTasks);
-        return new Tuple2<>(query.toString(), tipChannelInstance);
+        // Create channel instance, linking lineage to predecessor when available.
+        final SqlQueryChannel.Instance channelInstance = instantiateOutboundChannel(task, context, jdbcExecutor);
+        if (predecessorInstance != null) {
+            channelInstance.getLineage().addPredecessor(predecessorInstance.getLineage());
+        }
+        visited.put(task, channelInstance);
+
+        // Classify the current task's operator.
+        final var operator = task.getOperator();
+        if (operator instanceof JdbcTableSource) {
+            ops.tableSources.add((JdbcTableSource) operator);
+        } else if (operator instanceof JdbcFilterOperator || operator instanceof SpatialFilterOperator) {
+            ops.filters.add((JdbcExecutionOperator) operator);
+        } else if (operator instanceof JdbcProjectionOperator) {
+            assert ops.projection == null : "Only one projection operator per stage is supported";
+            ops.projection = (JdbcProjectionOperator) operator;
+        } else if (operator instanceof JdbcJoinOperator || operator instanceof SpatialJoinOperator) {
+            ops.joins.add((JdbcExecutionOperator) operator);
+        } else if (!(operator instanceof TableSource)) {
+            throw new WayangException(String.format("Unsupported JDBC execution task %s", task));
+        }
+
+        return channelInstance;
     }
 
     public static StringBuilder createSqlString(final JdbcExecutor jdbcExecutor, final JdbcTableSource tableOp,

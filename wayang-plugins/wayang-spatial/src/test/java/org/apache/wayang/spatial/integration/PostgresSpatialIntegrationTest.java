@@ -29,6 +29,7 @@ import org.apache.wayang.core.types.DataSetType;
 import org.apache.wayang.core.util.ReflectionUtils;
 import org.apache.wayang.java.Java;
 import org.apache.wayang.postgres.Postgres;
+import org.apache.wayang.spatial.Spatial;
 import org.apache.wayang.postgres.operators.PostgresTableSource;
 import org.apache.wayang.spark.Spark;
 import org.junit.jupiter.api.Disabled;
@@ -90,7 +91,7 @@ public class PostgresSpatialIntegrationTest {
 
     WayangContext getTestWayangContext() {
         Configuration configuration = new Configuration();
-        configuration.setProperty("wayang.postgres.jdbc.url", "jdbc:postgresql://localhost:5433/postgres"); // Default port 5432
+        configuration.setProperty("wayang.postgres.jdbc.url", "jdbc:postgresql://localhost:5433/spiderdb"); // spiderdb on port 5433
         configuration.setProperty("wayang.postgres.jdbc.user", "postgres");
         configuration.setProperty("wayang.postgres.jdbc.password", "postgres");
 
@@ -280,5 +281,60 @@ public class PostgresSpatialIntegrationTest {
                     "Found non-intersecting pair in spatial join result."
             );
         }
+    }
+
+    @Test
+    @Disabled("Requires local Postgres test database.")
+    void testSpatialFiltersOnBothSidesThenJoin() {
+        WayangContext wayangContext = getTestWayangContext()
+                .withPlugin(Java.basicPlugin())
+                .withPlugin(Spark.basicPlugin())
+                .withPlugin(Postgres.plugin())
+                .withPlugin(Spatial.plugin());
+
+        // Source 1: spider_boxes filtered to a small bounding box.
+        TableSource table1 = new PostgresTableSource("spider_boxes", "id", "x_min", "y_min", "x_max", "y_max", "geom");
+        SpatialFilterOperator<Record> filter1 = new SpatialFilterOperator<>(
+                SpatialPredicate.INTERSECTS,
+                record -> WayangGeometry.fromStringInput(record.getString(5)),
+                DataSetType.createDefaultUnchecked(Record.class),
+                WayangGeometry.fromStringInput("POLYGON((0.00 0.00,0.40 0.00,0.40 0.40,0.00 0.40,0.00 0.00))")
+        );
+        filter1.getKeyDescriptor().withSqlImplementation("spider_boxes", "geom");
+        table1.connectTo(0, filter1, 0);
+
+        // Source 2: spider_boxes_2 filtered to a different bounding box.
+        TableSource table2 = new PostgresTableSource("spider_boxes_2", "id", "x_min", "y_min", "x_max", "y_max", "geom");
+        SpatialFilterOperator<Record> filter2 = new SpatialFilterOperator<>(
+                SpatialPredicate.INTERSECTS,
+                record -> WayangGeometry.fromStringInput(record.getString(5)),
+                DataSetType.createDefaultUnchecked(Record.class),
+                WayangGeometry.fromStringInput("POLYGON((0.00 0.00,0.20 0.00,0.20 0.20,0.00 0.20,0.00 0.00))")
+        );
+        filter2.getKeyDescriptor().withSqlImplementation("spider_boxes_2", "geom");
+        table2.connectTo(0, filter2, 0);
+
+        // Spatial join on the filtered results.
+        SpatialJoinOperator<Record, Record> spatialJoinOperator = new SpatialJoinOperator<>(
+                record -> WayangGeometry.fromStringInput(record.getString(5)),
+                record -> WayangGeometry.fromStringInput(record.getString(5)),
+                Record.class, Record.class,
+                SpatialPredicate.INTERSECTS
+        );
+        spatialJoinOperator.getKeyDescriptor0().withSqlImplementation("spider_boxes", "geom");
+        spatialJoinOperator.getKeyDescriptor1().withSqlImplementation("spider_boxes_2", "geom");
+        spatialJoinOperator.addTargetPlatform(Postgres.platform());
+
+        filter1.connectTo(0, spatialJoinOperator, 0);
+        filter2.connectTo(0, spatialJoinOperator, 1);
+
+        Collection<Tuple2<Record, Record>> collector = new ArrayList<>();
+        LocalCallbackSink<Tuple2<Record, Record>> sink =
+                LocalCallbackSink.createCollectingSink(collector, DataSetType.createDefaultUnchecked(Tuple2.class));
+        spatialJoinOperator.connectTo(0, sink, 0);
+
+        wayangContext.execute("Spatial filters on both sides then join", new WayangPlan(sink));
+
+        assertFalse(collector.isEmpty(), "Filtered spatial join result should not be empty.");
     }
 }
