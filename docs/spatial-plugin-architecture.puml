@@ -1,0 +1,127 @@
+@startuml Wayang Core - Plugin Registration
+skinparam defaultFontSize 12
+skinparam classAttributeIconSize 0
+skinparam padding 5
+
+title Wayang Core - Plugin Registration Mechanism
+
+class WayangContext {
+    +register(plugin: Plugin)
+}
+
+class Configuration {
+    +getPlatformProvider()
+    +getMappingProvider()
+    +getChannelConversionProvider()
+}
+
+interface Plugin {
+    +configure(config: Configuration)
+    +getMappings(): Collection
+    +getRequiredPlatforms(): Collection
+    +getChannelConversions(): Collection
+}
+
+interface Mapping
+abstract class Platform
+interface ExecutionOperator
+
+WayangContext *-- Configuration
+WayangContext ..> Plugin : register() calls\nplugin.configure(config)
+Plugin ..> Configuration : configure() registers\nmappings, platforms,\nchannel conversions
+
+legend bottom
+  Any Plugin (bundled or external)
+  registers itself with WayangContext
+  via the same mechanism.
+endlegend
+
+@enduml
+
+
+@startuml JavaBasicPlugin vs Spatial Plugin
+skinparam defaultFontSize 12
+skinparam classAttributeIconSize 0
+skinparam padding 5
+
+title JavaBasicPlugin vs Spatial Plugin
+
+' ============================================================
+' wayang-java (left side)
+' ============================================================
+package "wayang-java" #E3F2FD {
+    class JavaPlatform
+    interface JavaExecutionOperator
+    class JavaExecutor
+
+    class JavaBasicPlugin {
+        getMappings(): 30+ mappings
+        getChannelConversions(): 6 conversions
+        getRequiredPlatforms(): JavaPlatform
+    }
+
+    class FilterMapping
+    class JavaFilterOperator
+
+    class Channels << (C,#ADD8E6) >> {
+        StreamChannel
+        CollectionChannel
+        FileChannel
+    }
+
+    JavaPlatform --> JavaExecutor : creates
+    JavaExecutor --> Channels : uses
+    JavaBasicPlugin --> FilterMapping : registers\n(+ 29 others)
+    FilterMapping ..> JavaFilterOperator : creates
+}
+
+' ============================================================
+' wayang-basic (center)
+' ============================================================
+package "wayang-basic" #FFFDE7 {
+    abstract class FilterOperator
+    abstract class SpatialFilterOperator
+}
+
+' ============================================================
+' wayang-spatial (right side)
+' ============================================================
+package "wayang-spatial" #E8F5E9 {
+    class Spatial {
+        getMappings(): 3 mappings
+        getChannelConversions(): none
+        getRequiredPlatforms(): JavaPlatform
+    }
+
+    class SpatialFilterMapping
+    class JavaSpatialFilterOperator
+
+    Spatial --> SpatialFilterMapping : registers\n(+ 2 others)
+    SpatialFilterMapping ..> JavaSpatialFilterOperator : creates
+}
+
+' ============================================================
+' Relationships
+' ============================================================
+JavaFilterOperator --|> FilterOperator
+JavaSpatialFilterOperator --|> SpatialFilterOperator
+
+FilterMapping ..> FilterOperator : matches
+SpatialFilterMapping ..> SpatialFilterOperator : matches
+
+FilterMapping ..> JavaPlatform : targets
+SpatialFilterMapping ..> JavaPlatform : targets
+
+JavaFilterOperator ..> JavaExecutor : executed by
+JavaSpatialFilterOperator ..> JavaExecutor : executed by
+
+Spatial ..> JavaPlatform : requires
+
+legend bottom
+  |= Color |= Module |
+  | <#E3F2FD> | wayang-java (platform + bundled plugin) |
+  | <#FFFDE7> | wayang-basic (abstract operators) |
+  | <#E8F5E9> | wayang-spatial (external plugin) |
+endlegend
+
+@enduml

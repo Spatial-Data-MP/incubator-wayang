@@ -20,7 +20,9 @@ package org.apache.wayang.postgres.channels;
 
 import org.apache.wayang.core.optimizer.channels.ChannelConversion;
 import org.apache.wayang.core.optimizer.channels.DefaultChannelConversion;
+import org.apache.wayang.java.channels.CollectionChannel;
 import org.apache.wayang.java.channels.StreamChannel;
+import org.apache.wayang.jdbc.operators.SqlToLongCollectionOperator;
 import org.apache.wayang.jdbc.operators.SqlToRddOperator;
 import org.apache.wayang.jdbc.operators.SqlToStreamOperator;
 import org.apache.wayang.postgres.platform.PostgresPlatform;
@@ -46,9 +48,16 @@ public class ChannelConversions {
             () -> new SqlToRddOperator(PostgresPlatform.getInstance())
     );
 
+    public static final ChannelConversion SQL_COUNT_TO_COLLECTION_CONVERSION = new DefaultChannelConversion(
+            PostgresPlatform.getInstance().getSqlCountQueryChannelDescriptor(),
+            CollectionChannel.DESCRIPTOR,
+            () -> new SqlToLongCollectionOperator(PostgresPlatform.getInstance())
+    );
+
     public static final Collection<ChannelConversion> ALL = Arrays.asList(
             SQL_TO_STREAM_CONVERSION,
-            SQL_TO_UNCACHED_RDD_CONVERSION
+            SQL_TO_UNCACHED_RDD_CONVERSION,
+            SQL_COUNT_TO_COLLECTION_CONVERSION
     );
 
 }

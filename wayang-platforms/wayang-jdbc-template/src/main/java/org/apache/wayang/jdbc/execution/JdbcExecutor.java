@@ -37,6 +37,7 @@ import org.apache.wayang.core.util.fs.FileSystem;
 import org.apache.wayang.core.util.fs.FileSystems;
 import org.apache.wayang.jdbc.channels.SqlQueryChannel;
 import org.apache.wayang.jdbc.compiler.FunctionCompiler;
+import org.apache.wayang.jdbc.operators.JdbcCountOperator;
 import org.apache.wayang.jdbc.operators.JdbcExecutionOperator;
 import org.apache.wayang.jdbc.operators.JdbcFilterOperator;
 import org.apache.wayang.jdbc.operators.JdbcJoinOperator;
@@ -113,6 +114,7 @@ public class JdbcExecutor extends ExecutorTemplate {
         final Collection<JdbcExecutionOperator> filters = new ArrayList<>(4);
         final Collection<JdbcExecutionOperator> joins = new ArrayList<>();
         JdbcProjectionOperator projection;
+        JdbcCountOperator<?> countOperator;
     }
 
     /**
@@ -132,7 +134,7 @@ public class JdbcExecutor extends ExecutorTemplate {
         assert !ops.tableSources.isEmpty() : "Invalid JDBC stage: no TableSource found";
 
         final StringBuilder query = createSqlString(
-                jdbcExecutor, ops.tableSources.get(0), ops.filters, ops.projection, ops.joins);
+                jdbcExecutor, ops.tableSources.get(0), ops.filters, ops.projection, ops.joins, ops.countOperator);
         return new Tuple2<>(query.toString(), tipChannelInstance);
     }
 
@@ -178,6 +180,9 @@ public class JdbcExecutor extends ExecutorTemplate {
         } else if (operator instanceof JdbcProjectionOperator) {
             assert ops.projection == null : "Only one projection operator per stage is supported";
             ops.projection = (JdbcProjectionOperator) operator;
+        } else if (operator instanceof JdbcCountOperator) {
+            assert ops.countOperator == null : "Only one count operator per stage is supported";
+            ops.countOperator = (JdbcCountOperator<?>) operator;
         } else if (operator instanceof JdbcJoinOperator || operator instanceof SpatialJoinOperator) {
             ops.joins.add((JdbcExecutionOperator) operator);
         } else if (!(operator instanceof TableSource)) {
@@ -190,12 +195,20 @@ public class JdbcExecutor extends ExecutorTemplate {
     public static StringBuilder createSqlString(final JdbcExecutor jdbcExecutor, final JdbcTableSource tableOp,
             final Collection<JdbcExecutionOperator> filterTasks,
             JdbcProjectionOperator projectionTask,
-            final Collection<JdbcExecutionOperator> joinTasks) {
+            final Collection<JdbcExecutionOperator> joinTasks,
+            JdbcCountOperator<?> countTask) {
         final String tableName = tableOp.createSqlClause(jdbcExecutor.connection, jdbcExecutor.functionCompiler);
         final Collection<String> conditions = filterTasks.stream()
                 .map(op -> op.createSqlClause(jdbcExecutor.connection, jdbcExecutor.functionCompiler))
                 .collect(Collectors.toList());
-        final String projection = projectionTask == null ? "*" : projectionTask.createSqlClause(jdbcExecutor.connection, jdbcExecutor.functionCompiler);
+        final String projection;
+        if (countTask != null) {
+            projection = countTask.createSqlClause(jdbcExecutor.connection, jdbcExecutor.functionCompiler);
+        } else if (projectionTask != null) {
+            projection = projectionTask.createSqlClause(jdbcExecutor.connection, jdbcExecutor.functionCompiler);
+        } else {
+            projection = "*";
+        }
         final Collection<String> joins = joinTasks.stream()
                 .map(op -> op.createSqlClause(jdbcExecutor.connection, jdbcExecutor.functionCompiler))
                 .collect(Collectors.toList());

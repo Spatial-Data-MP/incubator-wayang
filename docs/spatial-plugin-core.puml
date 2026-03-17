@@ -1,0 +1,154 @@
+@startuml
+skinparam defaultFontSize 12
+skinparam classAttributeIconSize 0
+skinparam padding 5
+
+title Wayang Core - Spatial Plugin Integration\n(JavaSpatialFilter Example)
+
+' ============================================================
+' wayang-core
+' ============================================================
+package "wayang-core" #F3E5F5 {
+    class WayangContext {
+        +register(plugin: Plugin)
+    }
+
+    class Configuration {
+        +getPlatformProvider()
+        +getMappingProvider()
+        +getChannelConversionProvider()
+    }
+
+    interface Plugin {
+        +configure(config: Configuration)
+        +getMappings(): Collection<Mapping>
+        +getRequiredPlatforms(): Collection<Platform>
+        +getChannelConversions(): Collection<ChannelConversion>
+        +setProperties(config: Configuration)
+    }
+
+    interface Mapping {
+        +getTransformations(): Collection
+    }
+
+    abstract class Platform
+
+    interface ExecutionOperator
+
+    class PlanTransformation {
+        +transform(subplan): Operator
+    }
+
+    WayangContext *-right- Configuration
+    WayangContext ..> Plugin : register()
+    Plugin ..> Configuration : configure() registers\nmappings & platforms
+    Plugin ..> Mapping : provides
+    Plugin ..> Platform : requires
+    Mapping ..> PlanTransformation : creates
+}
+
+' ============================================================
+' wayang-basic (abstract operators)
+' ============================================================
+package "wayang-basic" #FFFDE7 {
+    abstract class UnaryToUnaryOperator
+
+    abstract class SpatialFilterOperator<Type> {
+        #predicateType: SpatialPredicate
+        #keyDescriptor: TransformationDescriptor
+        #referenceGeometry: SpatialGeometry
+        +getPredicateType()
+        +getReferenceGeometry()
+        +getKeyDescriptor()
+    }
+
+    SpatialFilterOperator -up-|> UnaryToUnaryOperator
+}
+
+' ============================================================
+' wayang-java (platform)
+' ============================================================
+package "wayang-java" #E3F2FD {
+    class JavaPlatform
+
+    interface JavaExecutionOperator
+
+    class JavaExecutor {
+        +execute(operator)
+    }
+
+    JavaPlatform -down-|> Platform
+    JavaExecutionOperator -up-|> ExecutionOperator
+    JavaPlatform --> JavaExecutor : creates
+}
+
+' ============================================================
+' wayang-spatial (plugin)
+' ============================================================
+package "wayang-spatial" #E8F5E9 {
+    class Spatial << Plugin >> {
+        +{static} javaPlugin(): Plugin
+        +{static} sparkPlugin(): Plugin
+        +{static} postgresPlugin(): Plugin
+        --
+        getMappings(): SpatialFilterMapping, ...
+        getRequiredPlatforms(): JavaPlatform
+        getChannelConversions(): none
+    }
+
+    class SpatialFilterMapping << Mapping >> {
+        +getTransformations()
+        -createSubplanPattern()
+        -createReplacementSubplanFactory()
+    }
+
+    class JavaSpatialFilterOperator<Type> {
+        +evaluate(inputs, outputs, ctx)
+        -buildSpatialPredicate(): Predicate
+        +getSupportedInputChannels()
+        +getSupportedOutputChannels()
+    }
+
+    Spatial .up.|> Plugin
+    Spatial --> SpatialFilterMapping : registers
+    SpatialFilterMapping .up.|> Mapping
+    SpatialFilterMapping ..> SpatialFilterOperator : pattern matches
+    SpatialFilterMapping ..> JavaSpatialFilterOperator : replacement\ncreates
+    JavaSpatialFilterOperator -up-|> SpatialFilterOperator
+    JavaSpatialFilterOperator .up.|> JavaExecutionOperator
+    JavaSpatialFilterOperator ..> JavaExecutor : executed by
+}
+
+' ============================================================
+' Registration flow (numbered)
+' ============================================================
+note right of WayangContext
+  **Registration Flow:**
+  1. User calls wayangContext.register(Spatial.javaPlugin())
+  2. Plugin.configure() registers SpatialFilterMapping
+     with Configuration's MappingProvider
+  3. Plugin.configure() whitelists JavaPlatform
+     with Configuration's PlatformProvider
+end note
+
+note bottom of SpatialFilterMapping
+  **Plan Transformation (optimizer):**
+  1. Optimizer finds SpatialFilterOperator
+     in the logical plan
+  2. SpatialFilterMapping's pattern matches it
+  3. Factory creates JavaSpatialFilterOperator
+     as the platform-specific replacement
+end note
+
+' ============================================================
+' Legend
+' ============================================================
+legend bottom
+  |= Color |= Module |= Role |
+  | <#F3E5F5> | wayang-core | Plugin API, optimizer, execution framework |
+  | <#FFFDE7> | wayang-basic | Abstract (logical) operators |
+  | <#E3F2FD> | wayang-java | Java platform + executor |
+  | <#E8F5E9> | wayang-spatial | Spatial plugin (external) |
+endlegend
+
+@enduml

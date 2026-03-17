@@ -26,6 +26,7 @@ import org.apache.wayang.core.platform.ChannelDescriptor;
 import org.apache.wayang.core.platform.Executor;
 import org.apache.wayang.core.platform.Platform;
 import org.apache.wayang.core.util.ReflectionUtils;
+import org.apache.wayang.jdbc.channels.SqlCountQueryChannel;
 import org.apache.wayang.jdbc.channels.SqlQueryChannel;
 import org.apache.wayang.jdbc.execution.DatabaseDescriptor;
 import org.apache.wayang.jdbc.execution.JdbcExecutor;
@@ -55,6 +56,11 @@ public abstract class JdbcPlatformTemplate extends Platform {
      * {@link ChannelDescriptor} for {@link SqlQueryChannel}s with this instance.
      */
     private final SqlQueryChannel.Descriptor sqlQueryChannelDescriptor = new SqlQueryChannel.Descriptor(this);
+
+    /**
+     * {@link ChannelDescriptor} for {@link SqlCountQueryChannel}s with this instance.
+     */
+    private final SqlCountQueryChannel.Descriptor sqlCountQueryChannelDescriptor = new SqlCountQueryChannel.Descriptor(this);
 
     public Connection getConnection() {
         return connection;
@@ -119,6 +125,15 @@ public abstract class JdbcPlatformTemplate extends Platform {
      */
     public SqlQueryChannel.Descriptor getSqlQueryChannelDescriptor() {
         return this.sqlQueryChannelDescriptor;
+    }
+
+    /**
+     * Retrieve a {@link SqlCountQueryChannel.Descriptor} for this instance.
+     *
+     * @return the {@link SqlCountQueryChannel.Descriptor}
+     */
+    public SqlCountQueryChannel.Descriptor getSqlCountQueryChannelDescriptor() {
+        return this.sqlCountQueryChannelDescriptor;
     }
 
     /**

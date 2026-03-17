@@ -41,7 +41,7 @@ public class SqlQueryChannel extends Channel {
         super(descriptor, outputSlot);
     }
 
-    private SqlQueryChannel(SqlQueryChannel parent) {
+    protected SqlQueryChannel(SqlQueryChannel parent) {
         super(parent);
     }
 

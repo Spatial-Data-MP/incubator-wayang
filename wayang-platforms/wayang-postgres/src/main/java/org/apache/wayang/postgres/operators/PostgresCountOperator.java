@@ -16,23 +16,23 @@
  * limitations under the License.
  */
 
-package org.apache.wayang.postgres.mapping;
+package org.apache.wayang.postgres.operators;
 
-import org.apache.wayang.core.mapping.Mapping;
-
-import java.util.Arrays;
-import java.util.Collection;
+import org.apache.wayang.basic.operators.CountOperator;
+import org.apache.wayang.jdbc.operators.JdbcCountOperator;
 
 /**
- * Register for the {@link Mapping}s supported for this platform.
+ * PostgreSQL implementation of the {@link JdbcCountOperator}.
+ * Pushes {@code SELECT COUNT(*)} down to PostgreSQL.
  */
-public class Mappings {
+public class PostgresCountOperator<Type> extends JdbcCountOperator<Type> implements PostgresExecutionOperator {
 
-    public static final Collection<Mapping> ALL = Arrays.asList(
-            new FilterMapping(),
-            new JoinMapping(),
-            new ProjectionMapping(),
-            new CountMapping()
-    );
+    public PostgresCountOperator(CountOperator<Type> that) {
+        super(that);
+    }
 
+    @Override
+    protected PostgresCountOperator<Type> createCopy() {
+        return new PostgresCountOperator<>(this);
+    }
 }

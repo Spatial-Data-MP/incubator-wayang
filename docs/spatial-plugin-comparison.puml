@@ -1,0 +1,89 @@
+@startuml
+skinparam defaultFontSize 12
+skinparam classAttributeIconSize 0
+skinparam padding 5
+
+title JavaBasicPlugin vs Spatial Plugin\n(side-by-side comparison)
+
+' ============================================================
+' wayang-core (shared contracts)
+' ============================================================
+package "wayang-core" #F3E5F5 {
+    class WayangContext {
+        +register(plugin: Plugin)
+    }
+
+    class Configuration {
+        +getMappingProvider()
+        +getPlatformProvider()
+    }
+
+    interface Plugin
+    interface Mapping
+
+    WayangContext *-- Configuration
+    WayangContext ..> Plugin : register()
+    Plugin ..> Configuration : configure()
+}
+
+' ============================================================
+' wayang-java (bundled plugin — left)
+' ============================================================
+package "wayang-java" #E3F2FD {
+    class JavaBasicPlugin
+    class FilterMapping
+    class JavaFilterOperator
+
+    JavaBasicPlugin .up.|> Plugin
+    FilterMapping .up.|> Mapping
+    JavaBasicPlugin --> FilterMapping : registers
+}
+
+' ============================================================
+' wayang-basic (logical operators — center)
+' ============================================================
+package "wayang-basic" #FFFDE7 {
+    abstract class FilterOperator
+    abstract class SpatialFilterOperator
+}
+
+' ============================================================
+' wayang-spatial (external plugin — right)
+' ============================================================
+package "wayang-spatial" #E8F5E9 {
+    class Spatial
+    class SpatialFilterMapping
+    class JavaSpatialFilterOperator
+
+    Spatial .up.|> Plugin
+    SpatialFilterMapping .up.|> Mapping
+    Spatial --> SpatialFilterMapping : registers
+}
+
+' ============================================================
+' Inheritance (cross-package)
+' ============================================================
+JavaFilterOperator --|> FilterOperator
+JavaSpatialFilterOperator --|> SpatialFilterOperator
+
+' ============================================================
+' Plan transformation (color-coded)
+' ============================================================
+FilterMapping ..[#1565C0]> FilterOperator : <<matches in plan>>
+FilterMapping ..[#2E7D32]> JavaFilterOperator : <<replaces with>>
+
+SpatialFilterMapping ..[#1565C0]> SpatialFilterOperator : <<matches in plan>>
+SpatialFilterMapping ..[#2E7D32]> JavaSpatialFilterOperator : <<replaces with>>
+
+' ============================================================
+' Legend
+' ============================================================
+legend bottom
+  |= Arrow |= Meaning |
+  | ——<U+25B7> | extends |
+  | - -<U+25B7> | implements |
+  | <color:#1565C0>- - -></color> | matches in plan |
+  | <color:#2E7D32>- - -></color> | replaces with |
+endlegend
+
+@enduml
