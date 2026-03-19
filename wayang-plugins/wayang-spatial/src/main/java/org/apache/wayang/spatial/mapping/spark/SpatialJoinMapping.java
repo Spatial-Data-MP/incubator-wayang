@@ -30,6 +30,7 @@ import java.util.Collections;
 /**
  * Mapping from {@link SpatialJoinOperator} to {@link SparkSpatialJoinOperator}.
  */
+@SuppressWarnings("unchecked")
 public class SpatialJoinMapping implements Mapping {
 
     @Override
