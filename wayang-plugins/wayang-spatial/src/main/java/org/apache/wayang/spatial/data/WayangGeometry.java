@@ -234,6 +234,12 @@ public class WayangGeometry implements SpatialGeometry {
         return s.startsWith("{") && s.contains("\"type\"");
     }
 
+
+
+    private boolean looksLikeCSV(String s) {
+        return s.contains(",") && !s.startsWith("{") && !s.contains("(");
+    }
+
     private String cleanSRID(String wkt) {
         if (wkt.startsWith("SRID=")) {
             int idx = wkt.indexOf(';');

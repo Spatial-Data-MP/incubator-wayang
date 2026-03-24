@@ -80,11 +80,15 @@ public class SparkSpatialJoinOperator<InputType0, InputType1>
     @Override
     @SuppressWarnings("unchecked")
     public Tuple<Collection<ExecutionLineageNode>, Collection<ChannelInstance>> evaluate(ChannelInstance[] inputs, ChannelInstance[] outputs, SparkExecutor sparkExecutor, OptimizationContext.OperatorContext operatorContext) {
-        // Register Sedona JAR with Spark executors if running in cluster mode.
+        // Register Sedona and wayang-spatial JARs with Spark executors if running in cluster mode.
         if (!sparkExecutor.sc.isLocal()) {
             String sedonaJar = ReflectionUtils.getDeclaringJar(SpatialRDD.class);
             if (sedonaJar != null) {
                 sparkExecutor.sc.addJar(sedonaJar);
+            }
+            String spatialJar = ReflectionUtils.getDeclaringJar(SparkSpatialJoinOperator.class);
+            if (spatialJar != null) {
+                sparkExecutor.sc.addJar(spatialJar);
             }
         }
 
