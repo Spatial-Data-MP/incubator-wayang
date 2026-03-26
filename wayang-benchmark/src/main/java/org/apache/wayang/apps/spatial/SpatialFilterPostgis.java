@@ -38,6 +38,7 @@ public class SpatialFilterPostgis {
 
         Configuration configuration = new Configuration();
 
+        String predicate = args[0];
         String tableName = args[1];
         String node_name = args[2];
         String database_name = args[3];
@@ -62,11 +63,21 @@ public class SpatialFilterPostgis {
                 .readTable(new PostgresTableSource(tableName, "ST_AsText(geom)"))
                 .spatialFilter(
                         (input -> WayangGeometry.fromStringInput(input.getString(0))),
-                        SpatialPredicate.INTERSECTS,
+                        switch (predicate) {
+                            case "intersects" -> SpatialPredicate.INTERSECTS;
+                            case "contains" -> SpatialPredicate.CONTAINS;
+                            case "within" -> SpatialPredicate.WITHIN;
+                            case "overlaps" -> SpatialPredicate.OVERLAPS;
+                            case "touches" -> SpatialPredicate.TOUCHES;
+                            case "crosses" -> SpatialPredicate.CROSSES;
+                            case "equals" -> SpatialPredicate.EQUALS;
+                            default -> SpatialPredicate.INTERSECTS;
+                        },
                         queryGeometry
                 ).withSqlGeometryColumnName("geom")
                 .withTargetPlatform(Postgres.platform())
                 .count()
+                .withTargetPlatform(Postgres.platform())
                 .collect();
 
         System.out.println("Spatial Filter Postgres Result Size: " + outputcount);
