@@ -45,6 +45,7 @@ public class SpatialJoinPostgis {
 
         Configuration configuration = new Configuration();
 
+        String predicate = args[0];
         String tableName1 = args[1];
         String tableName2 = args[2];
         String node_name = args[3];
@@ -68,7 +69,16 @@ public class SpatialJoinPostgis {
                 (record -> WayangGeometry.fromStringInput(record.getString(0))),
                 (record -> WayangGeometry.fromStringInput(record.getString(0))),
                 Record.class, Record.class,
-                SpatialPredicate.INTERSECTS
+                switch (predicate) {
+                    case "intersects" -> SpatialPredicate.INTERSECTS;
+                    case "contains" -> SpatialPredicate.CONTAINS;
+                    case "within" -> SpatialPredicate.WITHIN;
+                    case "overlaps" -> SpatialPredicate.OVERLAPS;
+                    case "touches" -> SpatialPredicate.TOUCHES;
+                    case "crosses" -> SpatialPredicate.CROSSES;
+                    case "equals" -> SpatialPredicate.EQUALS;
+                    default -> SpatialPredicate.INTERSECTS;
+                }
         );
 
         spatialJoin.getKeyDescriptor0().withSqlImplementation(tableName1, "geom");
@@ -85,6 +95,11 @@ public class SpatialJoinPostgis {
         CountOperator<Tuple2<Record, Record>> count = new CountOperator<>(
                 DataSetType.createDefaultUnchecked(Tuple2.class)
         );
+        count.addTargetPlatform(switch (platform) {
+            case "java"  -> Java.platform();
+            case "spark" -> Spark.platform();
+            default       -> Postgres.platform();
+        });
         spatialJoin.connectTo(0, count, 0);
 
         Collection<Long> outputcount = new ArrayList<>();

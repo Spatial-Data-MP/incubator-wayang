@@ -42,8 +42,13 @@ public class SpatialJoin {
                 .withPlugin(Spark.basicPlugin())
                 .withPlugin(Spatial.plugin());
 
-        JavaPlanBuilder planBuilder = new JavaPlanBuilder(wayangContext);
+        JavaPlanBuilder planBuilder = new JavaPlanBuilder(wayangContext)
+                .withJobName("join test")
+                .withUdfJarOf(SpatialJoin.class)
+                .withUdfJarOf(org.apache.wayang.spatial.Spatial.class)
+                .withUdfJarOf(org.apache.wayang.java.Java.class);
 
+        String predicate = args[0];
         String file1Url = args[1];
         String file2Url = args[2];
         String platform = args[3];
@@ -55,7 +60,16 @@ public class SpatialJoin {
                         WayangGeometry::fromStringInput,
                         table2,
                         WayangGeometry::fromStringInput,
-                        SpatialPredicate.INTERSECTS
+                        switch (predicate) {
+                            case "intersects" -> SpatialPredicate.INTERSECTS;
+                            case "contains" -> SpatialPredicate.CONTAINS;
+                            case "within" -> SpatialPredicate.WITHIN;
+                            case "overlaps" -> SpatialPredicate.OVERLAPS;
+                            case "touches" -> SpatialPredicate.TOUCHES;
+                            case "crosses" -> SpatialPredicate.CROSSES;
+                            case "equals" -> SpatialPredicate.EQUALS;
+                            default -> SpatialPredicate.INTERSECTS;
+                        }
                 ).withTargetPlatform(
                         switch (platform) {
                             case "java"  -> Java.platform();

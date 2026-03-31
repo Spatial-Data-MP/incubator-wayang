@@ -35,6 +35,7 @@ public class SpatialFilter {
     public static void main(String[] args) {
         System.out.println("Running Spatial Filter Benchmark with args " + Arrays.toString(args));
 
+        String predicate = args[0];
         String fileUrl = args[1];
         String platform = args[2];
         String selectivity = args[3];
@@ -46,7 +47,9 @@ public class SpatialFilter {
 
         JavaPlanBuilder planBuilder = new JavaPlanBuilder(wayangContext)
                 .withJobName("filter test")
-                .withUdfJarOf(SpatialFilter.class);
+                .withUdfJarOf(SpatialFilter.class)
+                .withUdfJarOf(org.apache.wayang.spatial.Spatial.class)
+                .withUdfJarOf(org.apache.wayang.java.Java.class);
 
         SpatialGeometry queryGeometry = WayangGeometry.fromStringInput(
                 "POLYGON((0.0 0.0, " + selectivity + " 0.0, " + selectivity + " " + selectivity + ", 0.0 " + selectivity + ", 0.0 0.0))"
@@ -56,7 +59,16 @@ public class SpatialFilter {
                 planBuilder.readTextFile(fileUrl)
                         .spatialFilter(
                                 (input -> WayangGeometry.fromStringInput((input.split("\",")[0]).replace("\"", ""))),
-                                SpatialPredicate.INTERSECTS,
+                                switch (predicate) {
+                                    case "intersects" -> SpatialPredicate.INTERSECTS;
+                                    case "contains" -> SpatialPredicate.CONTAINS;
+                                    case "within" -> SpatialPredicate.WITHIN;
+                                    case "overlaps" -> SpatialPredicate.OVERLAPS;
+                                    case "touches" -> SpatialPredicate.TOUCHES;
+                                    case "crosses" -> SpatialPredicate.CROSSES;
+                                    case "equals" -> SpatialPredicate.EQUALS;
+                                    default -> SpatialPredicate.INTERSECTS;
+                                },
                                 queryGeometry
                         ).withTargetPlatform(
                                 switch (platform) {
