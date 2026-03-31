@@ -41,6 +41,7 @@ import org.apache.wayang.spark.operators.SparkLocalCallbackSink;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+import java.util.HashSet;
 import java.util.Collections;
 import java.util.Set;
 
@@ -57,6 +58,8 @@ public class SparkPlatform extends Platform {
     private static final String MONITORING_METRICS_FILE="wayang-spark-metrics.properties";
 
     public static final String INITIALIZATION_MS_CONFIG_KEY = "wayang.spark.init.ms";
+    // Plugin-provided jars that must be shipped with the SparkContext.
+    public static final String ADDITIONAL_JARS_CONFIG_KEY = "wayang.spark.additional-jars";
 
     private static SparkPlatform instance = null;
 
@@ -94,6 +97,11 @@ public class SparkPlatform extends Platform {
      * does not hold a counted reference, so it might be disposed.
      */
     private SparkContextReference sparkContextReference;
+
+    /**
+     * Tracks jars that have already been registered with the current SparkContext.
+     */
+    private final Set<String> registeredJarPaths = new HashSet<>();
 
     private Logger logger = LogManager.getLogger(this.getClass());
 
@@ -148,6 +156,7 @@ public class SparkPlatform extends Platform {
         // sparkConf.set("spark.extraListeners","org.apache.wayang.monitoring.spark.SparkListener");
         if (this.sparkContextReference == null || this.sparkContextReference.isDisposed()) {
             this.sparkContextReference = new SparkContextReference(job.getCrossPlatformExecutor(), new JavaSparkContext(sparkConf));
+            this.registeredJarPaths.clear();
         }
         final JavaSparkContext sparkContext = this.sparkContextReference.get();
 
@@ -168,13 +177,33 @@ public class SparkPlatform extends Platform {
             } else {
                 udfJarPaths.forEach(this::registerJarIfNotNull);
             }
+
+            this.registerConfiguredJars(configuration);
         }
 
         return this.sparkContextReference;
     }
 
     private void registerJarIfNotNull(String path) {
-        if (path != null) this.sparkContextReference.get().addJar(path);
+        if (path != null) this.registerJar(path);
+    }
+
+    private void registerConfiguredJars(Configuration configuration) {
+        configuration.getOptionalStringProperty(ADDITIONAL_JARS_CONFIG_KEY).ifPresent(jarList -> {
+            // Keep plugin-specific deployment concerns centralized in the platform setup.
+            for (String jarPath : jarList.split(",")) {
+                final String trimmedPath = jarPath.trim();
+                if (!trimmedPath.isEmpty()) {
+                    this.registerJar(trimmedPath);
+                }
+            }
+        });
+    }
+
+    private void registerJar(String path) {
+        if (this.registeredJarPaths.add(path)) {
+            this.sparkContextReference.get().addJar(path);
+        }
     }
 
     @Override

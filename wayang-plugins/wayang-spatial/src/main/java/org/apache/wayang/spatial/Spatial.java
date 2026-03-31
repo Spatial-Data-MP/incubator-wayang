@@ -18,6 +18,7 @@
 
 package org.apache.wayang.spatial;
 
+import org.apache.sedona.core.spatialRDD.SpatialRDD;
 import org.apache.wayang.basic.operators.GeoJsonFileSource;
 import org.apache.wayang.basic.operators.SpatialFilterOperator;
 import org.apache.wayang.basic.operators.SpatialJoinOperator;
@@ -26,9 +27,12 @@ import org.apache.wayang.core.mapping.Mapping;
 import org.apache.wayang.core.optimizer.channels.ChannelConversion;
 import org.apache.wayang.core.platform.Platform;
 import org.apache.wayang.core.plugin.Plugin;
+import org.apache.wayang.core.util.ReflectionUtils;
 import org.apache.wayang.spatial.mapping.Mappings;
 import org.apache.wayang.java.Java;
 import org.apache.wayang.java.platform.JavaPlatform;
+import org.locationtech.jts.geom.Geometry;
+import org.locationtech.jts.io.geojson.GeoJsonReader;
 import org.apache.wayang.spark.Spark;
 import org.apache.wayang.spark.platform.SparkPlatform;
 import org.apache.wayang.postgres.Postgres;
@@ -38,6 +42,8 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.LinkedHashSet;
+import java.util.Set;
 
 /**
  * Provides {@link Plugin}s that enable usage of the {@link SpatialFilterOperator}, {@link SpatialJoinOperator},
@@ -71,6 +77,7 @@ public class Spatial {
 
         @Override
         public void setProperties(Configuration configuration) {
+            configureSparkProperties(configuration);
         }
     };
 
@@ -140,6 +147,7 @@ public class Spatial {
 
         @Override
         public void setProperties(Configuration configuration) {
+            configureSparkProperties(configuration);
         }
     };
 
@@ -184,6 +192,37 @@ public class Spatial {
      */
     public static Plugin postgresPlugin() {
         return POSTGRES_PLUGIN;
+    }
+
+    private static void configureSparkProperties(Configuration configuration) {
+        // Declare runtime jars here; SparkPlatform decides when to ship them to the cluster.
+        appendSparkJar(configuration, ReflectionUtils.getDeclaringJar(Spatial.class));
+        appendSparkJar(configuration, ReflectionUtils.getDeclaringJar(SpatialRDD.class)); // Sedona
+        appendSparkJar(configuration, ReflectionUtils.getDeclaringJar(Geometry.class));
+        appendSparkJar(configuration, ReflectionUtils.getDeclaringJar(GeoJsonReader.class));
+    }
+
+    static void appendSparkJar(Configuration configuration, String jarPath) {
+        if (jarPath == null || jarPath.isBlank()) {
+            return;
+        }
+
+        final Set<String> jarPaths = new LinkedHashSet<>();
+        configuration.getOptionalStringProperty(SparkPlatform.ADDITIONAL_JARS_CONFIG_KEY).ifPresent(existingJarList -> {
+            for (String existingJar : existingJarList.split(",")) {
+                final String trimmedPath = existingJar.trim();
+                if (!trimmedPath.isEmpty()) {
+                    jarPaths.add(trimmedPath);
+                }
+            }
+        });
+        // Preserve insertion order so the serialized property stays stable.
+        jarPaths.add(jarPath);
+
+        configuration.setProperty(
+                SparkPlatform.ADDITIONAL_JARS_CONFIG_KEY,
+                String.join(",", jarPaths)
+        );
     }
 
 }
